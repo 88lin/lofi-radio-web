@@ -569,7 +569,7 @@ export default function Home() {
         />
         
         {/* Hero Section */}
-        <section className="pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6">
+        <section className="pt-24 sm:pt-28 pb-10 sm:pb-14 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial="hidden"
@@ -760,7 +760,7 @@ export default function Home() {
         </section>
         
         {/* Features Section */}
-        <section className="py-10 sm:py-14 px-4 sm:px-6">
+        <section className="py-6 sm:py-10 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -798,7 +798,7 @@ export default function Home() {
         </section>
         
         {/* 使用场景 Section */}
-        <section className="py-10 sm:py-12 px-4 sm:px-6">
+        <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -841,7 +841,7 @@ export default function Home() {
         </section>
         
         {/* 电台展示 */}
-        <section className="py-10 sm:py-12 px-4 sm:px-6">
+        <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -905,7 +905,7 @@ export default function Home() {
         </section>
         
         {/* CTA Section */}
-        <section className="py-10 sm:py-14 px-4 sm:px-6">
+        <section className="py-6 sm:py-10 px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
