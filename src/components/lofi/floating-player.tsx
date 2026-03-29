@@ -61,26 +61,26 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '20%',
+          inset: '18%',
           background: `
-            radial-gradient(circle at 35% 35%, ${color}60 0%, transparent 50%),
+            radial-gradient(circle at 35% 35%, ${color}70 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
           `,
           boxShadow: `
             inset 0 2px 8px rgba(0, 0, 0, 0.25),
             inset 0 -1px 2px rgba(255, 255, 255, 0.08),
-            0 0 25px ${color}30
+            0 0 30px ${color}40
           `
         }}
       >
-        <Music className="w-6 h-6 text-white/90 drop-shadow-lg" />
+        <Music className="w-10 h-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
       </div>
       
-      {/* 中心小孔 */}
+      {/* 中心小孔 - 更小 */}
       <div
         className="absolute rounded-full"
         style={{
-          inset: '47%',
+          inset: '48%',
           background: 'radial-gradient(circle, #000 0%, #1a1a1a 100%)',
           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8)'
         }}
@@ -436,40 +436,53 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   return (
     <div 
       className="relative w-full h-full flex overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0a0a0c 0%, #12121a 50%, #0a0a0c 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #0d0d12 0%, #141420 50%, #0d0d12 100%)' }}
     >
       {/* 背景渐变光晕 - 高斯模糊效果 */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* 主色圆光晕 - 左上 */}
+        {/* 主色圆光晕 - 左上 大 */}
         <div
-          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
+          className="absolute -top-10 -left-10 w-[700px] h-[700px] rounded-full"
           style={{
-            background: `radial-gradient(circle, ${stationColor}25 0%, ${stationColor}08 40%, transparent 70%)`,
-            filter: 'blur(60px)',
+            background: `radial-gradient(circle, ${stationColor}60 0%, ${stationColor}20 50%, transparent 80%)`,
+            filter: 'blur(100px)',
+            opacity: 0.8,
           }}
         />
-        {/* 主色圆光晕 - 右下 */}
+        {/* 主色圆光晕 - 右下 大 */}
         <div
-          className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full"
+          className="absolute -bottom-10 -right-10 w-[600px] h-[600px] rounded-full"
           style={{
-            background: `radial-gradient(circle, ${stationColor}18 0%, ${stationColor}06 40%, transparent 70%)`,
+            background: `radial-gradient(circle, ${stationColor}50 0%, ${stationColor}15 50%, transparent 80%)`,
+            filter: 'blur(120px)',
+            opacity: 0.7,
+          }}
+        />
+        {/* 中间偏右 */}
+        <div
+          className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${stationColor}35 0%, transparent 60%)`,
             filter: 'blur(80px)',
+            opacity: 0.6,
           }}
         />
-        {/* 互补色圆光晕 - 中右 */}
+        {/* 左下 */}
         <div
-          className="absolute top-1/3 right-1/4 w-[350px] h-[350px] rounded-full"
+          className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full"
           style={{
-            background: `radial-gradient(circle, ${stationColor}15 0%, transparent 60%)`,
-            filter: 'blur(50px)',
+            background: `radial-gradient(circle, ${stationColor}30 0%, transparent 55%)`,
+            filter: 'blur(90px)',
+            opacity: 0.5,
           }}
         />
-        {/* 小光晕点缀 */}
+        {/* 中央光晕 */}
         <div
-          className="absolute top-2/3 left-1/4 w-[200px] h-[200px] rounded-full"
+          className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full"
           style={{
-            background: `radial-gradient(circle, ${stationColor}10 0%, transparent 60%)`,
-            filter: 'blur(40px)',
+            background: `radial-gradient(circle, ${stationColor}25 0%, transparent 60%)`,
+            filter: 'blur(60px)',
+            opacity: 0.5,
           }}
         />
       </div>
