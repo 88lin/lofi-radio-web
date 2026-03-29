@@ -194,7 +194,7 @@ const NavBar = memo(({
       <div className="flex items-center gap-2 px-2 py-1">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
+          style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
         >
           <Headphones className="w-3.5 h-3.5 text-white" />
         </div>
@@ -506,7 +506,7 @@ export default function Home() {
 
   // 避免闪屏 - 在未挂载时默认使用暗色主题
   const isDark = mounted ? resolvedTheme === 'dark' : true;
-  const stationColor = currentStation?.color || '#10B981';
+  const stationColor = currentStation?.color || '#8B5CF6';
   
   return (
     <main className="relative min-h-screen overflow-x-hidden">
@@ -566,9 +566,9 @@ export default function Home() {
                 <span
                   className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors"
                   style={{
-                    background: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.08)',
-                    color: isDark ? '#34d399' : '#059669',
-                    border: isDark ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(16, 185, 129, 0.12)',
+                    background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.08)',
+                    color: isDark ? '#a78bfa' : '#7c3aed',
+                    border: isDark ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.12)',
                   }}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -587,7 +587,7 @@ export default function Home() {
               >
                 专注音乐
                 <br />
-                <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
                   触手可及
                 </span>
               </motion.h1>
@@ -614,8 +614,8 @@ export default function Home() {
                       togglePlay();
                       if (!isPlaying) setMiniMode(false);
                     }}
-                    className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
+                    className="w-full sm:w-auto rounded-full px-6 h-11 sm:h-12 text-base font-medium shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                   >
                     {isPlaying ? (
                       <>
@@ -636,7 +636,7 @@ export default function Home() {
                     variant="outline"
                     size="lg"
                     className={cn(
-                      "w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium group",
+                      "w-full sm:w-auto rounded-full px-6 h-11 sm:h-12 text-base font-medium group",
                       isDark && "border-white/20 text-white hover:bg-white/10"
                     )}
                     asChild
@@ -899,9 +899,9 @@ export default function Home() {
               className="relative p-6 sm:p-10 rounded-3xl overflow-hidden"
               style={{
                 background: isDark 
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)'
-                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 182, 212, 0.03) 100%)',
-                border: isDark ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(16, 185, 129, 0.1)',
+                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(217, 70, 239, 0.04) 100%)'
+                  : 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(217, 70, 239, 0.03) 100%)',
+                border: isDark ? '1px solid rgba(139, 92, 246, 0.15)' : '1px solid rgba(139, 92, 246, 0.1)',
               }}
             >
               <h2 className={cn(
@@ -924,8 +924,8 @@ export default function Home() {
                     togglePlay();
                     if (!isPlaying) setMiniMode(false);
                   }}
-                  className="rounded-full px-8 h-12 text-sm font-medium shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
+                  className="rounded-full px-6 h-11 text-sm font-medium shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                 >
                   {isPlaying ? (
                     <>

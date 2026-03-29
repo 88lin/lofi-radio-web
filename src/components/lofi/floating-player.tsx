@@ -588,7 +588,7 @@ FullScreenPlayer.displayName = 'FullScreenPlayer';
 const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
   const { isPlaying, currentStation, togglePlay, isLoading } = useAudioStore();
   const { focusTime } = useFocusTimer();
-  const stationColor = currentStation?.color || '#10B981';
+  const stationColor = currentStation?.color || '#8B5CF6';
   
   return (
     <div className="relative cursor-grab active:cursor-grabbing select-none">
