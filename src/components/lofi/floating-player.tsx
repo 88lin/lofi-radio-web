@@ -218,11 +218,18 @@ const VolumeSlider = memo(({
 VolumeSlider.displayName = 'VolumeSlider';
 
 // ==================== 电台列表组件 ====================
-const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect: (station: Station) => void }) => {
+const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => void; onSelect: (station: Station) => void; initialScene?: string }) => {
   const {
     isPlaying, currentStation, selectedCategory,
     setSelectedCategory,
   } = useAudioStore();
+  
+  // 初始化时设置分类
+  useEffect(() => {
+    if (initialScene && categories.find(c => c.id === initialScene)) {
+      setSelectedCategory(initialScene);
+    }
+  }, [initialScene, setSelectedCategory]);
   
   const filteredStations = getFilteredStations(selectedCategory);
   const stationColor = currentStation?.color || '#8B5CF6';
@@ -251,15 +258,15 @@ const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect
             e.stopPropagation(); 
             onClose(); 
           }}
-          className="w-7 h-7 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
         >
-          <X className="w-3.5 h-3.5 text-white/60" />
+          <X className="w-4 h-4 text-white/60" />
         </button>
       </div>
       
-      {/* 分类标签 */}
-      <div className="px-3 py-2.5 border-b border-white/[0.04]">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+      {/* 分类标签 - 横向滚动 */}
+      <div className="px-3 py-2 border-b border-white/[0.04]">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -268,10 +275,10 @@ const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect
                 setSelectedCategory(cat.id);
               }}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
                 selectedCategory === cat.id
                   ? "text-white"
-                  : "text-white/50 hover:text-white/70 bg-white/[0.03] hover:bg-white/[0.05]"
+                  : "text-white/50 hover:text-white/70 bg-white/[0.04]"
               )}
               style={{
                 background: selectedCategory === cat.id
@@ -286,8 +293,8 @@ const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect
       </div>
       
       {/* 电台列表 */}
-      <div className="flex-1 overflow-y-auto p-2.5">
-        <div className="grid gap-1.5">
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="grid gap-2">
           {filteredStations.map((station) => {
             const isActive = currentStation?.id === station.id;
             return (
@@ -298,44 +305,44 @@ const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect
                   onSelect(station);
                 }}
                 className={cn(
-                  "w-full p-2.5 rounded-xl text-left flex items-center gap-2.5 transition-all relative overflow-hidden group",
-                  isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+                  "w-full p-3 rounded-xl text-left flex items-center gap-3 transition-all relative overflow-hidden",
+                  isActive ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
                 )}
                 style={{
-                  borderLeft: isActive ? `2.5px solid ${station.color}` : '2.5px solid transparent',
+                  borderLeft: isActive ? `3px solid ${station.color}` : '3px solid transparent',
                 }}
               >
                 {/* 图标 */}
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${station.color}12` }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${station.color}15` }}
                 >
                   {isActive && isPlaying ? (
                     <div
-                      className={cn("w-3 h-3 rounded-full animate-pulse")}
+                      className="w-4 h-4 rounded-full animate-pulse"
                       style={{ 
                         background: `linear-gradient(135deg, ${station.color}, ${station.color}bb)`,
                       }}
                     />
                   ) : (
-                    <Music4 className="w-4 h-4" style={{ color: station.color }} />
+                    <Music4 className="w-5 h-5" style={{ color: station.color }} />
                   )}
                 </div>
                 
                 {/* 信息 */}
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className={cn(
-                      "text-xs font-medium truncate",
+                      "text-sm font-medium truncate",
                       isActive ? "text-white" : "text-white/80"
                     )}>
                       {station.name}
                     </span>
                     {station.custom && (
                       <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                        className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0"
                         style={{
-                          background: `${station.color}20`,
+                          background: `${station.color}25`,
                           color: station.color
                         }}
                       >
@@ -343,19 +350,19 @@ const StationList = memo(({ onClose, onSelect }: { onClose: () => void; onSelect
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/[0.05] text-white/40">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50">
                       {station.style1}
                     </span>
-                    <span className="text-[10px] text-white/25">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.04] text-white/40">
                       {station.scene}
                     </span>
                   </div>
                 </div>
                 
-                {/* 播放指示 - 使用 CSS 动画 */}
+                {/* 播放指示 */}
                 {isActive && isPlaying && (
-                  <div className="flex items-center gap-0.5 mr-1">
+                  <div className="flex items-center gap-0.5 mr-1 flex-shrink-0">
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}

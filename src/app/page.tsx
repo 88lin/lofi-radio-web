@@ -139,10 +139,10 @@ const features = [
 
 // 使用场景
 const scenes = [
-  { icon: '📚', title: '学习', description: 'Lo-fi 音乐帮助你集中注意力' },
-  { icon: '💻', title: '编程', description: '氛围音乐激发创作灵感' },
-  { icon: '📖', title: '阅读', description: '轻柔爵士陪伴你的阅读时光' },
-  { icon: '🌙', title: '放松', description: '自然白噪音帮助你入眠' },
+  { id: '学习', icon: '📚', title: '学习', description: 'Lo-fi 音乐帮助你集中注意力' },
+  { id: '编程', icon: '💻', title: '编程', description: '氛围音乐激发创作灵感' },
+  { id: '阅读', icon: '📖', title: '阅读', description: '轻柔爵士陪伴你的阅读时光' },
+  { id: '助眠', icon: '🌙', title: '助眠', description: '自然白噪音帮助你入眠' },
 ];
 
 // 快捷键列表
@@ -336,17 +336,21 @@ FeatureCard.displayName = 'FeatureCard';
 // 场景卡片组件
 const SceneCard = memo(({ 
   scene, 
-  isDark 
+  isDark,
+  onClick
 }: { 
   scene: typeof scenes[0];
   isDark: boolean;
+  onClick: () => void;
 }) => (
   <motion.div
     variants={scaleIn}
     whileHover={{ y: -3 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
     className={cn(
-      "p-4 rounded-2xl text-center transition-all",
-      isDark ? "bg-white/[0.03]" : "bg-white shadow-sm"
+      "p-4 rounded-2xl text-center transition-all cursor-pointer",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.06]" : "bg-white shadow-sm hover:shadow-md"
     )}
   >
     <div className="text-2xl mb-2">{scene.icon}</div>
@@ -434,6 +438,7 @@ export default function Home() {
   const currentStation = useAudioStore((state) => state.currentStation);
   const setMiniMode = useAudioStore((state) => state.setMiniMode);
   const selectStationById = useAudioStore((state) => state.selectStationById);
+  const setSelectedCategory = useAudioStore((state) => state.setSelectedCategory);
   
   // 初始化
   useAudioPlayer();
@@ -444,6 +449,17 @@ export default function Home() {
     selectStationById(stationId);
     setMiniMode(false);
   }, [selectStationById, setMiniMode]);
+
+  // 处理场景点击
+  const handleSceneClick = useCallback((sceneId: string) => {
+    // 找到该场景的第一个电台并播放
+    const sceneStations = stations.filter(s => s.scene === sceneId);
+    if (sceneStations.length > 0) {
+      setSelectedCategory(sceneId);
+      selectStationById(sceneStations[0].id);
+      setMiniMode(false);
+    }
+  }, [selectStationById, setMiniMode, setSelectedCategory]);
 
   // 主题切换
   const handleThemeToggle = useCallback(() => {
@@ -790,7 +806,12 @@ export default function Home() {
               className="grid grid-cols-2 sm:grid-cols-4 gap-3"
             >
               {scenes.map((scene) => (
-                <SceneCard key={scene.title} scene={scene} isDark={isDark} />
+                <SceneCard 
+                  key={scene.title} 
+                  scene={scene} 
+                  isDark={isDark}
+                  onClick={() => handleSceneClick(scene.id)}
+                />
               ))}
             </motion.div>
           </div>
