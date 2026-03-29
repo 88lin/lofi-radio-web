@@ -1,0 +1,27 @@
+{
+  "name": "Lofi Radio - 专注音乐电台",
+  "short_name": "Lofi Radio",
+  "description": "macOS 风格灵动岛音乐播放器，支持 Lo-Fi、Chill、Jazz 等多种风格电台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment", "productivity"],
+  "shortcuts": [
+    {
+      "name": "播放/暂停",
+      "short_name": "播放",
+      "description": "切换播放状态",
+      "url": "/?action=toggle"
+    }
+  ]
+}

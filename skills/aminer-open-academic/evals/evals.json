@@ -1,0 +1,46 @@
+{
+  "skill_name": "aminer-data-search",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我想了解 Andrew Ng（吴恩达）的完整学术画像，包括他的研究方向、发表了哪些重要论文、有没有专利、参与过哪些科研项目。帮我用 AMiner 的 API 查一下，我的 token 是 <YOUR_TOKEN>",
+      "expected_output": "运行 scholar_profile 工作流，依次调用学者搜索→学者详情→学者画像→学者论文→学者专利→学者项目，输出包含研究兴趣、论文列表、专利列表等字段的 JSON 结果",
+      "files": [],
+      "expectations": [
+        "调用了学者搜索 API（person_search）找到 Andrew Ng",
+        "调用了学者详情 API（person_detail）获取个人简介",
+        "调用了学者画像 API（person_figure）获取研究兴趣和领域",
+        "调用了学者论文 API（person_paper_relation）获取论文列表",
+        "输出包含 selected.name 字段且值为 Andrew Ng",
+        "输出包含 figure 或 detail 字段"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我深度分析论文《Attention Is All You Need》——先找到它，然后获取完整的论文详情（摘要、作者、年份），再看看它引用了哪些文献。我的 AMiner token 是 <YOUR_TOKEN>",
+      "expected_output": "运行 paper_deep_dive 工作流，搜索论文→获取详情→获取引用关系，输出论文摘要、作者列表、DOI、引用的论文列表",
+      "files": [],
+      "expectations": [
+        "调用了论文搜索 API 找到目标论文",
+        "调用了论文详情 API（paper_detail）获取摘要",
+        "调用了论文引用 API（paper_relation）获取引用列表",
+        "输出包含 detail 字段且其中有 abstract 字段",
+        "输出包含 citations_count 或 citations_preview 字段"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我需要分析麻省理工学院（MIT）的科研实力，想知道他们机构下有哪些知名学者、发表了哪些论文、有什么专利。请用 AMiner API 帮我整理一份报告。Token：<YOUR_TOKEN>",
+      "expected_output": "运行 org_analysis 工作流，先用机构消歧 pro 找到 MIT 的机构 ID，再并行获取机构详情、学者列表、论文列表，整理成报告",
+      "files": [],
+      "expectations": [
+        "调用了机构消歧 pro API（org_disambiguate_pro）获取机构 ID",
+        "调用了机构详情 API（org_detail）获取 MIT 简介",
+        "调用了机构学者 API（org_person_relation）获取学者列表",
+        "调用了机构论文 API（org_paper_relation）获取论文列表",
+        "输出包含 org_id 字段",
+        "输出包含 scholars 或 papers 字段"
+      ]
+    }
+  ]
+}

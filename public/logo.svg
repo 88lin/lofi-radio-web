@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#D946EF"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#gradient)"/>
+  <!-- Vinyl Record Outer Ring -->
+  <circle cx="256" cy="256" r="200" fill="#1a1a1a"/>
+  <!-- Vinyl Grooves -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#2d2d2d" stroke-width="2"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#2d2d2d" stroke-width="2"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#2d2d2d" stroke-width="2"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#2d2d2d" stroke-width="2"/>
+  <!-- Center Label -->
+  <circle cx="256" cy="256" r="70" fill="url(#gradient)"/>
+  <!-- Center Hole -->
+  <circle cx="256" cy="256" r="20" fill="#1a1a1a"/>
+  <!-- Music Note -->
+  <path d="M230 200 L230 280 C230 300 210 310 195 300 C180 290 180 270 195 260 C210 250 230 260 230 280" fill="white" opacity="0.9"/>
+  <path d="M280 180 L280 260 C280 280 260 290 245 280 C230 270 230 250 245 240 C260 230 280 240 280 260" fill="white" opacity="0.9"/>
+  <path d="M230 200 L280 180" stroke="white" stroke-width="8" stroke-linecap="round"/>
+</svg>
