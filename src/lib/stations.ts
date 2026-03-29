@@ -13,17 +13,6 @@ export interface Station {
 
 export const stations: Station[] = [
   {
-    id: 'lofi-girl',
-    name: 'Lofi Girl',
-    scene: '学习',
-    type: 'bilibili',
-    url: 'https://live.bilibili.com/27519423?live_from=84001&spm_id_from=333.337.0.0',
-    style1: 'Lo-fi',
-    style2: 'Chill',
-    custom: '最稳定',
-    color: '#8B5CF6'
-  },
-  {
     id: 'lofi-box',
     name: 'Lofi Box',
     scene: '学习',
@@ -173,6 +162,17 @@ export const stations: Station[] = [
     style1: 'Indie',
     style2: 'Alt',
     color: '#22C55E'
+  },
+  {
+    id: 'lofi-girl',
+    name: 'Lofi Girl (B站)',
+    scene: '学习',
+    type: 'bilibili',
+    url: 'https://live.bilibili.com/27519423',
+    style1: 'Lo-fi',
+    style2: 'Chill',
+    custom: 'B站直播',
+    color: '#8B5CF6'
   }
 ];
 
