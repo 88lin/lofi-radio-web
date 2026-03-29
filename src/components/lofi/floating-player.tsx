@@ -19,60 +19,61 @@ const VinylRecord = ({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlaying: 
     >
       {/* 外部光晕 */}
       <motion.div
-        className="absolute -inset-4 rounded-full"
+        className="absolute -inset-6 rounded-full"
         style={{
-          background: `radial-gradient(circle, ${color}20 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${color}15 0%, transparent 70%)`,
         }}
         animate={{ 
-          opacity: isPlaying ? [0.5, 1, 0.5] : 0.3,
+          opacity: isPlaying ? [0.3, 0.6, 0.3] : 0.2,
           scale: isPlaying ? [1, 1.05, 1] : 1 
         }}
-        transition={{ duration: 2, repeat: Infinity }}
+        transition={{ duration: 3, repeat: Infinity }}
       />
       
-      {/* 唱片主体 */}
+      {/* 唱片主体 - 更精致的渐变 */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
           background: `
-            radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.15) 0%, transparent 40%),
-            radial-gradient(circle at 65% 65%, rgba(0, 0, 0, 0.3) 0%, transparent 40%),
-            linear-gradient(145deg, #1f1f1f, #0a0a0a)
+            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 45%),
+            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.4) 0%, transparent 45%),
+            conic-gradient(from 0deg, #1a1a1a, #252525, #1a1a1a, #252525, #1a1a1a)
           `,
           boxShadow: `
-            inset 0 2px 6px rgba(255, 255, 255, 0.08),
-            inset 0 -2px 6px rgba(0, 0, 0, 0.5),
-            0 15px 50px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(255, 255, 255, 0.03)
-            ${isPlaying ? `, 0 0 80px ${color}25` : ''}
+            inset 0 2px 8px rgba(255, 255, 255, 0.06),
+            inset 0 -2px 8px rgba(0, 0, 0, 0.4),
+            0 20px 60px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(255, 255, 255, 0.02)
+            ${isPlaying ? `, 0 0 60px ${color}20` : ''}
           `
         }}
       >
         {/* 纹路 */}
-        {[...Array(10)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full"
             style={{
-              inset: `${(i + 1) * 6.5}%`,
-              border: '1px solid rgba(255, 255, 255, 0.02)'
+              inset: `${(i + 1) * 5.5}%`,
+              border: '1px solid rgba(255, 255, 255, 0.015)'
             }}
           />
         ))}
       </div>
       
-      {/* 中心标签 */}
+      {/* 中心标签 - 更精致 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '24%',
+          inset: '25%',
           background: `
-            radial-gradient(circle at 30% 30%, ${color}50 0%, transparent 60%),
-            linear-gradient(135deg, ${color}, ${color}bb)
+            radial-gradient(circle at 35% 35%, ${color}60 0%, transparent 50%),
+            linear-gradient(135deg, ${color}, ${color}cc)
           `,
           boxShadow: `
-            inset 0 2px 8px rgba(0, 0, 0, 0.4),
-            0 0 20px ${color}30
+            inset 0 2px 10px rgba(0, 0, 0, 0.3),
+            inset 0 -1px 3px rgba(255, 255, 255, 0.1),
+            0 0 25px ${color}25
           `
         }}
       >
@@ -83,9 +84,9 @@ const VinylRecord = ({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlaying: 
       <div
         className="absolute rounded-full"
         style={{
-          inset: '43%',
+          inset: '44%',
           background: 'radial-gradient(circle, #000 0%, #151515 100%)',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)'
+          boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.9)'
         }}
       />
     </motion.div>
@@ -175,7 +176,7 @@ const VolumeSlider = ({
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="flex-shrink-0 p-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="flex-shrink-0 p-2 rounded-xl hover:bg-white/5 transition-colors"
       >
         {isMuted || volume === 0 ? (
           <VolumeX className="w-5 h-5 text-white/40" />
@@ -186,7 +187,7 @@ const VolumeSlider = ({
       
       <div 
         ref={sliderRef}
-        className="flex-1 relative h-6 flex items-center cursor-pointer"
+        className="flex-1 relative h-8 flex items-center cursor-pointer"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
@@ -208,7 +209,7 @@ const VolumeSlider = ({
           style={{
             background: 'linear-gradient(135deg, #fff, #e0e0e0)',
             left: `calc(${displayVolume * 100}% - 8px)`,
-            boxShadow: `0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px ${stationColor}40`
+            boxShadow: `0 2px 8px rgba(0,0,0,0.3), 0 0 0 3px ${stationColor}30`
           }}
         />
       </div>
@@ -237,10 +238,13 @@ const StationList = ({ onClose, onSelect }: { onClose: () => void; onSelect: (st
     >
       {/* 头部 */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)` }}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ 
+              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
+              boxShadow: `0 4px 15px ${stationColor}30`
+            }}
           >
             <Radio className="w-4 h-4 text-white" />
           </div>
@@ -435,38 +439,38 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* 背景渐变 */}
+      {/* 背景渐变 - 更精致的暗色 */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 80% 50% at 20% -10%, ${stationColor}18 0%, transparent 50%),
-            radial-gradient(ellipse 60% 40% at 80% 110%, ${stationColor}12 0%, transparent 50%),
-            linear-gradient(180deg, rgba(12, 12, 15, 0.99) 0%, rgba(8, 8, 10, 0.995) 100%)
+            radial-gradient(ellipse 80% 50% at 20% -10%, ${stationColor}12 0%, transparent 50%),
+            radial-gradient(ellipse 60% 40% at 80% 110%, ${stationColor}08 0%, transparent 50%),
+            linear-gradient(180deg, rgba(15, 15, 18, 0.99) 0%, rgba(10, 10, 12, 0.995) 100%)
           `
         }}
       />
       
       {/* 动态背景粒子 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full blur-3xl"
             style={{
-              width: 200 + i * 50,
-              height: 200 + i * 50,
-              left: `${10 + i * 20}%`,
-              top: `${20 + i * 15}%`,
-              background: `${stationColor}08`,
+              width: 180 + i * 40,
+              height: 180 + i * 40,
+              left: `${8 + i * 18}%`,
+              top: `${15 + i * 12}%`,
+              background: `${stationColor}06`,
             }}
             animate={{
-              x: [0, 30, 0],
-              y: [0, -20, 0],
-              opacity: [0.3, 0.5, 0.3],
+              x: [0, 25, 0],
+              y: [0, -15, 0],
+              opacity: [0.2, 0.4, 0.2],
             }}
             transition={{
-              duration: 8 + i * 2,
+              duration: 10 + i * 2,
               repeat: Infinity,
               delay: i * 0.5,
             }}
@@ -478,7 +482,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
       <div className="relative flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.04]">
         <motion.button
           onClick={onClose}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -490,7 +494,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
             className="w-2.5 h-2.5 rounded-full"
             style={{ 
               background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
-              boxShadow: `0 0 10px ${stationColor}50`
+              boxShadow: `0 0 12px ${stationColor}50`
             }}
             animate={isPlaying ? { scale: [1, 1.4, 1], opacity: [1, 0.6, 1] } : {}}
             transition={{ duration: 1.2, repeat: Infinity }}
@@ -500,7 +504,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
         
         <motion.button
           onClick={() => setShowStationList(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -559,7 +563,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
           <div className="flex items-center justify-center gap-8 sm:gap-10 mb-8 sm:mb-10">
             <motion.button
               onClick={prevStation}
-              className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -571,7 +575,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center relative overflow-hidden"
               style={{ 
                 background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
-                boxShadow: `0 8px 30px ${stationColor}40`
+                boxShadow: `0 10px 40px ${stationColor}35`
               }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -595,7 +599,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
             
             <motion.button
               onClick={nextStation}
-              className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -670,7 +674,7 @@ const FullScreenPlayer = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// ==================== 迷你灵动岛 ====================
+// ==================== 迷你灵动岛 - 精致版 ====================
 const MiniPlayer = ({ onExpand }: { onExpand: () => void }) => {
   const { isPlaying, currentStation, togglePlay, isLoading } = useAudioStore();
   const { focusTime } = useFocusTimer();
@@ -684,36 +688,36 @@ const MiniPlayer = ({ onExpand }: { onExpand: () => void }) => {
       exit={{ opacity: 0, scale: 0.9, y: 10 }}
       transition={{ type: 'spring', damping: 25, stiffness: 400 }}
     >
-      {/* 外部光晕 */}
+      {/* 外部光晕 - 更柔和 */}
       <motion.div
-        className="absolute -inset-4 rounded-full blur-2xl"
-        style={{ background: `radial-gradient(ellipse, ${stationColor} 0%, transparent 70%)` }}
-        animate={{ opacity: isPlaying ? [0.2, 0.35, 0.2] : 0.1 }}
-        transition={{ duration: 2.5, repeat: Infinity }}
+        className="absolute -inset-5 rounded-full blur-2xl"
+        style={{ background: `radial-gradient(ellipse, ${stationColor}15 0%, transparent 70%)` }}
+        animate={{ opacity: isPlaying ? [0.15, 0.3, 0.15] : 0.08 }}
+        transition={{ duration: 3, repeat: Infinity }}
       />
       
-      {/* 主体 */}
+      {/* 主体 - 更精致的玻璃质感 */}
       <div
         className="relative flex items-center gap-2.5 px-3.5 py-2.5 rounded-full"
         style={{
           background: `
-            linear-gradient(135deg, rgba(30, 30, 35, 0.95) 0%, rgba(10, 10, 12, 0.98) 100%)
+            linear-gradient(145deg, rgba(35, 35, 40, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%)
           `,
-          backdropFilter: 'blur(30px)',
+          backdropFilter: 'blur(40px)',
           boxShadow: `
-            0 10px 40px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(255, 255, 255, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            ${isPlaying ? `0 0 30px ${stationColor}15` : ''}
+            0 12px 40px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            ${isPlaying ? `0 0 40px ${stationColor}10` : ''}
           `
         }}
       >
-        {/* 迷你唱片 */}
+        {/* 迷你唱片 - 更精致 */}
         <motion.div
           className="w-9 h-9 rounded-full flex-shrink-0 relative overflow-hidden"
           style={{ 
-            background: 'linear-gradient(145deg, #1a1a1a, #0a0a0a)',
-            boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.05), inset 0 -1px 3px rgba(0,0,0,0.3)'
+            background: 'linear-gradient(145deg, #1c1c1c, #0c0c0c)',
+            boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.3)'
           }}
           animate={{ rotate: isPlaying ? 360 : 0 }}
           transition={{ duration: 4, repeat: isPlaying ? Infinity : 0, ease: 'linear' }}
@@ -721,14 +725,14 @@ const MiniPlayer = ({ onExpand }: { onExpand: () => void }) => {
           <div
             className="absolute rounded-full"
             style={{
-              inset: '18%',
+              inset: '20%',
               background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
-              boxShadow: `0 0 10px ${stationColor}40`
+              boxShadow: `0 0 12px ${stationColor}30`
             }}
           />
           <div
             className="absolute rounded-full bg-black/60"
-            style={{ inset: '42%' }}
+            style={{ inset: '44%' }}
           />
         </motion.div>
         
@@ -743,13 +747,13 @@ const MiniPlayer = ({ onExpand }: { onExpand: () => void }) => {
           </div>
         </div>
         
-        {/* 播放按钮 */}
+        {/* 播放按钮 - 更精致 */}
         <motion.button
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden"
           style={{ 
             background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
-            boxShadow: `0 2px 10px ${stationColor}40`
+            boxShadow: `0 3px 12px ${stationColor}35`
           }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

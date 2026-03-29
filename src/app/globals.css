@@ -32,7 +32,7 @@
   --radius-3xl: calc(var(--radius) + 12px);
 }
 
-/* Light Mode */
+/* Light Mode - 柔和明亮 */
 :root {
   --radius: 0.75rem;
   --background: #fafafa;
@@ -55,21 +55,21 @@
   --ring: #7c3aed;
 }
 
-/* Dark Mode */
+/* Dark Mode - 精致的深色主题 */
 .dark {
-  --background: #09090b;
+  --background: #0a0a0c;
   --foreground: #fafafa;
-  --card: #18181b;
+  --card: #141416;
   --card-foreground: #fafafa;
-  --popover: #18181b;
+  --popover: #141416;
   --popover-foreground: #fafafa;
   --primary: #a78bfa;
-  --primary-foreground: #09090b;
-  --secondary: #27272a;
+  --primary-foreground: #0a0a0c;
+  --secondary: #1f1f23;
   --secondary-foreground: #fafafa;
-  --muted: #27272a;
+  --muted: #1f1f23;
   --muted-foreground: #a1a1aa;
-  --accent: #27272a;
+  --accent: #1f1f23;
   --accent-foreground: #fafafa;
   --destructive: #f87171;
   --border: #27272a;
@@ -86,9 +86,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* 主题切换过渡 */
+  /* 主题切换过渡 - 更平滑 */
   html {
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
   
   html.dark {
@@ -100,7 +100,7 @@
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - 暗色模式下更精致 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -119,9 +119,22 @@
   background: rgba(139, 92, 246, 0.35);
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.4);
+}
+
 /* Selection */
 ::selection {
   background: rgba(139, 92, 246, 0.3);
+}
+
+.dark ::selection {
+  background: rgba(167, 139, 250, 0.35);
 }
 
 /* Hide scrollbar utility */
@@ -142,16 +155,31 @@
   background-clip: text;
 }
 
-/* Glow Effects */
+.dark .gradient-text {
+  background: linear-gradient(135deg, #a78bfa 0%, #e879f9 50%, #fb7185 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects - 更精致的光效 */
 .glow-primary {
-  box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.25);
+}
+
+.dark .glow-primary {
+  box-shadow: 0 0 50px rgba(167, 139, 250, 0.2);
 }
 
 .glow-sm {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
 }
 
-/* Glass Effect */
+.dark .glow-sm {
+  box-shadow: 0 0 25px rgba(167, 139, 250, 0.12);
+}
+
+/* Glass Effect - 更精致的玻璃效果 */
 .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
@@ -159,7 +187,9 @@
 }
 
 .dark .glass {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
 }
 
 /* Animation Classes */
@@ -227,6 +257,11 @@
   animation: shimmer 2s infinite;
 }
 
+.dark .animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  background-size: 200% 100%;
+}
+
 .animate-breathe {
   animation: breathe 4s ease-in-out infinite;
 }
@@ -244,13 +279,23 @@
   background-size: 60px 60px;
 }
 
+.dark .grid-pattern {
+  background-image: 
+    linear-gradient(rgba(167, 139, 250, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.02) 1px, transparent 1px);
+}
+
 /* Dot Pattern Background */
 .dot-pattern {
   background-image: radial-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-/* Noise Texture Overlay */
+.dark .dot-pattern {
+  background-image: radial-gradient(rgba(167, 139, 250, 0.1) 1px, transparent 1px);
+}
+
+/* Noise Texture Overlay - 增加质感 */
 .noise-overlay::before {
   content: '';
   position: absolute;
@@ -260,10 +305,18 @@
   pointer-events: none;
 }
 
+.dark .noise-overlay::before {
+  opacity: 0.02;
+}
+
 /* Custom Focus Ring */
 .focus-ring:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+}
+
+.dark .focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.5);
 }
 
 /* Smooth Image Loading */
@@ -302,9 +355,17 @@ img[loading] {
   -webkit-mask-composite: xor;
 }
 
+.dark .gradient-border::before {
+  background: linear-gradient(135deg, #a78bfa, #e879f9, #fb7185);
+}
+
 /* Text Glow */
 .text-glow {
   text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+.dark .text-glow {
+  text-shadow: 0 0 25px rgba(167, 139, 250, 0.4);
 }
 
 /* Card Hover Effect */
@@ -315,6 +376,10 @@ img[loading] {
 .card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
 /* Smooth Scroll */
@@ -340,9 +405,56 @@ button, [role="button"] {
   }
 }
 
+/* Dark mode background - 深邃的黑色 */
+.dark body {
+  background-color: #0a0a0c;
+}
+
+/* Primary button gradient - 暗色模式下更柔和 */
+.dark .btn-primary-gradient {
+  background: linear-gradient(135deg, #8B5CF6, #a855f7);
+}
+
+/* Subtle borders in dark mode */
+.dark .subtle-border {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Interactive element hover in dark mode */
+.dark .interactive-hover:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
 /* Print styles */
 @media print {
   .no-print {
     display: none !important;
+  }
+}
+
+/* Dark mode specific enhancements */
+@layer utilities {
+  .dark-enhanced-shadow {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark-glow-border {
+    box-shadow: 
+      0 0 0 1px rgba(139, 92, 246, 0.2),
+      0 0 20px rgba(139, 92, 246, 0.1);
+  }
+  
+  .dark-card {
+    background: linear-gradient(145deg, rgba(20, 20, 22, 0.95), rgba(10, 10, 12, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  
+  .dark-glass-card {
+    background: rgba(20, 20, 24, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 }

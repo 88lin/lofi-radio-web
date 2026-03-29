@@ -53,3 +53,18 @@ dev.log
 
 # examples
 /examples/
+
+# skills - 不推送到 GitHub
+/skills/
+
+# worklog - 不推送工作日志
+/worklog.md
+
+# agent-ctx - 不推送临时文件
+/agent-ctx/
+
+# 原项目备份文件
+*.backup
+*.bak
+upstream_stations.json
+original_stations.json
