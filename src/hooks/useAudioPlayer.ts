@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
 import Hls from 'hls.js';
@@ -9,7 +9,6 @@ import Hls from 'hls.js';
 type FlvPlayer = {
   attachMediaElement: (media: HTMLMediaElement) => void;
   load: () => void;
-  play: () => Promise<void>;
   destroy: () => void;
   on: (event: string, callback: (...args: unknown[]) => void) => void;
   off: (event: string, callback: (...args: unknown[]) => void) => void;
@@ -36,13 +35,13 @@ const loadFlvJs = async (): Promise<FlvJs | null> => {
   if (flvjs) return flvjs;
   if (typeof window === 'undefined') return null;
   try {
-    console.log('Loading flv.js module...');
+    console.log('[Player] Loading flv.js module...');
     const module = await import('flv.js');
     flvjs = module.default || module;
-    console.log('flv.js loaded successfully');
+    console.log('[Player] flv.js loaded successfully');
     return flvjs;
   } catch (e) {
-    console.error('Failed to load flv.js:', e);
+    console.error('[Player] Failed to load flv.js:', e);
     return null;
   }
 };
@@ -62,12 +61,11 @@ export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const flvPlayerRef = useRef<FlvPlayer | null>(null);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // 使用 ref 跟踪状态，避免 useEffect 依赖问题
+  // 使用 ref 跟踪状态，避免闭包问题
   const currentStationIdRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false);
-  const userInteractedRef = useRef(false);
+  const isLoadingStationRef = useRef(false);
+  const pendingPlayRef = useRef(false); // 是否有待处理的播放请求
 
   const {
     isPlaying,
@@ -76,38 +74,10 @@ export function useAudioPlayer() {
     isMuted,
     setPlaying,
     setLoading,
-    nextStation,
-    prevStation,
-    togglePlay,
   } = useAudioStore();
-
-  // 检测用户交互
-  useEffect(() => {
-    const handleInteraction = () => {
-      userInteractedRef.current = true;
-      // 移除监听器，只需检测一次
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
-      document.removeEventListener('keydown', handleInteraction);
-    };
-
-    document.addEventListener('click', handleInteraction);
-    document.addEventListener('touchstart', handleInteraction);
-    document.addEventListener('keydown', handleInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
-      document.removeEventListener('keydown', handleInteraction);
-    };
-  }, []);
 
   // 清理函数
   const cleanup = useCallback(() => {
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-      refreshTimeoutRef.current = null;
-    }
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -116,61 +86,93 @@ export function useAudioPlayer() {
       try {
         flvPlayerRef.current.destroy();
       } catch (e) {
-        console.error('Error destroying flv player:', e);
+        console.error('[Player] Error destroying flv player:', e);
       }
       flvPlayerRef.current = null;
     }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
+      audioRef.current.load();
     }
   }, []);
+
+  // 尝试播放音频
+  const tryPlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      console.log('[Player] No audio element');
+      return;
+    }
+
+    console.log('[Player] Attempting to play...');
+    
+    audio.play()
+      .then(() => {
+        console.log('[Player] Play succeeded');
+        setPlaying(true);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('[Player] Play failed:', err.message);
+        // 如果是自动播放策略限制
+        if (err.name === 'NotAllowedError') {
+          console.log('[Player] Autoplay blocked, waiting for user interaction');
+          setPlaying(false);
+          setLoading(false);
+        }
+      });
+  }, [setPlaying, setLoading]);
 
   // 加载 Bilibili 直播流
   const loadBilibiliStream = useCallback(async (station: Station): Promise<boolean> => {
     const audio = audioRef.current;
     if (!audio) return false;
 
-    console.log('=== Loading Bilibili stream for:', station.name, '===');
+    console.log('[Player] Loading Bilibili stream for:', station.name);
 
     try {
       // 从 URL 提取房间号
       const urlMatch = station.url.match(/live\.bilibili\.com\/(\d+)/);
       const roomId = urlMatch ? urlMatch[1] : '27519423';
 
-      console.log('Fetching stream for room:', roomId);
+      console.log('[Player] Fetching stream for room:', roomId);
 
       // 通过 API 获取直播流地址
-      const res = await fetch(`/api/bilibili-stream?room_id=${roomId}`);
+      const res = await fetch(`/api/bilibili-stream?room_id=${roomId}`, {
+        signal: AbortSignal.timeout(15000)
+      });
       
       if (!res.ok) {
-        console.error('API request failed:', res.status);
+        console.error('[Player] API request failed:', res.status);
         return false;
       }
 
       const data: BilibiliStreamInfo = await res.json();
 
       if (!data.success || !data.flv_url) {
-        console.error('No stream URL in response');
+        console.error('[Player] No stream URL in response');
         return false;
       }
 
-      console.log('Got FLV URL');
+      console.log('[Player] Got FLV URL');
 
       // 加载 flv.js
       const flv = await loadFlvJs();
       if (!flv || !flv.isSupported()) {
-        console.error('flv.js not supported');
+        console.error('[Player] flv.js not supported');
         return false;
       }
 
       // 清理之前的播放器
       if (flvPlayerRef.current) {
-        flvPlayerRef.current.destroy();
+        try {
+          flvPlayerRef.current.destroy();
+        } catch (e) {}
         flvPlayerRef.current = null;
       }
 
-      // 创建播放器 - 禁用 worker 避免打包问题
+      // 创建播放器
       const flvPlayer = flv.createPlayer({
         type: 'flv',
         url: data.flv_url,
@@ -179,7 +181,7 @@ export function useAudioPlayer() {
         hasVideo: false,
         cors: true,
       }, {
-        enableWorker: false, // 禁用 worker，避免打包问题
+        enableWorker: false,
         enableStashBuffer: false,
         stashInitialSize: 128,
         lazyLoad: false,
@@ -193,37 +195,32 @@ export function useAudioPlayer() {
       flvPlayerRef.current = flvPlayer;
 
       // 错误处理
-      const handleError = (errorType: string, errorDetail: string) => {
-        console.error('FLV error:', errorType, errorDetail);
-      };
-      flvPlayer.on(flv.Events.ERROR, handleError);
+      flvPlayer.on(flv.Events.ERROR, (errorType: string, errorDetail: string) => {
+        console.error('[Player] FLV error:', errorType, errorDetail);
+      });
 
-      // 更新标记
-      currentStationIdRef.current = station.id;
-      isLoadingRef.current = false;
-
-      console.log('Bilibili stream loaded successfully');
+      console.log('[Player] Bilibili stream loaded');
       return true;
 
     } catch (error) {
-      console.error('Bilibili stream load error:', error);
+      console.error('[Player] Bilibili stream load error:', error);
       return false;
     }
   }, []);
 
-  // 加载电台
-  const loadStation = useCallback(async (station: Station): Promise<boolean> => {
-    if (!audioRef.current || !station) return false;
+  // 加载电台 - 核心函数
+  const loadStation = useCallback(async (station: Station) => {
+    if (!audioRef.current || !station) return;
     
-    // 防止重复加载
-    if (isLoadingRef.current) {
-      console.log('Already loading, skip');
-      return false;
+    // 防止重复加载同一个电台
+    if (isLoadingStationRef.current) {
+      console.log('[Player] Already loading, queuing station:', station.name);
+      return;
     }
 
-    console.log('=== Loading station:', station.name, station.type, '===');
+    console.log('[Player] === Loading station:', station.name, station.type, '===');
     
-    isLoadingRef.current = true;
+    isLoadingStationRef.current = true;
     
     // 清理之前的资源
     cleanup();
@@ -239,6 +236,9 @@ export function useAudioPlayer() {
       // Bilibili 直播流
       if (station.type === 'bilibili') {
         success = await loadBilibiliStream(station);
+        if (success) {
+          currentStationIdRef.current = station.id;
+        }
       }
       // HLS 流
       else if (station.type === 'm3u8') {
@@ -253,24 +253,31 @@ export function useAudioPlayer() {
           hls.attachMedia(audio);
           
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            console.log('[Player] HLS manifest parsed');
             currentStationIdRef.current = station.id;
-            isLoadingRef.current = false;
-            console.log('HLS stream ready');
+            isLoadingStationRef.current = false;
+            
+            // 如果有待处理的播放请求，尝试播放
+            if (pendingPlayRef.current || isPlaying) {
+              tryPlay();
+            }
           });
           
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
-              console.error('HLS fatal error:', data);
-              isLoadingRef.current = false;
+              console.error('[Player] HLS fatal error:', data);
+              isLoadingStationRef.current = false;
+              setLoading(false);
             }
           });
           
           hlsRef.current = hls;
           success = true;
         } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+          // Safari 原生支持
           audio.src = station.url;
+          audio.load();
           currentStationIdRef.current = station.id;
-          isLoadingRef.current = false;
           success = true;
         }
       }
@@ -279,21 +286,30 @@ export function useAudioPlayer() {
         audio.src = station.url;
         audio.load();
         currentStationIdRef.current = station.id;
-        isLoadingRef.current = false;
         success = true;
       }
 
     } catch (error) {
-      console.error('Load station error:', error);
-      isLoadingRef.current = false;
+      console.error('[Player] Load station error:', error);
     }
+
+    isLoadingStationRef.current = false;
 
     if (!success) {
       setLoading(false);
+    } else if (station.type !== 'm3u8') {
+      // 非 HLS 流，直接尝试播放
+      // 等待一小段时间让音频准备好
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 如果应该播放，则尝试播放
+      if (pendingPlayRef.current || isPlaying) {
+        tryPlay();
+      } else {
+        setLoading(false);
+      }
     }
-
-    return success;
-  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading]);
+  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, isPlaying, tryPlay]);
 
   // 初始化音频元素
   useEffect(() => {
@@ -305,29 +321,30 @@ export function useAudioPlayer() {
     audioRef.current = audio;
     
     const handleCanPlay = () => {
-      setLoading(false);
+      console.log('[Player] Audio canplay event');
     };
     
     const handlePlaying = () => {
+      console.log('[Player] Audio playing event');
       setLoading(false);
       setPlaying(true);
     };
     
-    const handlePause = () => {};
+    const handlePause = () => {
+      console.log('[Player] Audio pause event');
+    };
     
     const handleWaiting = () => {
+      console.log('[Player] Audio waiting event');
       setLoading(true);
     };
     
     const handleError = (e: Event) => {
       const audioEl = e.target as HTMLAudioElement;
       const error = audioEl?.error;
-      console.error('Audio error:', error?.code, error?.message);
+      console.error('[Player] Audio error:', error?.code, error?.message);
       setLoading(false);
-    };
-    
-    const handleEnded = () => {
-      // 直播流不会结束
+      isLoadingStationRef.current = false;
     };
     
     audio.addEventListener('canplay', handleCanPlay);
@@ -335,7 +352,6 @@ export function useAudioPlayer() {
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('error', handleError);
-    audio.addEventListener('ended', handleEnded);
     
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
@@ -343,51 +359,44 @@ export function useAudioPlayer() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('error', handleError);
-      audio.removeEventListener('ended', handleEnded);
       cleanup();
       audio.pause();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 监听电台变化 - 只在电台 ID 改变时加载
+  // 监听电台变化 - 加载新电台
   useEffect(() => {
-    if (currentStation && audioRef.current) {
-      // 只有电台 ID 真正改变时才加载
-      if (currentStationIdRef.current !== currentStation.id) {
-        console.log('Station changed, loading new station');
-        loadStation(currentStation);
-      }
-    }
-  }, [currentStation?.id, loadStation]);
-
-  // 监听播放状态变化 - 用户点击播放时触发
-  useEffect(() => {
-    if (!audioRef.current || !currentStation) return;
+    if (!currentStation || !audioRef.current) return;
     
+    // 只有电台 ID 真正改变时才加载
+    if (currentStationIdRef.current !== currentStation.id) {
+      console.log('[Player] Station changed to:', currentStation.name);
+      // 标记有待处理的播放请求（如果当前正在播放）
+      pendingPlayRef.current = isPlaying;
+      loadStation(currentStation);
+    }
+  }, [currentStation?.id, isPlaying, loadStation]);
+
+  // 监听播放状态变化 - 控制播放/暂停
+  useEffect(() => {
     const audio = audioRef.current;
+    if (!audio) return;
+
+    // 如果电台还没加载完成，不处理
+    if (currentStationIdRef.current !== currentStation?.id) {
+      return;
+    }
+
+    console.log('[Player] isPlaying changed to:', isPlaying);
 
     if (isPlaying) {
-      // 检查是否需要加载电台
-      if (currentStationIdRef.current !== currentStation.id && !isLoadingRef.current) {
-        console.log('Play requested but station not loaded, loading...');
-        loadStation(currentStation).then(() => {
-          // 加载完成后播放
-          audio.play().catch(err => {
-            console.error('Play failed:', err);
-            setPlaying(false);
-          });
-        });
-      } else {
-        // 直接播放
-        audio.play().catch(err => {
-          console.error('Play failed:', err);
-          setPlaying(false);
-        });
-      }
+      tryPlay();
     } else {
       audio.pause();
+      setLoading(false);
     }
-  }, [isPlaying, currentStation, loadStation, setPlaying]);
+  }, [isPlaying, currentStation, tryPlay, setLoading]);
 
   // 监听音量变化
   useEffect(() => {
