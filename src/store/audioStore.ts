@@ -131,6 +131,12 @@ export const useAudioStore = create<AudioState>()(
         focusDate: state.focusDate,
         isMiniMode: state.isMiniMode,
       }),
+      // hydration 后根据 stationIndex 恢复 currentStation
+      onRehydrateStorage: () => (state) => {
+        if (state && state.stationIndex !== undefined) {
+          state.currentStation = stations[state.stationIndex] || stations[0];
+        }
+      },
     }
   )
 );

@@ -27,7 +27,10 @@ const loadFlvJs = async (): Promise<FlvJs | null> => {
   if (flvjs) return flvjs;
   if (typeof window === 'undefined') return null;
   try {
-    flvjs = await import('flv.js').then(m => m.default || m);
+    console.log('Loading flv.js module...');
+    const module = await import('flv.js');
+    flvjs = module.default || module;
+    console.log('flv.js loaded successfully, isSupported:', flvjs.isSupported());
     return flvjs;
   } catch (e) {
     console.error('Failed to load flv.js:', e);
@@ -54,6 +57,7 @@ export function useAudioPlayer() {
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
+  const loadedStationIdRef = useRef<string | null>(null); // 跟踪已加载的电台
   
   const {
     isPlaying,
@@ -138,7 +142,12 @@ export function useAudioPlayer() {
   // 加载 Bilibili 直播流
   const loadBilibiliStream = useCallback(async (station: Station) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio) {
+      console.error('Audio element not ready');
+      return;
+    }
+
+    console.log('=== loadBilibiliStream called for:', station.name, '===');
 
     try {
       // 从 URL 提取房间号
@@ -146,13 +155,17 @@ export function useAudioPlayer() {
       const roomId = urlMatch ? urlMatch[1] : '27519423';
 
       console.log('Fetching Bilibili stream for room:', roomId);
+      setLoading(true);
 
       // 通过我们的 API 获取直播流地址
       const res = await fetch(`/api/bilibili-stream?room_id=${roomId}`);
+      console.log('API response status:', res.status);
+
       const data: BilibiliStreamInfo = await res.json();
+      console.log('API response data:', { success: data.success, hasUrl: !!data.flv_url, title: data.title });
 
       if (!data.success || !data.flv_url) {
-        console.error('Failed to get Bilibili stream:', data.error || 'Unknown error');
+        console.error('Failed to get Bilibili stream:', (data as Record<string, unknown>).error || 'Unknown error');
         setLoading(false);
         setTimeout(() => nextStation(), 500);
         return;
@@ -162,12 +175,21 @@ export function useAudioPlayer() {
 
       // 动态加载 flv.js
       const flv = await loadFlvJs();
-      if (!flv || !flv.isSupported()) {
-        console.error('flv.js is not supported');
+      if (!flv) {
+        console.error('flv.js failed to load');
         setLoading(false);
         setTimeout(() => nextStation(), 500);
         return;
       }
+
+      if (!flv.isSupported()) {
+        console.error('flv.js is not supported in this browser');
+        setLoading(false);
+        setTimeout(() => nextStation(), 500);
+        return;
+      }
+
+      console.log('Creating flv.js player...');
 
       // 创建 flv.js 播放器
       const flvPlayer = flv.createPlayer({
@@ -187,13 +209,11 @@ export function useAudioPlayer() {
       flvPlayer.attachMediaElement(audio);
       flvPlayer.load();
 
-      // 尝试播放
-      await flvPlayer.play();
-      setLoading(false);
-      setPlaying(true);
-
       // 保存播放器引用
       flvPlayerRef.current = flvPlayer;
+
+      // 标记电台已加载
+      loadedStationIdRef.current = station.id;
 
       // 设置错误处理
       flvPlayer.on(flv.Events.ERROR, (errorType: string, errorDetail: string) => {
@@ -201,6 +221,7 @@ export function useAudioPlayer() {
         if (errorType === flv.ErrorTypes.NETWORK_ERROR) {
           if (retryCountRef.current < maxRetries) {
             retryCountRef.current++;
+            console.log('Retrying... attempt', retryCountRef.current);
             setTimeout(() => loadBilibiliStream(station), 2000);
           } else {
             setLoading(false);
@@ -208,6 +229,13 @@ export function useAudioPlayer() {
           }
         }
       });
+
+      // 尝试播放
+      console.log('Starting playback...');
+      await flvPlayer.play();
+      console.log('Playback started successfully!');
+      setLoading(false);
+      setPlaying(true);
 
       // 定时刷新流地址（每 5 分钟）
       refreshTimeoutRef.current = setTimeout(() => {
@@ -252,6 +280,9 @@ export function useAudioPlayer() {
       return;
     }
     
+    // 标记电台已加载
+    loadedStationIdRef.current = station.id;
+
     // HLS 流
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {
@@ -382,15 +413,30 @@ export function useAudioPlayer() {
   // 监听电台变化
   useEffect(() => {
     if (currentStation && audioRef.current) {
+      loadedStationIdRef.current = null; // 重置加载状态
       loadStation(currentStation);
     }
   }, [currentStation?.id]);
 
+  // 首次加载时，如果有电台就加载
+  useEffect(() => {
+    if (currentStation && audioRef.current && !loadedStationIdRef.current) {
+      loadStation(currentStation);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 监听播放状态变化
   useEffect(() => {
     if (!audioRef.current || !currentStation) return;
-    
+
     if (isPlaying) {
+      // 如果电台还没加载，先加载电台
+      if (loadedStationIdRef.current !== currentStation.id) {
+        console.log('Station not loaded, loading:', currentStation.name);
+        loadStation(currentStation);
+        return;
+      }
       audioRef.current.play().catch(err => {
         console.error('Play failed:', err);
         setPlaying(false);
@@ -398,9 +444,9 @@ export function useAudioPlayer() {
     } else {
       audioRef.current.pause();
     }
-    
+
     updateMediaSessionPlaybackState(isPlaying);
-  }, [isPlaying]);
+  }, [isPlaying, currentStation, loadStation, setPlaying, updateMediaSessionPlaybackState]);
 
   // 监听音量变化
   useEffect(() => {
