@@ -61,7 +61,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '22%',
+          inset: '20%',
           background: `
             radial-gradient(circle at 35% 35%, ${color}60 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
@@ -73,16 +73,16 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        <Music className="w-5 h-5 text-white/90 drop-shadow-lg" />
+        <Music className="w-6 h-6 text-white/90 drop-shadow-lg" />
       </div>
       
-      {/* 中心小圆点 */}
+      {/* 中心小孔 */}
       <div
         className="absolute rounded-full"
         style={{
-          inset: '46%',
-          background: `linear-gradient(135deg, ${color}cc, ${color})`,
-          boxShadow: `0 0 8px ${color}40`
+          inset: '47%',
+          background: 'radial-gradient(circle, #000 0%, #1a1a1a 100%)',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8)'
         }}
       />
     </div>
@@ -436,18 +436,43 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   return (
     <div 
       className="relative w-full h-full flex overflow-hidden"
-      style={{ background: 'rgb(13, 13, 13)' }}
+      style={{ background: 'linear-gradient(135deg, #0a0a0c 0%, #12121a 50%, #0a0a0c 100%)' }}
     >
-      {/* 背景渐变 + 模糊效果 */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 100% 80% at 50% -20%, ${stationColor}12 0%, transparent 50%),
-            radial-gradient(ellipse 80% 60% at 80% 120%, ${stationColor}08 0%, transparent 50%)
-          `
-        }}
-      />
+      {/* 背景渐变光晕 - 高斯模糊效果 */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* 主色圆光晕 - 左上 */}
+        <div
+          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${stationColor}25 0%, ${stationColor}08 40%, transparent 70%)`,
+            filter: 'blur(60px)',
+          }}
+        />
+        {/* 主色圆光晕 - 右下 */}
+        <div
+          className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${stationColor}18 0%, ${stationColor}06 40%, transparent 70%)`,
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* 互补色圆光晕 - 中右 */}
+        <div
+          className="absolute top-1/3 right-1/4 w-[350px] h-[350px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${stationColor}15 0%, transparent 60%)`,
+            filter: 'blur(50px)',
+          }}
+        />
+        {/* 小光晕点缀 */}
+        <div
+          className="absolute top-2/3 left-1/4 w-[200px] h-[200px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${stationColor}10 0%, transparent 60%)`,
+            filter: 'blur(40px)',
+          }}
+        />
+      </div>
       
       {/* 主内容区 - 桌面端左右布局 */}
       <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
