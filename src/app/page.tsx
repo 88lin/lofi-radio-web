@@ -483,7 +483,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
 
-  // 避免闪屏 - 在未挂载时显示基础结构
+  // 避免闪屏 - 在未挂载时默认使用暗色主题
   const isDark = mounted ? resolvedTheme === 'dark' : true;
   const stationColor = currentStation?.color || '#8B5CF6';
   
@@ -560,7 +560,7 @@ export default function Home() {
               <motion.h1
                 variants={fadeInUp}
                 className={cn(
-                  "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-5",
+                  "text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6",
                   isDark ? "text-white" : "text-zinc-900"
                 )}
               >
@@ -575,7 +575,7 @@ export default function Home() {
               <motion.p
                 variants={fadeInUp}
                 className={cn(
-                  "text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed",
+                  "text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed",
                   isDark ? "text-white/50" : "text-zinc-600"
                 )}
               >
@@ -585,7 +585,7 @@ export default function Home() {
               </motion.p>
               
               {/* 操作按钮 */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                   <Button
                     size="lg"
@@ -593,17 +593,17 @@ export default function Home() {
                       togglePlay();
                       if (!isPlaying) setMiniMode(false);
                     }}
-                    className="w-full sm:w-auto rounded-full px-7 h-11 sm:h-12 text-sm font-medium shadow-lg"
+                    className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                   >
                     {isPlaying ? (
                       <>
-                        <Pause className="w-4 h-4 mr-2" />
+                        <Pause className="w-5 h-5 mr-2" />
                         <span>正在播放</span>
                       </>
                     ) : (
                       <>
-                        <Play className="w-4 h-4 mr-2" />
+                        <Play className="w-5 h-5 mr-2" />
                         <span>开始播放</span>
                       </>
                     )}
@@ -615,15 +615,15 @@ export default function Home() {
                     variant="outline"
                     size="lg"
                     className={cn(
-                      "w-full sm:w-auto rounded-full px-7 h-11 sm:h-12 text-sm font-medium group",
+                      "w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium group",
                       isDark && "border-white/20 text-white hover:bg-white/10"
                     )}
                     asChild
                   >
                     <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
-                      <Github className="w-4 h-4 mr-2" />
+                      <Github className="w-5 h-5 mr-2" />
                       查看源码
-                      <ExternalLink className="w-3.5 h-3.5 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
                     </a>
                   </Button>
                 </motion.div>
@@ -721,23 +721,23 @@ export default function Home() {
         </section>
         
         {/* Features Section */}
-        <section className="py-12 sm:py-20 px-4 sm:px-6">
+        <section className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-10"
+              className="text-center mb-12"
             >
               <h2 className={cn(
-                "text-xl sm:text-2xl font-bold mb-2",
+                "text-2xl sm:text-3xl font-bold mb-3",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 为什么选择 Lofi Radio
               </h2>
               <p className={cn(
-                "text-sm max-w-xl mx-auto",
+                "text-base sm:text-lg max-w-xl mx-auto",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 专为专注设计，让音乐成为你工作和学习的最佳伴侣
@@ -759,23 +759,23 @@ export default function Home() {
         </section>
         
         {/* 使用场景 Section */}
-        <section className="py-12 sm:py-16 px-4 sm:px-6">
+        <section className="py-16 sm:py-20 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-8"
+              className="text-center mb-10"
             >
               <h2 className={cn(
-                "text-xl sm:text-2xl font-bold mb-2",
+                "text-2xl sm:text-3xl font-bold mb-3",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 适用场景
               </h2>
               <p className={cn(
-                "text-sm",
+                "text-base sm:text-lg",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 无论学习、工作还是放松，总有一个电台适合你
@@ -797,23 +797,23 @@ export default function Home() {
         </section>
         
         {/* 电台展示 */}
-        <section className="py-12 sm:py-16 px-4 sm:px-6">
+        <section className="py-16 sm:py-20 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-8"
+              className="text-center mb-10"
             >
               <h2 className={cn(
-                "text-xl sm:text-2xl font-bold mb-2",
+                "text-2xl sm:text-3xl font-bold mb-3",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 精选电台
               </h2>
               <p className={cn(
-                "text-sm",
+                "text-base sm:text-lg",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 涵盖多种风格，总有适合你的音乐
@@ -920,37 +920,27 @@ export default function Home() {
         
         {/* 底部 */}
         <footer className={cn(
-          "py-8 px-4 sm:px-6",
+          "py-10 px-4 sm:px-6",
           isDark ? "border-t border-white/5" : "border-t border-zinc-100"
         )}>
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className={cn("flex items-center gap-1.5 text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
-                <span>Made with love for focus lovers</span>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className={cn("flex items-center gap-2 text-sm", isDark ? "text-white/40" : "text-zinc-500")}>
+                <span>Made with love by</span>
+                <span className={cn("font-semibold", isDark ? "text-white/70" : "text-zinc-700")}>茉灵智库</span>
               </div>
               
-              <div className={cn("flex items-center gap-3 text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
-                <a
-                  href="https://github.com/88lin/lofi-radio-web"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-current transition-colors flex items-center gap-1"
-                >
-                  <Github className="w-3.5 h-3.5" />
-                  本项目
-                </a>
-                <span className={isDark ? "text-white/20" : "text-zinc-300"}>|</span>
-                <a
-                  href="https://github.com/labilio/lofi-radio"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-current transition-colors"
-                >
-                  原项目
-                </a>
-                <span className={isDark ? "text-white/20" : "text-zinc-300"}>|</span>
-                <span>MIT License</span>
-              </div>
+              <span className={cn("hidden sm:block", isDark ? "text-white/20" : "text-zinc-300")}>|</span>
+              
+              <a
+                href="https://github.com/88lin/lofi-radio-web"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn("hover:text-current transition-colors flex items-center gap-1.5 text-sm", isDark ? "text-white/40" : "text-zinc-500")}
+              >
+                <Github className="w-4 h-4" />
+                GitHub: 88lin/lofi-radio-web
+              </a>
             </div>
           </div>
         </footer>

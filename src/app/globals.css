@@ -435,16 +435,64 @@ button, [role="button"] {
   user-select: none;
 }
 
-/* Responsive font sizing */
+/* Responsive font sizing - 增大移动端字体 */
 @media (max-width: 640px) {
   html {
-    font-size: 14px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 641px) {
+  html {
+    font-size: 16px;
   }
 }
 
 /* Dark mode background - 深邃的黑色 */
 .dark body {
   background-color: #0a0a0c;
+}
+
+/* 主题切换优化 - 减少闪屏 */
+html {
+  color-scheme: light dark;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* 禁用主题切换时的过渡闪烁 */
+.no-transition {
+  transition: none !important;
+}
+
+/* 移动端触摸区域增大 */
+@media (max-width: 640px) {
+  button, 
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* 移动端字体增大 */
+  .text-xs { font-size: 0.8125rem; }
+  .text-sm { font-size: 0.9375rem; }
+  .text-base { font-size: 1.0625rem; }
+  .text-lg { font-size: 1.1875rem; }
+  .text-xl { font-size: 1.375rem; }
+  .text-2xl { font-size: 1.625rem; }
+  .text-3xl { font-size: 2rem; }
+  .text-4xl { font-size: 2.5rem; }
+  .text-5xl { font-size: 3rem; }
 }
 
 /* Primary button gradient - 暗色模式下更柔和 */
