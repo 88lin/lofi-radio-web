@@ -760,7 +760,7 @@ export default function Home() {
         </section>
         
         {/* Features Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6">
+        <section className="py-10 sm:py-14 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -798,7 +798,7 @@ export default function Home() {
         </section>
         
         {/* 使用场景 Section */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6">
+        <section className="py-10 sm:py-12 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -841,7 +841,7 @@ export default function Home() {
         </section>
         
         {/* 电台展示 */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6">
+        <section className="py-10 sm:py-12 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -905,7 +905,7 @@ export default function Home() {
         </section>
         
         {/* CTA Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6">
+        <section className="py-10 sm:py-14 px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -964,72 +964,30 @@ export default function Home() {
         
         {/* 底部 */}
         <footer className={cn(
-          "py-12 px-4 sm:px-6",
+          "py-8 px-4 sm:px-6",
           isDark ? "border-t border-white/5" : "border-t border-zinc-100"
         )}>
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col items-center justify-center gap-6">
-              {/* Logo 和名称 */}
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
-                  }}
-                >
-                  <Music4 className="w-4 h-4 text-white" />
-                </div>
-                <span className={cn("font-semibold text-lg", isDark ? "text-white" : "text-zinc-900")}>
-                  Lofi Radio
-                </span>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+              <a
+                href="https://github.com/88lin/lofi-radio-web"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center gap-1.5 transition-colors",
+                  isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
+                )}
+              >
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </a>
               
-              {/* 链接 */}
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                <a
-                  href="https://blog.88lin.eu.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex items-center gap-1.5 transition-colors",
-                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
-                  )}
-                >
-                  <span className="font-medium">茉灵智库</span>
-                </a>
-                
-                <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
-                
-                <a
-                  href="https://github.com/88lin/lofi-radio-web"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex items-center gap-1.5 transition-colors",
-                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
-                  )}
-                >
-                  <Github className="w-4 h-4" />
-                  <span>GitHub</span>
-                </a>
-                
-                <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
-                
-                <a
-                  href="https://github.com/88lin/lofi-radio-web/discussions"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex items-center gap-1.5 transition-colors",
-                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
-                  )}
-                >
-                  <span>Discussions</span>
-                </a>
-              </div>
+              <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
               
-              {/* 版权 */}
-              <p className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>
+              <span className={cn(
+                "font-semibold",
+                isDark ? "text-violet-400" : "text-violet-600"
+              )}>
                 Made with ❤️ by{' '}
                 <a 
                   href="https://blog.88lin.eu.org/" 
@@ -1039,7 +997,7 @@ export default function Home() {
                 >
                   茉灵智库
                 </a>
-              </p>
+              </span>
             </div>
           </div>
         </footer>

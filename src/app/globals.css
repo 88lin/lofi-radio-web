@@ -419,9 +419,22 @@ img[loading] {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* Smooth Scroll */
+/* Smooth Scroll with Damping */
 html {
   scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+
+/* Desktop scroll damping effect */
+@media (min-width: 640px) {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Better Font Rendering */
