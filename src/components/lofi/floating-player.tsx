@@ -434,55 +434,31 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   }, [selectStationById]);
   
   return (
-    <div 
-      className="relative w-full h-full flex overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0d0d12 0%, #141420 50%, #0d0d12 100%)' }}
-    >
-      {/* 背景渐变光晕 - 高斯模糊效果 */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* 主色圆光晕 - 左上 大 */}
+    <div className="relative w-full h-full flex overflow-hidden">
+      {/* 主背景色 */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{ background: '#0a0a0f' }}
+      />
+      
+      {/* 渐变光晕层 - 两个大面积模糊色块 */}
+      <div className="absolute inset-0 z-0">
+        {/* 左上角主题色光晕 */}
         <div
-          className="absolute -top-10 -left-10 w-[700px] h-[700px] rounded-full"
+          className="absolute -top-1/4 -left-1/4 w-[900px] h-[900px]"
           style={{
-            background: `radial-gradient(circle, ${stationColor}60 0%, ${stationColor}20 50%, transparent 80%)`,
-            filter: 'blur(100px)',
-            opacity: 0.8,
-          }}
-        />
-        {/* 主色圆光晕 - 右下 大 */}
-        <div
-          className="absolute -bottom-10 -right-10 w-[600px] h-[600px] rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${stationColor}50 0%, ${stationColor}15 50%, transparent 80%)`,
+            background: `radial-gradient(ellipse at center, ${stationColor} 0%, transparent 70%)`,
+            opacity: 0.35,
             filter: 'blur(120px)',
-            opacity: 0.7,
           }}
         />
-        {/* 中间偏右 */}
+        {/* 右下角主题色光晕 */}
         <div
-          className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full"
+          className="absolute -bottom-1/4 -right-1/4 w-[700px] h-[700px]"
           style={{
-            background: `radial-gradient(circle, ${stationColor}35 0%, transparent 60%)`,
-            filter: 'blur(80px)',
-            opacity: 0.6,
-          }}
-        />
-        {/* 左下 */}
-        <div
-          className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${stationColor}30 0%, transparent 55%)`,
-            filter: 'blur(90px)',
-            opacity: 0.5,
-          }}
-        />
-        {/* 中央光晕 */}
-        <div
-          className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${stationColor}25 0%, transparent 60%)`,
-            filter: 'blur(60px)',
-            opacity: 0.5,
+            background: `radial-gradient(ellipse at center, ${stationColor} 0%, transparent 70%)`,
+            opacity: 0.25,
+            filter: 'blur(100px)',
           }}
         />
       </div>
