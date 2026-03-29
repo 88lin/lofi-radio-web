@@ -355,7 +355,7 @@ export default function Home() {
                     isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
                   )}
                 >
-                  <a href="https://github.com/labilio/lofi-radio" target="_blank" rel="noopener noreferrer">
+                  <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
                     <Github className="w-5 h-5" />
                   </a>
                 </Button>
@@ -461,7 +461,7 @@ export default function Home() {
                     )}
                     asChild
                   >
-                    <a href="https://github.com/labilio/lofi-radio" target="_blank" rel="noopener noreferrer">
+                    <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
                       <Github className="w-5 h-5 mr-2" />
                       查看源码
                       <ExternalLink className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -897,13 +897,23 @@ export default function Home() {
               
               <div className={cn("flex items-center gap-4 text-sm", isDark ? "text-white/40" : "text-zinc-500")}>
                 <motion.a
-                  href="https://github.com/labilio/lofi-radio"
+                  href="https://github.com/88lin/lofi-radio-web"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-current transition-colors flex items-center gap-1.5"
                   whileHover={{ scale: 1.05 }}
                 >
                   <Github className="w-4 h-4" />
+                  本项目
+                </motion.a>
+                <span className={isDark ? "text-white/20" : "text-zinc-300"}>·</span>
+                <motion.a
+                  href="https://github.com/labilio/lofi-radio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-current transition-colors flex items-center gap-1.5"
+                  whileHover={{ scale: 1.05 }}
+                >
                   原项目
                 </motion.a>
                 <span className={isDark ? "text-white/20" : "text-zinc-300"}>·</span>
