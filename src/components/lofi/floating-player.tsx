@@ -425,22 +425,24 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   
   return (
     <div className="relative w-full h-full flex overflow-hidden">
-      {/* 背景层 - 使用伪元素实现高斯模糊 */}
+      {/* 背景层 - 更透明更亮 */}
       <div 
         className="absolute inset-0 z-0"
         style={{
           background: `linear-gradient(135deg, 
-            ${stationColor}18 0%, 
-            transparent 30%,
-            transparent 70%,
-            ${stationColor}12 100%
+            ${stationColor}25 0%, 
+            ${stationColor}10 30%,
+            ${stationColor}08 70%,
+            ${stationColor}18 100%
           ),
           linear-gradient(45deg,
-            transparent 0%,
-            ${stationColor}08 50%,
-            transparent 100%
+            ${stationColor}10 0%,
+            ${stationColor}15 50%,
+            ${stationColor}10 100%
           ),
-          #0a0a0f`
+          rgba(15, 15, 25, 0.95)`,
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)'
         }}
       />
       
@@ -566,9 +568,11 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
         
         {/* 右侧：电台列表 - 桌面端固定显示 */}
         <div 
-          className="hidden lg:flex w-80 flex-col border-l border-white/[0.06]"
+          className="hidden lg:flex w-80 flex-col border-l border-white/[0.08]"
           style={{ 
-            background: 'linear-gradient(180deg, rgba(18, 18, 20, 0.95) 0%, rgba(12, 12, 14, 0.98) 100%)',
+            background: 'linear-gradient(180deg, rgba(30, 30, 45, 0.6) 0%, rgba(20, 20, 35, 0.7) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)'
           }}
         >
           <StationList onClose={() => {}} onSelect={handleStationSelect} isDesktop={true} />
@@ -578,7 +582,7 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
       {/* 关闭按钮 - 固定在左上角 */}
       <button
         onClick={onClose}
-        className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200"
+        className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] transition-all duration-200"
       >
         <Minimize2 className="w-4 h-4 text-white/60" />
       </button>
@@ -592,7 +596,7 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
             boxShadow: `0 0 8px ${stationColor}`
           }}
         />
-        <span className="text-white/50 text-sm font-medium">Lofi Radio</span>
+        <span className="text-white/60 text-sm font-medium">Lofi Radio</span>
       </div>
       
       {/* 移动端电台列表弹窗 */}
@@ -605,12 +609,16 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
             exit={{ opacity: 0 }}
           >
             <div 
-              className="absolute inset-0 bg-black/70"
+              className="absolute inset-0 bg-black/50"
               onClick={() => setShowStationList(false)}
             />
             <motion.div
               className="absolute inset-x-0 bottom-0 h-[80vh] rounded-t-3xl overflow-hidden"
-              style={{ background: 'rgb(20, 20, 22)' }}
+              style={{ 
+                background: 'linear-gradient(180deg, rgba(35, 35, 50, 0.85) 0%, rgba(25, 25, 40, 0.9) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)'
+              }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -649,18 +657,18 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
         }}
       />
       
-      {/* 主体 - 玻璃质感灵动岛 */}
+      {/* 主体 - 玻璃质感灵动岛，更透明更亮 */}
       <div
         className="relative flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full"
         style={{
-          background: `linear-gradient(145deg, rgba(40, 40, 50, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)`,
+          background: `linear-gradient(145deg, rgba(60, 60, 80, 0.65) 0%, rgba(40, 40, 60, 0.7) 100%)`,
           backdropFilter: 'blur(24px) saturate(200%)',
           WebkitBackdropFilter: 'blur(24px) saturate(200%)',
           boxShadow: `
-            0 12px 40px rgba(0, 0, 0, 0.5),
-            0 0 0 0.5px rgba(255, 255, 255, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            0 0 30px ${stationColor}20
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            0 0 0 0.5px rgba(255, 255, 255, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12),
+            0 0 30px ${stationColor}15
           `
         }}
       >
@@ -671,8 +679,8 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
             isPlaying && "animate-spin-slow"
           )}
           style={{ 
-            background: `linear-gradient(145deg, rgba(30, 30, 40, 0.95), rgba(15, 15, 20, 1))`,
-            boxShadow: `inset 0 1px 3px rgba(255,255,255,0.08), 0 2px 10px rgba(0,0,0,0.4)`
+            background: `linear-gradient(145deg, rgba(50, 50, 70, 0.8), rgba(30, 30, 50, 0.9))`,
+            boxShadow: `inset 0 1px 3px rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.3)`
           }}
         >
           <div
@@ -685,7 +693,7 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
           />
           <div
             className="absolute rounded-full"
-            style={{ inset: '42%', background: 'rgba(0,0,0,0.6)' }}
+            style={{ inset: '42%', background: 'rgba(0,0,0,0.5)' }}
           />
         </div>
         
@@ -694,7 +702,7 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
           <span className="text-white text-xs sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-[100px]">
             {currentStation?.name || 'Lofi Radio'}
           </span>
-          <div className="flex items-center gap-1 text-white/50 text-[10px] sm:text-xs">
+          <div className="flex items-center gap-1 text-white/60 text-[10px] sm:text-xs">
             <Clock className="w-2.5 h-2.5" />
             <span className="tabular-nums font-medium">{focusTime} min</span>
           </div>
@@ -722,9 +730,9 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
         {/* 展开按钮 */}
         <button
           onClick={(e) => { e.stopPropagation(); onExpand(); }}
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.08] hover:bg-white/[0.15] transition-colors"
         >
-          <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50" />
+          <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/60" />
         </button>
       </div>
     </div>
