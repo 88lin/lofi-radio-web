@@ -4,7 +4,36 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
 import Hls from 'hls.js';
-import flvjs from 'flv.js';
+
+// flv.js 类型定义
+type FlvPlayer = {
+  attachMediaElement: (media: HTMLMediaElement) => void;
+  load: () => void;
+  play: () => Promise<void>;
+  destroy: () => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+};
+
+type FlvJs = {
+  isSupported: () => boolean;
+  createPlayer: (config: Record<string, unknown>, options?: Record<string, unknown>) => FlvPlayer;
+  Events: { ERROR: string };
+  ErrorTypes: { NETWORK_ERROR: string };
+};
+
+// 动态加载 flv.js
+let flvjs: FlvJs | null = null;
+const loadFlvJs = async (): Promise<FlvJs | null> => {
+  if (flvjs) return flvjs;
+  if (typeof window === 'undefined') return null;
+  try {
+    flvjs = await import('flv.js').then(m => m.default || m);
+    return flvjs;
+  } catch (e) {
+    console.error('Failed to load flv.js:', e);
+    return null;
+  }
+};
 
 // Bilibili 直播流信息接口
 interface BilibiliStreamInfo {
@@ -20,7 +49,7 @@ interface BilibiliStreamInfo {
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const flvPlayerRef = useRef<flvjs.Player | null>(null);
+  const flvPlayerRef = useRef<FlvPlayer | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
@@ -125,15 +154,15 @@ export function useAudioPlayer() {
       if (!data.success || !data.flv_url) {
         console.error('Failed to get Bilibili stream:', data.error || 'Unknown error');
         setLoading(false);
-        // 跳到下一个电台
         setTimeout(() => nextStation(), 500);
         return;
       }
 
       console.log('Got Bilibili FLV URL, loading with flv.js...');
 
-      // 检查 flv.js 支持
-      if (!flvjs.isSupported()) {
+      // 动态加载 flv.js
+      const flv = await loadFlvJs();
+      if (!flv || !flv.isSupported()) {
         console.error('flv.js is not supported');
         setLoading(false);
         setTimeout(() => nextStation(), 500);
@@ -141,7 +170,7 @@ export function useAudioPlayer() {
       }
 
       // 创建 flv.js 播放器
-      const flvPlayer = flvjs.createPlayer({
+      const flvPlayer = flv.createPlayer({
         type: 'flv',
         url: data.flv_url,
         isLive: true,
@@ -167,10 +196,9 @@ export function useAudioPlayer() {
       flvPlayerRef.current = flvPlayer;
 
       // 设置错误处理
-      flvPlayer.on(flvjs.Events.ERROR, (errorType: string, errorDetail: string) => {
+      flvPlayer.on(flv.Events.ERROR, (errorType: string, errorDetail: string) => {
         console.error('FLV player error:', errorType, errorDetail);
-        if (errorType === flvjs.ErrorTypes.NETWORK_ERROR) {
-          // 网络错误，尝试重新加载
+        if (errorType === flv.ErrorTypes.NETWORK_ERROR) {
           if (retryCountRef.current < maxRetries) {
             retryCountRef.current++;
             setTimeout(() => loadBilibiliStream(station), 2000);
