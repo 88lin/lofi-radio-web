@@ -641,11 +641,11 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
       {/* 外部光晕 - 精致柔和 */}
       <div
         className={cn(
-          "absolute -inset-2 sm:-inset-3 rounded-full transition-opacity duration-500",
-          isPlaying ? "opacity-40" : "opacity-20"
+          "absolute -inset-3 sm:-inset-4 rounded-full transition-opacity duration-500",
+          isPlaying ? "opacity-50" : "opacity-30"
         )}
         style={{ 
-          background: `radial-gradient(ellipse, ${stationColor}20 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse, ${stationColor}30 0%, transparent 70%)`,
         }}
       />
       
@@ -653,13 +653,14 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
       <div
         className="relative flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full"
         style={{
-          background: `linear-gradient(145deg, rgba(40, 40, 50, 0.85) 0%, rgba(25, 25, 35, 0.9) 100%)`,
-          backdropFilter: 'blur(20px) saturate(180%)',
+          background: `linear-gradient(145deg, rgba(40, 40, 50, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)`,
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
           boxShadow: `
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            0 0 0 0.5px rgba(255, 255, 255, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            0 0 20px ${stationColor}15
+            0 12px 40px rgba(0, 0, 0, 0.5),
+            0 0 0 0.5px rgba(255, 255, 255, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 0 30px ${stationColor}20
           `
         }}
       >
@@ -670,8 +671,8 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
             isPlaying && "animate-spin-slow"
           )}
           style={{ 
-            background: `linear-gradient(145deg, rgba(30, 30, 40, 0.9), rgba(15, 15, 20, 0.95))`,
-            boxShadow: `inset 0 1px 2px rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3)`
+            background: `linear-gradient(145deg, rgba(30, 30, 40, 0.95), rgba(15, 15, 20, 1))`,
+            boxShadow: `inset 0 1px 3px rgba(255,255,255,0.08), 0 2px 10px rgba(0,0,0,0.4)`
           }}
         >
           <div
@@ -679,7 +680,7 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
             style={{
               inset: '20%',
               background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
-              boxShadow: `0 0 10px ${stationColor}40`
+              boxShadow: `0 0 12px ${stationColor}60`
             }}
           />
           <div
@@ -740,7 +741,7 @@ export function FloatingPlayer() {
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const lastTapRef = useRef<number>(0);
   
-  // 灵动岛边界约束 - 严格边界防止越界
+  // 灵动岛边界约束 - 允许拖到屏幕边缘
   useEffect(() => {
     const updateConstraints = () => {
       const windowWidth = window.innerWidth;
@@ -748,26 +749,20 @@ export function FloatingPlayer() {
       
       // 灵动岛尺寸
       const islandWidth = windowWidth < 640 ? 200 : 220;
-      const islandHeight = windowWidth < 640 ? 46 : 50;
-      // 边距 - 确保不越界
-      const padding = 16;
-      const topPadding = 80; // 顶部留出导航空间
+      const islandHeight = windowWidth < 640 ? 50 : 56;
       
-      // 计算边界
-      const leftLimit = padding;
-      const rightLimit = Math.max(padding, windowWidth - islandWidth - padding);
-      const topLimit = topPadding;
-      const bottomLimit = Math.max(topPadding, windowHeight - islandHeight - padding - 60);
-      
-      // 初始位置
+      // 初始位置（屏幕顶部中央）
       const initialX = (windowWidth - islandWidth) / 2;
-      const initialY = topPadding + 10;
+      const initialY = 70;
+      
+      // 允许拖动到屏幕边缘，只留一点边距防止完全看不见
+      const edgePadding = 20; // 边缘留20px，确保还能点击到
       
       setConstraints({
-        left: leftLimit - initialX,
-        right: rightLimit - initialX,
-        top: 0, // 相对于初始位置，向下为正
-        bottom: bottomLimit - initialY
+        left: edgePadding - initialX,
+        right: windowWidth - islandWidth - edgePadding - initialX,
+        top: edgePadding - initialY,
+        bottom: windowHeight - islandHeight - edgePadding - initialY
       });
       
       setPosition({ x: 0, y: 0 });
@@ -834,7 +829,7 @@ export function FloatingPlayer() {
             className={cn("fixed pointer-events-auto z-50", isDragging ? "cursor-grabbing" : "cursor-grab")}
             style={{ 
               left: '50%', 
-              top: '90px',
+              top: '70px',
               marginLeft: '-110px',
               x: position.x,
               y: position.y,
