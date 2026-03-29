@@ -178,7 +178,7 @@ const NavBar = memo(({
   >
     <div 
       className={cn(
-        "flex items-center gap-1.5 px-2 py-1.5 rounded-full",
+        "flex items-center gap-1 px-2 py-1 rounded-full",
         "backdrop-blur-2xl shadow-2xl",
         isDark 
           ? "bg-zinc-900/60 border border-white/[0.08]" 
@@ -190,41 +190,44 @@ const NavBar = memo(({
           : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
       }}
     >
-      {/* Logo */}
+      {/* Logo - 美化版 */}
       <div className="flex items-center gap-2 px-2 py-1">
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
+          style={{ 
+            background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)'
+          }}
         >
-          <Headphones className="w-3.5 h-3.5 text-white" />
+          <Music4 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
         </div>
-        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
+        <span className={cn("font-semibold text-xs sm:text-sm", isDark ? "text-white/90" : "text-zinc-900")}>
           Lofi Radio
         </span>
       </div>
 
       {/* 分隔线 */}
-      <div className={cn("w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
 
-      {/* 播放状态指示 */}
+      {/* 播放状态指示 - 移动端也显示 */}
       <AnimatePresence>
         {isPlaying && currentStation && (
           <motion.div
             initial={{ opacity: 0, width: 0, marginRight: 0 }}
             animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
             exit={{ opacity: 0, width: 0, marginRight: 0 }}
-            className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full overflow-hidden"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 rounded-full overflow-hidden"
             style={{ 
               background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
             }}
           >
             <motion.div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: stationColor }}
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ background: '#22C55E', boxShadow: '0 0 6px #22C55E' }}
               animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/60" : "text-zinc-600")}>
+            <span className={cn("text-xs font-medium whitespace-nowrap truncate max-w-[60px] sm:max-w-none", isDark ? "text-white/60" : "text-zinc-600")}>
               {currentStation.name}
             </span>
           </motion.div>
@@ -235,7 +238,7 @@ const NavBar = memo(({
       <motion.button
         onClick={onThemeToggle}
         className={cn(
-          "w-7 h-7 rounded-full flex items-center justify-center transition-colors",
+          "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
           isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
         )}
         whileHover={{ scale: 1.05 }}
@@ -250,7 +253,7 @@ const NavBar = memo(({
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Sun className="w-3.5 h-3.5" />
+              <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </motion.div>
           ) : (
             <motion.div
@@ -260,14 +263,14 @@ const NavBar = memo(({
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Moon className="w-3.5 h-3.5" />
+              <Moon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </motion.div>
           )}
         </AnimatePresence>
       </motion.button>
 
       {/* 分隔线 */}
-      <div className={cn("w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
 
       {/* GitHub */}
       <motion.a
@@ -275,13 +278,13 @@ const NavBar = memo(({
         target="_blank"
         rel="noopener noreferrer"
         className={cn(
-          "w-7 h-7 rounded-full flex items-center justify-center transition-colors",
+          "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
           isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
         )}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <Github className="w-3.5 h-3.5" />
+        <Github className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
       </motion.a>
     </div>
   </motion.nav>

@@ -131,24 +131,6 @@ export function useAudioPlayer() {
     // 更新 Media Session
     updateMediaSession(station);
     
-    // Bilibili 类型需要特殊处理，网页版不支持，跳过
-    if (station.type === 'bilibili') {
-      console.warn('Bilibili live stream not supported on web, skipping');
-      setLoading(false);
-      const stationList = [
-        'lofi-box', 'chill-sky', 'chill-wave', 'groove-salad',
-        'asp', 'paradise', 'drone-zone', 'rain-sounds',
-        'jazz-box', 'jazz-groove', 'jazz-smooth', 'swiss-classic',
-        'bbc-3', 'rap', 'kexp'
-      ];
-      const nextId = stationList[0];
-      setTimeout(() => {
-        const { selectStationById } = useAudioStore.getState();
-        selectStationById(nextId);
-      }, 500);
-      return;
-    }
-    
     // HLS 流 - 优化配置减少功耗
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {
@@ -252,7 +234,7 @@ export function useAudioPlayer() {
       setLoading(false);
     };
     const handleEnded = () => {
-      if (currentStation && currentStation.type !== 'bilibili') {
+      if (currentStation) {
         setTimeout(() => loadStation(currentStation), 2000);
       }
     };
