@@ -7,11 +7,11 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**Lofi 音乐被科学家认为是最适合专注工作学习的音乐**
+**几乎所有手机都有灵动岛功能，电脑为什么不能有呢？**
 
 macOS 风格灵动岛设计，16 个精选电台，打开即用，无需下载
 
-[功能特性](#-功能特性) · [快速开始](#-快速开始) · [部署指南](#-部署指南) · [在线体验](#-在线体验)
+**[🎧 在线体验](https://lofi.88lin.eu.org/)** · [📖 功能特性](#-功能特性) · [🚀 快速开始](#-快速开始) · [📦 部署指南](#-部署指南) · [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions)
 
 </div>
 
@@ -324,7 +324,9 @@ lofi-radio-web/
 
 如有问题或建议，欢迎：
 
-- [提交 Issue](https://github.com/88lin/lofi-radio-web/issues)
+- [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions) - 参与讨论
+- [🐛 提交 Issue](https://github.com/88lin/lofi-radio-web/issues) - 报告问题
+- [📝 博客](https://blog.88lin.eu.org/) - 茉灵智库
 
 ---
 
@@ -332,6 +334,6 @@ lofi-radio-web/
 
 **如果这个项目对你有帮助，请给一个 ⭐ Star 支持一下！**
 
-Made with ❤️ by [88lin](https://github.com/88lin)
+Made with ❤️ by [茉灵智库](https://blog.88lin.eu.org/) · [GitHub](https://github.com/88lin)
 
 </div>

@@ -190,8 +190,13 @@ const NavBar = memo(({
           : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
       }}
     >
-      {/* Logo - 美化版 */}
-      <div className="flex items-center gap-2 px-2 py-1">
+      {/* Logo - 美化版，点击跳转官网 */}
+      <a 
+        href="https://lofi.88lin.eu.org/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 px-2 py-1 hover:opacity-80 transition-opacity"
+      >
         <div
           className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
           style={{ 
@@ -205,7 +210,7 @@ const NavBar = memo(({
         <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
           Lofi Radio
         </span>
-      </div>
+      </a>
 
       {/* 分隔线 */}
       <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
@@ -573,8 +578,11 @@ export default function Home() {
             >
               {/* 标签 */}
               <motion.div variants={fadeInUp} className="mb-5">
-                <span
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors"
+                <a
+                  href="https://lofi.88lin.eu.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors hover:opacity-80"
                   style={{
                     background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.08)',
                     color: isDark ? '#a78bfa' : '#7c3aed',
@@ -584,7 +592,7 @@ export default function Home() {
                   <Sparkles className="w-3.5 h-3.5" />
                   网页版全新上线
                   <ExternalLink className="w-3 h-3 opacity-50" />
-                </span>
+                </a>
               </motion.div>
               
               {/* 标题 */}
@@ -956,27 +964,82 @@ export default function Home() {
         
         {/* 底部 */}
         <footer className={cn(
-          "py-10 px-4 sm:px-6",
+          "py-12 px-4 sm:px-6",
           isDark ? "border-t border-white/5" : "border-t border-zinc-100"
         )}>
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <div className={cn("flex items-center gap-2 text-sm", isDark ? "text-white/40" : "text-zinc-500")}>
-                <span>Made with love by</span>
-                <span className={cn("font-semibold", isDark ? "text-white/70" : "text-zinc-700")}>茉灵智库</span>
+            <div className="flex flex-col items-center justify-center gap-6">
+              {/* Logo 和名称 */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
+                  }}
+                >
+                  <Music4 className="w-4 h-4 text-white" />
+                </div>
+                <span className={cn("font-semibold text-lg", isDark ? "text-white" : "text-zinc-900")}>
+                  Lofi Radio
+                </span>
               </div>
               
-              <span className={cn("hidden sm:block", isDark ? "text-white/20" : "text-zinc-300")}>|</span>
+              {/* 链接 */}
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+                <a
+                  href="https://blog.88lin.eu.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
+                  )}
+                >
+                  <span className="font-medium">茉灵智库</span>
+                </a>
+                
+                <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
+                
+                <a
+                  href="https://github.com/88lin/lofi-radio-web"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
+                  )}
+                >
+                  <Github className="w-4 h-4" />
+                  <span>GitHub</span>
+                </a>
+                
+                <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
+                
+                <a
+                  href="https://github.com/88lin/lofi-radio-web/discussions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "flex items-center gap-1.5 transition-colors",
+                    isDark ? "text-white/50 hover:text-white/80" : "text-zinc-500 hover:text-zinc-800"
+                  )}
+                >
+                  <span>Discussions</span>
+                </a>
+              </div>
               
-              <a
-                href="https://github.com/88lin/lofi-radio-web"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn("hover:text-current transition-colors flex items-center gap-1.5 text-sm", isDark ? "text-white/40" : "text-zinc-500")}
-              >
-                <Github className="w-4 h-4" />
-                GitHub: 88lin/lofi-radio-web
-              </a>
+              {/* 版权 */}
+              <p className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>
+                Made with ❤️ by{' '}
+                <a 
+                  href="https://blog.88lin.eu.org/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  茉灵智库
+                </a>
+              </p>
             </div>
           </div>
         </footer>
