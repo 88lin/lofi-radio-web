@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, Headphones, X, Sparkles, Music4 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, Headphones, X, Sparkles, Music4, Music } from 'lucide-react';
 import { useAudioStore } from '@/store/audioStore';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
 import { stations, categories, getFilteredStations, Station } from '@/lib/stations';
@@ -57,32 +57,32 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
         ))}
       </div>
       
-      {/* 中心标签 */}
+      {/* 中心标签 - 带音乐符号 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '25%',
+          inset: '22%',
           background: `
-            radial-gradient(circle at 35% 35%, ${color}50 0%, transparent 50%),
+            radial-gradient(circle at 35% 35%, ${color}60 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
           `,
           boxShadow: `
             inset 0 2px 8px rgba(0, 0, 0, 0.25),
             inset 0 -1px 2px rgba(255, 255, 255, 0.08),
-            0 0 20px ${color}20
+            0 0 25px ${color}30
           `
         }}
       >
-        <Headphones className="w-4 h-4 text-white/85" />
+        <Music className="w-5 h-5 text-white/90 drop-shadow-lg" />
       </div>
       
-      {/* 中心孔 */}
+      {/* 中心小圆点 */}
       <div
         className="absolute rounded-full"
         style={{
-          inset: '44%',
-          background: 'radial-gradient(circle, #000 0%, #151515 100%)',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)'
+          inset: '46%',
+          background: `linear-gradient(135deg, ${color}cc, ${color})`,
+          boxShadow: `0 0 8px ${color}40`
         }}
       />
     </div>
@@ -217,8 +217,18 @@ const VolumeSlider = memo(({
 });
 VolumeSlider.displayName = 'VolumeSlider';
 
-// ==================== 电台列表组件 ====================
-const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => void; onSelect: (station: Station) => void; initialScene?: string }) => {
+// ==================== 电台列表组件 - 桌面端优化版 ====================
+const StationList = memo(({ 
+  onClose, 
+  onSelect, 
+  initialScene,
+  isDesktop = false 
+}: { 
+  onClose: () => void; 
+  onSelect: (station: Station) => void; 
+  initialScene?: string;
+  isDesktop?: boolean;
+}) => {
   const {
     isPlaying, currentStation, selectedCategory,
     setSelectedCategory,
@@ -239,7 +249,7 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
       className="h-full flex flex-col"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* 头部 */}
+      {/* 头部 - 桌面端不显示关闭按钮 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <div 
@@ -253,19 +263,22 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
           <h3 className="text-white font-medium text-sm">电台列表</h3>
           <span className="text-white/30 text-xs">({filteredStations.length})</span>
         </div>
-        <button
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            onClose(); 
-          }}
-          className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
-        >
-          <X className="w-4 h-4 text-white/60" />
-        </button>
+        {/* 移动端显示关闭按钮 */}
+        {!isDesktop && (
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onClose(); 
+            }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          >
+            <X className="w-4 h-4 text-white/60" />
+          </button>
+        )}
       </div>
       
-      {/* 分类标签 - 横向滚动 - 药丸胶囊形式 */}
-      <div className="px-3 py-2 border-b border-white/[0.04]">
+      {/* 分类标签 - 横向滚动 */}
+      <div className="px-3 py-2.5 border-b border-white/[0.04]">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {categories.map((cat) => (
             <button
@@ -295,9 +308,12 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
         </div>
       </div>
       
-      {/* 电台列表 */}
+      {/* 电台列表 - 桌面端优化布局 */}
       <div className="flex-1 overflow-y-auto p-3">
-        <div className="grid gap-2">
+        <div className={cn(
+          "grid gap-2",
+          isDesktop ? "grid-cols-1" : "grid-cols-1"
+        )}>
           {filteredStations.map((station) => {
             const isActive = currentStation?.id === station.id;
             return (
@@ -308,16 +324,26 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
                   onSelect(station);
                 }}
                 className={cn(
-                  "w-full p-3 rounded-xl text-left flex items-center gap-3 transition-all relative overflow-hidden",
-                  isActive ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
+                  "w-full p-3 rounded-xl text-left flex items-center gap-3 transition-all relative overflow-hidden group",
+                  isActive 
+                    ? "bg-white/[0.08] border border-white/[0.08]" 
+                    : "hover:bg-white/[0.04] border border-transparent hover:border-white/[0.04]"
                 )}
                 style={{
                   borderLeft: isActive ? `3px solid ${station.color}` : '3px solid transparent',
                 }}
               >
+                {/* 悬停背景光效 */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: `radial-gradient(circle at 30% 50%, ${station.color}08 0%, transparent 60%)`,
+                  }}
+                />
+                
                 {/* 图标 */}
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative"
                   style={{ background: `${station.color}15` }}
                 >
                   {isActive && isPlaying ? (
@@ -325,19 +351,20 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
                       className="w-4 h-4 rounded-full animate-pulse"
                       style={{ 
                         background: `linear-gradient(135deg, ${station.color}, ${station.color}bb)`,
+                        boxShadow: `0 0 10px ${station.color}60`,
                       }}
                     />
                   ) : (
-                    <Music4 className="w-5 h-5" style={{ color: station.color }} />
+                    <Music4 className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" style={{ color: station.color }} />
                   )}
                 </div>
                 
                 {/* 信息 */}
-                <div className="flex-1 min-w-0 text-left">
+                <div className="flex-1 min-w-0 text-left relative">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={cn(
-                      "text-sm font-medium truncate",
-                      isActive ? "text-white" : "text-white/80"
+                      "text-sm font-medium truncate transition-colors duration-200",
+                      isActive ? "text-white" : "text-white/80 group-hover:text-white"
                     )}>
                       {station.name}
                     </span>
@@ -353,11 +380,12 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50">
+                  {/* 标签 - 完整显示 */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50 whitespace-nowrap">
                       {station.style1}
                     </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.04] text-white/40">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.04] text-white/40 whitespace-nowrap">
                       {station.scene}
                     </span>
                   </div>
@@ -372,7 +400,8 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
                         className="w-0.5 rounded-full animate-equalizer"
                         style={{ 
                           background: station.color,
-                          animationDelay: `${i * 0.1}s`
+                          animationDelay: `${i * 0.1}s`,
+                          height: `${12 + i * 4}px`,
                         }}
                       />
                     ))}
@@ -543,9 +572,11 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
         {/* 右侧：电台列表 - 桌面端固定显示 */}
         <div 
           className="hidden lg:flex w-80 flex-col border-l border-white/[0.06]"
-          style={{ background: 'rgba(0, 0, 0, 0.3)' }}
+          style={{ 
+            background: 'linear-gradient(180deg, rgba(18, 18, 20, 0.95) 0%, rgba(12, 12, 14, 0.98) 100%)',
+          }}
         >
-          <StationList onClose={() => {}} onSelect={handleStationSelect} />
+          <StationList onClose={() => {}} onSelect={handleStationSelect} isDesktop={true} />
         </div>
       </div>
       
