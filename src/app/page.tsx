@@ -190,7 +190,7 @@ const NavBar = memo(({
           : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
       }}
     >
-      {/* Logo */}
+      {/* Logo - 美化版 */}
       <div className="flex items-center gap-2 px-2 py-1">
         <div
           className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
@@ -210,26 +210,36 @@ const NavBar = memo(({
       {/* 分隔线 */}
       <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
 
-      {/* 播放状态指示 - 移动端和桌面端都显示，居中 */}
-      <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2">
+      {/* 播放状态指示 - 移动端也显示 */}
+      <AnimatePresence>
         {isPlaying && currentStation ? (
-          <>
+          <motion.div
+            initial={{ opacity: 0, width: 0, marginRight: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
+            exit={{ opacity: 0, width: 0, marginRight: 0 }}
+            className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 rounded-full overflow-hidden"
+            style={{ 
+              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+            }}
+          >
             <motion.div
               className="w-1.5 h-1.5 rounded-full flex-shrink-0"
               style={{ background: '#22C55E', boxShadow: '0 0 6px #22C55E' }}
               animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className={cn("text-xs font-medium text-center", isDark ? "text-white/60" : "text-zinc-600")}>
+            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/60" : "text-zinc-600")}>
               {currentStation.name}
             </span>
-          </>
+          </motion.div>
         ) : (
-          <span className={cn("text-xs font-medium", isDark ? "text-white/40" : "text-zinc-400")}>
-            未播放
-          </span>
+          <div className="flex items-center px-2 py-1">
+            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/40" : "text-zinc-400")}>
+              未播放
+            </span>
+          </div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* 分隔线 */}
       <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
