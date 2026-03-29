@@ -22,6 +22,9 @@
     "tailwindcss"
   ],
   "private": false,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
