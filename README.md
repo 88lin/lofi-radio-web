@@ -117,7 +117,7 @@ Lofi Radio Web 是 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) �
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/lofi-radio-web.git
+git clone https://github.com/88lin/lofi-radio-web.git
 cd lofi-radio-web
 
 # 安装依赖
@@ -157,7 +157,7 @@ npm run start
 
 #### 方法一：一键部署
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/lofi-radio-web)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/88lin/lofi-radio-web)
 
 1. 点击上方按钮
 2. 登录 Vercel 账号（支持 GitHub、GitLab、Bitbucket）
@@ -426,8 +426,8 @@ lofi-radio-web/
 
 如有问题或建议，欢迎：
 
-- [提交 Issue](https://github.com/YOUR_USERNAME/lofi-radio-web/issues)
-- [参与讨论](https://github.com/YOUR_USERNAME/lofi-radio-web/discussions)
+- [提交 Issue](https://github.com/88lin/lofi-radio-web/issues)
+- [参与讨论](https://github.com/88lin/lofi-radio-web/discussions)
 
 ---
 
