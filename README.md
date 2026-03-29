@@ -176,6 +176,11 @@ npm run start
 5. **关键步骤**：添加环境变量
    - `NODE_VERSION` = `20`（或 `22`）
 6. 点击 "保存并部署"
+7. **部署后配置（重要！）**：
+   - 进入项目 → **Settings** → **Functions**
+   - 找到 **Compatibility flags** 部分
+   - 在 **Production** 和 **Preview** 两个环境都添加：`nodejs_compat`
+   - 点击保存，然后重新部署
 
 #### 方式二：使用 Wrangler CLI
 
@@ -194,6 +199,8 @@ wrangler pages deploy .vercel/output/static --project-name=lofi-radio-web
 ```
 
 > 💡 **提示**: 项目根目录已包含 `.node-version` 文件指定 Node.js 20，Cloudflare 会自动识别。
+
+> ⚠️ **注意**: 如果部署后页面显示 "hasn't been properly configured" 错误，请确保已在 Compatibility flags 中添加 `nodejs_compat`。
 
 ### 部署到 Netlify
 
