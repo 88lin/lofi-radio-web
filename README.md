@@ -171,15 +171,13 @@ npm run start
 3. 授权 GitHub 并选择 `lofi-radio-web` 仓库
 4. 配置构建设置：
    - **框架预设**: `Next.js`
-   - **构建命令**: `npx @cloudflare/next-on-pages`
+   - **构建命令**: `npx @cloudflare/next-on-pages@1`
    - **构建输出目录**: `.vercel/output/static`
-5. **关键步骤**：添加环境变量
-   - `NODE_VERSION` = `20`（或 `22`）
-6. 点击 "保存并部署"
-7. **部署后配置（重要！）**：
-   - 进入项目 → **Settings** → **Functions**
-   - 找到 **Compatibility flags** 部分
-   - 在 **Production** 和 **Preview** 两个环境都添加：`nodejs_compat`
+5. 点击 "保存并部署"
+6. **部署后配置（重要！）**：
+   - 进入项目 → **设置** → **运行时**
+   - 找到 **定义 Pages 函数的运行时配置** 部分
+   - 在 **兼容性标志**搜索：`nodejs_compat`添加即可
    - 点击保存，然后重新部署
 
 #### 方式二：使用 Wrangler CLI
