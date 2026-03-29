@@ -638,96 +638,92 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
   
   return (
     <div className="relative cursor-grab active:cursor-grabbing select-none">
-      {/* 外部光晕 */}
+      {/* 外部光晕 - 精致柔和 */}
       <div
         className={cn(
-          "absolute -inset-1 rounded-full transition-opacity duration-500",
-          isPlaying ? "opacity-60" : "opacity-30"
+          "absolute -inset-2 sm:-inset-3 rounded-full transition-opacity duration-500",
+          isPlaying ? "opacity-40" : "opacity-20"
         )}
         style={{ 
-          background: `radial-gradient(ellipse, ${stationColor}30 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse, ${stationColor}20 0%, transparent 70%)`,
         }}
       />
       
-      {/* 主体 - 灵动岛 */}
+      {/* 主体 - 玻璃质感灵动岛 */}
       <div
-        className="relative flex items-center gap-2 px-2.5 py-1.5 rounded-full"
+        className="relative flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full"
         style={{
-          background: 'linear-gradient(145deg, rgba(28, 28, 32, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
+          background: `linear-gradient(145deg, rgba(40, 40, 50, 0.85) 0%, rgba(25, 25, 35, 0.9) 100%)`,
+          backdropFilter: 'blur(20px) saturate(180%)',
           boxShadow: `
-            0 4px 20px rgba(0, 0, 0, 0.5),
-            0 0 0 0.5px rgba(255, 255, 255, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06)
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 0 0.5px rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 0 20px ${stationColor}15
           `
         }}
       >
-        {/* 左侧状态点 */}
-        <motion.div
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-          style={{ 
-            background: isPlaying ? '#22C55E' : 'rgba(255,255,255,0.3)',
-            boxShadow: isPlaying ? '0 0 6px #22C55E' : 'none'
-          }}
-          animate={isPlaying ? { scale: [1, 1.2, 1] } : {}}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-        
         {/* 迷你唱片 */}
         <div
           className={cn(
-            "w-7 h-7 rounded-full flex-shrink-0 relative overflow-hidden",
+            "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 relative overflow-hidden",
             isPlaying && "animate-spin-slow"
           )}
           style={{ 
-            background: `linear-gradient(145deg, #1a1a1e, #0f0f12)`,
-            boxShadow: `inset 0 1px 2px rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.3)`
+            background: `linear-gradient(145deg, rgba(30, 30, 40, 0.9), rgba(15, 15, 20, 0.95))`,
+            boxShadow: `inset 0 1px 2px rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3)`
           }}
         >
           <div
             className="absolute rounded-full"
             style={{
-              inset: '22%',
+              inset: '20%',
               background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
+              boxShadow: `0 0 10px ${stationColor}40`
             }}
+          />
+          <div
+            className="absolute rounded-full"
+            style={{ inset: '42%', background: 'rgba(0,0,0,0.6)' }}
           />
         </div>
         
         {/* 信息 */}
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-white text-xs font-medium truncate max-w-[70px] sm:max-w-[90px]">
+          <span className="text-white text-xs sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-[100px]">
             {currentStation?.name || 'Lofi Radio'}
           </span>
-          <div className="flex items-center gap-1 text-white/40 text-[10px]">
-            <Clock className="w-2 h-2" />
-            <span className="tabular-nums">{focusTime} min</span>
+          <div className="flex items-center gap-1 text-white/50 text-[10px] sm:text-xs">
+            <Clock className="w-2.5 h-2.5" />
+            <span className="tabular-nums font-medium">{focusTime} min</span>
           </div>
         </div>
         
         {/* 播放按钮 */}
         <button
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-          className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ 
             background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
+            boxShadow: `0 2px 12px ${stationColor}40`
           }}
           disabled={isLoading}
         >
           {isLoading ? (
-            <Loader2 className="w-3 h-3 text-white animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />
           ) : isPlaying ? (
-            <Pause className="w-3 h-3 text-white" />
+            <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
           ) : (
-            <Play className="w-3 h-3 text-white ml-0.5" />
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white ml-0.5" />
           )}
         </button>
         
         {/* 展开按钮 */}
         <button
           onClick={(e) => { e.stopPropagation(); onExpand(); }}
-          className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
         >
-          <Maximize2 className="w-2.5 h-2.5 text-white/50" />
+          <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50" />
         </button>
       </div>
     </div>
@@ -744,30 +740,33 @@ export function FloatingPlayer() {
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const lastTapRef = useRef<number>(0);
   
-  // 灵动岛边界约束
+  // 灵动岛边界约束 - 严格边界防止越界
   useEffect(() => {
     const updateConstraints = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       
-      // 灵动岛尺寸 - 更紧凑
-      const islandWidth = windowWidth < 640 ? 160 : 180;
-      const islandHeight = windowWidth < 640 ? 36 : 40;
+      // 灵动岛尺寸
+      const islandWidth = windowWidth < 640 ? 200 : 220;
+      const islandHeight = windowWidth < 640 ? 46 : 50;
+      // 边距 - 确保不越界
       const padding = 16;
-      const topPadding = 80;
+      const topPadding = 80; // 顶部留出导航空间
       
+      // 计算边界
       const leftLimit = padding;
       const rightLimit = Math.max(padding, windowWidth - islandWidth - padding);
       const topLimit = topPadding;
       const bottomLimit = Math.max(topPadding, windowHeight - islandHeight - padding - 60);
       
+      // 初始位置
       const initialX = (windowWidth - islandWidth) / 2;
       const initialY = topPadding + 10;
       
       setConstraints({
         left: leftLimit - initialX,
         right: rightLimit - initialX,
-        top: 0,
+        top: 0, // 相对于初始位置，向下为正
         bottom: bottomLimit - initialY
       });
       
@@ -836,7 +835,7 @@ export function FloatingPlayer() {
             style={{ 
               left: '50%', 
               top: '90px',
-              marginLeft: '-90px',
+              marginLeft: '-110px',
               x: position.x,
               y: position.y,
             }}

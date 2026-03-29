@@ -131,6 +131,18 @@ export function useAudioPlayer() {
     // 更新 Media Session
     updateMediaSession(station);
     
+    // Bilibili 类型需要特殊处理，网页版不支持直播流
+    if (station.type === 'bilibili') {
+      console.warn('Bilibili live stream not supported on web, skipping to next station');
+      setLoading(false);
+      // 自动跳到下一个电台
+      setTimeout(() => {
+        const { nextStation } = useAudioStore.getState();
+        nextStation();
+      }, 300);
+      return;
+    }
+    
     // HLS 流 - 优化配置减少功耗
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {

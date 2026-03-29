@@ -201,7 +201,8 @@ const NavBar = memo(({
         >
           <Music4 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
         </div>
-        <span className={cn("font-semibold text-xs sm:text-sm", isDark ? "text-white/90" : "text-zinc-900")}>
+        {/* 桌面端显示标题 */}
+        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
           Lofi Radio
         </span>
       </div>
