@@ -198,6 +198,43 @@
   50% { transform: translateY(-15px) rotate(2deg); }
 }
 
+@keyframes orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.12;
+  }
+  33% {
+    transform: translate(20px, -15px) scale(1.05);
+    opacity: 0.16;
+  }
+  66% {
+    transform: translate(-10px, 10px) scale(0.98);
+    opacity: 0.1;
+  }
+}
+
+.animate-orb {
+  animation: orb 15s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+@keyframes equalizer {
+  0%, 100% { height: 4px; }
+  50% { height: 10px; }
+}
+
+.animate-equalizer {
+  animation: equalizer 0.5s ease-in-out infinite;
+}
+
 @keyframes pulse-glow {
   0%, 100% { 
     box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);

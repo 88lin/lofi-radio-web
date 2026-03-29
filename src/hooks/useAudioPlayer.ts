@@ -5,11 +5,29 @@ import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
 import Hls from 'hls.js';
 
+// Wake Lock API 类型定义
+interface WakeLockSentinel {
+  released: boolean;
+  release: () => Promise<void>;
+  addEventListener: (event: string, callback: () => void) => void;
+  removeEventListener: (event: string, callback: () => void) => void;
+}
+
+// 扩展 Navigator 类型
+declare global {
+  interface Navigator {
+    wakeLock?: {
+      request: (type: 'screen') => Promise<WakeLockSentinel>;
+    };
+  }
+}
+
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const maxRetries = 3;
   
   const {
@@ -19,7 +37,122 @@ export function useAudioPlayer() {
     isMuted,
     setPlaying,
     setLoading,
+    nextStation,
+    prevStation,
+    togglePlay,
   } = useAudioStore();
+
+  // Wake Lock - 屏幕常亮
+  const requestWakeLock = useCallback(async () => {
+    if ('wakeLock' in navigator && navigator.wakeLock) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('🔒 Wake Lock acquired');
+        
+        // 监听释放事件
+        wakeLockRef.current.addEventListener('release', () => {
+          console.log('🔓 Wake Lock released');
+        });
+      } catch (err) {
+        console.log('Wake Lock request failed:', err);
+      }
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      } catch (err) {
+        console.log('Wake Lock release failed:', err);
+      }
+    }
+  }, []);
+
+  // 页面可见性变化时重新获取 Wake Lock
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isPlaying) {
+        await requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPlaying, requestWakeLock]);
+
+  // Media Session API - 更新媒体信息
+  const updateMediaSession = useCallback((station: Station | null) => {
+    if (!('mediaSession' in navigator) || !station) return;
+
+    const mediaSession = navigator.mediaSession;
+    
+    mediaSession.metadata = new MediaMetadata({
+      title: station.name,
+      artist: 'Lofi Radio',
+      album: station.style1 || 'Focus Music',
+      artwork: [
+        { src: '/logo.svg', sizes: '512x512', type: 'image/svg+xml' },
+      ],
+    });
+
+    mediaSession.setPositionState?.({
+      duration: Infinity, // 直播流
+      playbackRate: 1,
+    });
+  }, []);
+
+  // Media Session API - 设置播放状态
+  const updateMediaSessionPlaybackState = useCallback((playing: boolean) => {
+    if (!('mediaSession' in navigator)) return;
+    
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+  }, []);
+
+  // Media Session API - 设置事件处理器
+  const setupMediaSessionHandlers = useCallback(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    const mediaSession = navigator.mediaSession;
+
+    mediaSession.setActionHandler('play', () => {
+      togglePlay();
+    });
+
+    mediaSession.setActionHandler('pause', () => {
+      togglePlay();
+    });
+
+    mediaSession.setActionHandler('previoustrack', () => {
+      prevStation();
+    });
+
+    mediaSession.setActionHandler('nexttrack', () => {
+      nextStation();
+    });
+
+    // 某些浏览器不支持这些操作，所以用 try-catch
+    try {
+      mediaSession.setActionHandler('seekbackward', () => {
+        prevStation();
+      });
+    } catch {}
+
+    try {
+      mediaSession.setActionHandler('seekforward', () => {
+        nextStation();
+      });
+    } catch {}
+
+    try {
+      mediaSession.setActionHandler('stop', () => {
+        if (isPlaying) togglePlay();
+      });
+    } catch {}
+  }, [togglePlay, prevStation, nextStation, isPlaying]);
 
   // 清理函数
   const cleanup = useCallback(() => {
@@ -42,7 +175,7 @@ export function useAudioPlayer() {
   const loadStation = useCallback((station: Station) => {
     if (!audioRef.current || !station) return;
     
-    console.log('🎵 Loading station:', station.name, station.type, station.url);
+    console.log('Loading station:', station.name, station.type, station.url);
     
     // 清理之前的资源
     cleanup();
@@ -55,19 +188,20 @@ export function useAudioPlayer() {
     
     setLoading(true);
     
+    // 更新 Media Session
+    updateMediaSession(station);
+    
     // Bilibili 类型需要特殊处理，网页版不支持，跳过
     if (station.type === 'bilibili') {
-      console.warn('⚠️ Bilibili直播源在网页端不支持，自动跳过');
+      console.warn('Bilibili live stream not supported on web, skipping');
       setLoading(false);
-      // 自动切换到下一个可用电台
-      const { selectStation } = useAudioStore.getState();
       const stationList = [
         'lofi-box', 'chill-sky', 'chill-wave', 'groove-salad',
         'asp', 'paradise', 'drone-zone', 'rain-sounds',
         'jazz-box', 'jazz-groove', 'jazz-smooth', 'swiss-classic',
         'bbc-3', 'rap', 'kexp'
       ];
-      const nextId = stationList[0]; // 默认切换到 lofi-box
+      const nextId = stationList[0];
       setTimeout(() => {
         const { selectStationById } = useAudioStore.getState();
         selectStationById(nextId);
@@ -78,39 +212,38 @@ export function useAudioPlayer() {
     // HLS 流
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {
-        console.log('📺 Using HLS.js for m3u8 stream');
+        console.log('Using HLS.js for m3u8 stream');
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: true,
-          startLevel: -1, // 自动选择质量
+          startLevel: -1,
         });
         
         hls.loadSource(station.url);
         hls.attachMedia(audio);
         
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log('✅ HLS manifest parsed, starting playback');
+          console.log('HLS manifest parsed, starting playback');
           audio.play()
             .then(() => {
-              console.log('🎵 HLS playback started');
+              console.log('HLS playback started');
               setLoading(false);
               setPlaying(true);
             })
             .catch(err => {
-              console.error('❌ HLS play failed:', err);
+              console.error('HLS play failed:', err);
               setLoading(false);
             });
         });
         
         hls.on(Hls.Events.ERROR, (_, data) => {
-          console.error('❌ HLS error:', data);
+          console.error('HLS error:', data);
           if (data.fatal) {
             setLoading(false);
             setPlaying(false);
-            // 尝试恢复
             if (retryCountRef.current < maxRetries) {
               retryCountRef.current++;
-              console.log(`🔄 Retrying HLS (${retryCountRef.current}/${maxRetries})...`);
+              console.log(`Retrying HLS (${retryCountRef.current}/${maxRetries})...`);
               hls.recoverMediaError();
             }
           }
@@ -118,98 +251,104 @@ export function useAudioPlayer() {
         
         hlsRef.current = hls;
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari 原生支持
-        console.log('📺 Using native HLS (Safari)');
+        console.log('Using native HLS (Safari)');
         audio.src = station.url;
         audio.play()
           .then(() => {
-            console.log('🎵 Native HLS playback started');
+            console.log('Native HLS playback started');
             setLoading(false);
             setPlaying(true);
           })
           .catch(err => {
-            console.error('❌ Native HLS play failed:', err);
+            console.error('Native HLS play failed:', err);
             setLoading(false);
           });
       } else {
-        console.error('❌ HLS not supported');
+        console.error('HLS not supported');
         setLoading(false);
       }
     } else {
       // MP3 流
-      console.log('📻 Loading MP3 stream');
+      console.log('Loading MP3 stream');
       audio.src = station.url;
       audio.load();
       
       audio.play()
         .then(() => {
-          console.log('🎵 MP3 playback started');
+          console.log('MP3 playback started');
           setLoading(false);
           setPlaying(true);
         })
         .catch(err => {
-          console.error('❌ MP3 play failed:', err);
+          console.error('MP3 play failed:', err);
           setLoading(false);
-          // 重试
           if (retryCountRef.current < maxRetries) {
             retryCountRef.current++;
-            console.log(`🔄 Retrying MP3 (${retryCountRef.current}/${maxRetries})...`);
+            console.log(`Retrying MP3 (${retryCountRef.current}/${maxRetries})...`);
             retryTimeoutRef.current = setTimeout(() => {
               audio.play().catch(e => console.error('Retry failed:', e));
             }, 1000 * retryCountRef.current);
           }
         });
     }
-  }, [cleanup, volume, isMuted, setLoading, setPlaying]);
+  }, [cleanup, volume, isMuted, setLoading, setPlaying, updateMediaSession]);
 
   // 初始化音频元素
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    console.log('🔊 Initializing audio player');
+    console.log('Initializing audio player');
     const audio = new Audio();
     audio.preload = 'auto';
     audio.volume = volume;
     audioRef.current = audio;
     
+    // 设置 Media Session 处理器
+    setupMediaSessionHandlers();
+    
     // 音频事件
     const handleCanPlay = () => {
-      console.log('✅ Audio can play');
+      console.log('Audio can play');
       setLoading(false);
     };
     
     const handlePlaying = () => {
-      console.log('🎵 Audio is playing');
+      console.log('Audio is playing');
       setLoading(false);
       setPlaying(true);
+      updateMediaSessionPlaybackState(true);
+    };
+    
+    const handlePause = () => {
+      updateMediaSessionPlaybackState(false);
     };
     
     const handleWaiting = () => {
-      console.log('⏳ Audio waiting for data');
+      console.log('Audio waiting for data');
       setLoading(true);
     };
     
     const handleError = (e: Event) => {
       const audioEl = e.target as HTMLAudioElement;
       const error = audioEl?.error;
-      console.error('❌ Audio error:', error?.code, error?.message);
+      console.error('Audio error:', error?.code, error?.message);
       setLoading(false);
     };
     
     const handleEnded = () => {
-      console.log('🔚 Audio ended, reconnecting...');
-      // 直播流不应该结束，如果结束则重连
+      console.log('Audio ended, reconnecting...');
       if (currentStation && currentStation.type !== 'bilibili') {
         setTimeout(() => loadStation(currentStation), 2000);
       }
     };
     
     const handleStalled = () => {
-      console.log('⚠️ Audio stalled');
+      console.log('Audio stalled');
     };
     
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('pause', handlePause);
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
@@ -218,6 +357,7 @@ export function useAudioPlayer() {
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('ended', handleEnded);
@@ -232,9 +372,9 @@ export function useAudioPlayer() {
     if (currentStation && audioRef.current) {
       loadStation(currentStation);
     }
-  }, [currentStation?.id]); // 只在电台ID变化时重新加载
+  }, [currentStation?.id]);
 
-  // 监听播放状态变化（手动暂停/播放）
+  // 监听播放状态变化
   useEffect(() => {
     if (!audioRef.current || !currentStation) return;
     
@@ -243,9 +383,13 @@ export function useAudioPlayer() {
         console.error('Play failed:', err);
         setPlaying(false);
       });
+      requestWakeLock();
     } else {
       audioRef.current.pause();
+      releaseWakeLock();
     }
+    
+    updateMediaSessionPlaybackState(isPlaying);
   }, [isPlaying]);
 
   // 监听音量变化

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, useCallback } from 'react';
+import { useEffect, useSyncExternalStore, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Github, Headphones, Sparkles, Zap, Globe, Keyboard, Heart, Play, Pause, ExternalLink, Coffee, MoonStar, Waves, Music4, Clock, Target, Volume2, ChevronRight } from 'lucide-react';
+import { Sun, Moon, Github, Headphones, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { FloatingPlayer } from '@/components/lofi/floating-player';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -17,87 +17,93 @@ function useMounted() {
   return useSyncExternalStore(() => () => {}, () => true, () => false);
 }
 
-// 动画变体
+// 动画变体 - 简化版
 const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
 const stagger = {
-  visible: { transition: { staggerChildren: 0.15 } },
+  visible: { transition: { staggerChildren: 0.1 } },
 };
 
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
 };
 
-// 浮动粒子
-const FloatingParticles = ({ isDark }: { isDark: boolean }) => {
+// 浮动粒子 - 使用 CSS 动画，减少数量
+const FloatingParticles = memo(({ isDark }: { isDark: boolean }) => {
+  // 预计算粒子位置，避免每次渲染重新计算
+  const particles = useMemo(() => 
+    [...Array(8)].map((_, i) => ({
+      id: i,
+      width: 2 + (i % 3),
+      height: 2 + (i % 3),
+      left: (i * 12.5) + Math.random() * 5,
+      top: 10 + (i * 10) + Math.random() * 5,
+      delay: i * 0.5,
+      duration: 6 + (i % 4),
+    })), []
+  );
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full"
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full animate-float"
           style={{
-            width: Math.random() * 4 + 2,
-            height: Math.random() * 4 + 2,
+            width: p.width,
+            height: p.height,
             background: isDark 
-              ? `rgba(139, 92, 246, ${Math.random() * 0.3 + 0.1})`
-              : `rgba(139, 92, 246, ${Math.random() * 0.2 + 0.05})`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, Math.random() * 20 - 10, 0],
-            opacity: [0.3, 0.8, 0.3],
-          }}
-          transition={{
-            duration: Math.random() * 5 + 5,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-            ease: 'easeInOut',
+              ? `rgba(139, 92, 246, ${0.1 + (p.id % 3) * 0.05})`
+              : `rgba(139, 92, 246, ${0.05 + (p.id % 3) * 0.03})`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
           }}
         />
       ))}
     </div>
   );
-};
+});
+FloatingParticles.displayName = 'FloatingParticles';
 
-// 流动渐变背景
-const GradientOrb = ({ color1, color2, size, top, left, delay = 0 }: { 
+// 流动渐变背景 - 使用 CSS 动画替代 Framer Motion
+const GradientOrb = memo(({ 
+  color1, 
+  color2, 
+  size, 
+  top, 
+  left, 
+  delay = 0,
+  duration = 15 
+}: { 
   color1: string; 
   color2: string; 
   size: number; 
   top: string; 
   left: string;
   delay?: number;
+  duration?: number;
 }) => (
-  <motion.div
-    className="absolute rounded-full blur-[80px] sm:blur-[100px]"
+  <div
+    className="absolute rounded-full animate-orb blur-[60px] sm:blur-[80px]"
     style={{
       width: size,
       height: size,
       top,
       left,
       background: `linear-gradient(135deg, ${color1}, ${color2})`,
-    }}
-    animate={{
-      scale: [1, 1.2, 1],
-      opacity: [0.15, 0.25, 0.15],
-      x: [0, 30, 0],
-      y: [0, -20, 0],
-    }}
-    transition={{
-      duration: 10,
-      repeat: Infinity,
-      delay,
-      ease: 'easeInOut',
+      opacity: 0.12,
+      animationDelay: `${delay}s`,
+      animationDuration: `${duration}s`,
     }}
   />
-);
+));
+GradientOrb.displayName = 'GradientOrb';
 
 // 特性数据
 const features = [
@@ -109,21 +115,21 @@ const features = [
     gradient: 'from-violet-500 to-purple-500',
   },
   {
-    icon: Target,
+    icon: Sparkles,
     title: '专注计时',
     description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光',
     color: '#EC4899',
     gradient: 'from-pink-500 to-rose-500',
   },
   {
-    icon: Globe,
+    icon: Waves,
     title: '在线收听',
     description: '无需下载安装，打开网页即可享受高品质音乐，支持 PWA 离线使用',
     color: '#06B6D4',
     gradient: 'from-cyan-500 to-teal-500',
   },
   {
-    icon: Keyboard,
+    icon: Headphones,
     title: '快捷键支持',
     description: 'Space 播放/暂停，方向键切歌，M 静音，T 切换主题，让你的操作更高效',
     color: '#F59E0B',
@@ -148,6 +154,275 @@ const shortcuts = [
   { key: 'T', label: '切换主题' },
 ];
 
+// 导航栏组件 - 药丸胶囊形式
+const NavBar = memo(({ 
+  isDark, 
+  isPlaying, 
+  currentStation, 
+  stationColor,
+  onThemeToggle,
+  theme
+}: { 
+  isDark: boolean; 
+  isPlaying: boolean; 
+  currentStation: typeof stations[0] | null;
+  stationColor: string;
+  onThemeToggle: () => void;
+  theme: string | undefined;
+}) => (
+  <motion.nav 
+    className="fixed top-4 left-1/2 -translate-x-1/2 z-40"
+    initial={{ y: -20, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ duration: 0.5 }}
+  >
+    <div 
+      className={cn(
+        "flex items-center gap-2 px-2 py-1.5 rounded-full",
+        "backdrop-blur-xl shadow-lg border",
+        isDark 
+          ? "bg-black/50 border-white/[0.08]" 
+          : "bg-white/70 border-black/[0.05]"
+      )}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-2 py-1">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
+        >
+          <Headphones className="w-4 h-4 text-white" />
+        </div>
+        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white" : "text-zinc-900")}>
+          Lofi Radio
+        </span>
+      </div>
+
+      {/* 分隔线 */}
+      <div className={cn("w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+
+      {/* 播放状态指示 */}
+      <AnimatePresence>
+        {isPlaying && currentStation && (
+          <motion.div
+            initial={{ opacity: 0, width: 0, marginRight: 0 }}
+            animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
+            exit={{ opacity: 0, width: 0, marginRight: 0 }}
+            className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full overflow-hidden"
+            style={{ 
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            }}
+          >
+            <motion.div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: stationColor }}
+              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/70" : "text-zinc-600")}>
+              {currentStation.name}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 主题切换 */}
+      <motion.button
+        onClick={onThemeToggle}
+        className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+          isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
+        )}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <AnimatePresence mode="wait">
+          {isDark ? (
+            <motion.div
+              key="sun"
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Sun className="w-4 h-4" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="moon"
+              initial={{ rotate: 90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: -90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Moon className="w-4 h-4" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+
+      {/* 分隔线 */}
+      <div className={cn("w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+
+      {/* GitHub */}
+      <motion.a
+        href="https://github.com/88lin/lofi-radio-web"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+          isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
+        )}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <Github className="w-4 h-4" />
+      </motion.a>
+    </div>
+  </motion.nav>
+));
+NavBar.displayName = 'NavBar';
+
+// 特性卡片组件
+const FeatureCard = memo(({ 
+  feature, 
+  isDark 
+}: { 
+  feature: typeof features[0];
+  isDark: boolean;
+}) => (
+  <motion.div
+    variants={scaleIn}
+    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+    className={cn(
+      "relative p-5 rounded-2xl transition-all duration-300 overflow-hidden group",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:shadow-lg"
+    )}
+  >
+    {/* Hover 光效 */}
+    <div
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      style={{
+        background: `radial-gradient(circle at 50% 0%, ${feature.color}10 0%, transparent 60%)`,
+      }}
+    />
+    
+    {/* 图标容器 */}
+    <div
+      className={cn(
+        "relative w-11 h-11 rounded-xl flex items-center justify-center mb-4",
+        `bg-gradient-to-br ${feature.gradient}`
+      )}
+    >
+      <feature.icon className="w-5 h-5 text-white" />
+    </div>
+    
+    <h3 className={cn(
+      "relative text-base font-semibold mb-1.5",
+      isDark ? "text-white" : "text-zinc-900"
+    )}>
+      {feature.title}
+    </h3>
+    <p className={cn(
+      "relative text-sm leading-relaxed",
+      isDark ? "text-white/40" : "text-zinc-600"
+    )}>
+      {feature.description}
+    </p>
+  </motion.div>
+));
+FeatureCard.displayName = 'FeatureCard';
+
+// 场景卡片组件
+const SceneCard = memo(({ 
+  scene, 
+  isDark 
+}: { 
+  scene: typeof scenes[0];
+  isDark: boolean;
+}) => (
+  <motion.div
+    variants={scaleIn}
+    whileHover={{ y: -3 }}
+    className={cn(
+      "p-4 rounded-2xl text-center transition-all",
+      isDark ? "bg-white/[0.03]" : "bg-white shadow-sm"
+    )}
+  >
+    <div className="text-2xl mb-2">{scene.icon}</div>
+    <h4 className={cn(
+      "font-semibold text-sm mb-0.5",
+      isDark ? "text-white" : "text-zinc-900"
+    )}>
+      {scene.title}
+    </h4>
+    <p className={cn(
+      "text-xs",
+      isDark ? "text-white/40" : "text-zinc-500"
+    )}>
+      {scene.description}
+    </p>
+  </motion.div>
+));
+SceneCard.displayName = 'SceneCard';
+
+// 电台卡片组件
+const StationCard = memo(({ 
+  station, 
+  isDark,
+  onClick
+}: { 
+  station: typeof stations[0];
+  isDark: boolean;
+  onClick: () => void;
+}) => (
+  <motion.div
+    variants={scaleIn}
+    whileHover={{ y: -3, scale: 1.01 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className={cn(
+      "relative p-3.5 rounded-xl cursor-pointer overflow-hidden group",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:shadow-lg"
+    )}
+    style={{
+      borderLeft: `3px solid ${station.color}`,
+    }}
+  >
+    {/* Hover 背景光效 */}
+    <div
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      style={{
+        background: `linear-gradient(135deg, ${station.color}08 0%, transparent 50%)`,
+      }}
+    />
+    
+    <div className="relative flex items-center gap-3">
+      <div 
+        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ background: `${station.color}15` }}
+      >
+        <Waves className="w-4 h-4" style={{ color: station.color }} />
+      </div>
+      <div className="min-w-0">
+        <h4 className={cn(
+          "text-sm font-medium truncate",
+          isDark ? "text-white" : "text-zinc-900"
+        )}>
+          {station.name}
+        </h4>
+        <span className={cn(
+          "text-xs",
+          isDark ? "text-white/30" : "text-zinc-500"
+        )}>
+          {station.style1}
+        </span>
+      </div>
+    </div>
+  </motion.div>
+));
+StationCard.displayName = 'StationCard';
+
 export default function Home() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
@@ -169,6 +444,11 @@ export default function Home() {
     selectStationById(stationId);
     setMiniMode(false);
   }, [selectStationById, setMiniMode]);
+
+  // 主题切换
+  const handleThemeToggle = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
   
   // 键盘快捷键
   useEffect(() => {
@@ -194,18 +474,17 @@ export default function Home() {
           break;
         case 'KeyT':
           e.preventDefault();
-          setTheme(theme === 'dark' ? 'light' : 'dark');
+          handleThemeToggle();
           break;
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [theme, setTheme, togglePlay, nextStation, prevStation, toggleMute]);
-  
-  if (!mounted) return null;
-  
-  const isDark = resolvedTheme === 'dark';
+  }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
+
+  // 避免闪屏 - 在未挂载时显示基础结构
+  const isDark = mounted ? resolvedTheme === 'dark' : true;
   const stationColor = currentStation?.color || '#8B5CF6';
   
   return (
@@ -215,19 +494,19 @@ export default function Home() {
         {/* 纯色背景 */}
         <div
           className={cn(
-            "absolute inset-0 transition-colors duration-700",
+            "absolute inset-0 transition-colors duration-500",
             isDark ? "bg-zinc-950" : "bg-gray-50"
           )}
         />
         
-        {/* 流动渐变光球 */}
-        <GradientOrb color1="#8B5CF6" color2="#D946EF" size={500} top="-10%" left="5%" delay={0} />
-        <GradientOrb color1="#06B6D4" color2="#8B5CF6" size={400} top="60%" left="60%" delay={2} />
-        <GradientOrb color1="#EC4899" color2="#F59E0B" size={300} top="80%" left="10%" delay={4} />
+        {/* 流动渐变光球 - 减少 blur */}
+        <GradientOrb color1="#8B5CF6" color2="#D946EF" size={400} top="-5%" left="5%" delay={0} duration={20} />
+        <GradientOrb color1="#06B6D4" color2="#8B5CF6" size={350} top="50%" left="55%" delay={3} duration={18} />
+        <GradientOrb color1="#EC4899" color2="#F59E0B" size={280} top="75%" left="10%" delay={6} duration={22} />
         
         {/* 网格图案 */}
         <div 
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: `
               linear-gradient(${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px),
@@ -243,126 +522,15 @@ export default function Home() {
       
       {/* 内容 */}
       <div className="relative z-10">
-        {/* 导航栏 */}
-        <motion.nav 
-          className="fixed top-0 left-0 right-0 z-40"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div 
-            className={cn(
-              "max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between",
-              "backdrop-blur-xl border-b",
-              isDark 
-                ? "bg-zinc-950/60 border-white/5" 
-                : "bg-white/60 border-black/5"
-            )}
-          >
-            {/* Logo */}
-            <motion.div
-              className="flex items-center gap-2.5 group cursor-pointer"
-              whileHover={{ scale: 1.02 }}
-            >
-              <motion.div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <Headphones className="w-5 h-5 text-white relative z-10" />
-                <motion.div
-                  className="absolute inset-0 bg-white/20"
-                  initial={{ x: '-100%', y: '-100%' }}
-                  whileHover={{ x: '100%', y: '100%' }}
-                  transition={{ duration: 0.4 }}
-                />
-              </motion.div>
-              <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-zinc-900")}>
-                Lofi Radio
-              </span>
-            </motion.div>
-            
-            {/* 操作按钮 */}
-            <div className="flex items-center gap-1.5">
-              {/* 播放状态指示 */}
-              <AnimatePresence>
-                {isPlaying && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                    animate={{ opacity: 1, scale: 1, width: 'auto' }}
-                    exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                    className="hidden sm:flex items-center gap-2 mr-2 px-3 py-1.5 rounded-full overflow-hidden"
-                    style={{ 
-                      background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                    }}
-                  >
-                    <motion.div
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: stationColor }}
-                      animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    />
-                    <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/70" : "text-zinc-600")}>
-                      {currentStation?.name}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className={cn(
-                    "rounded-full h-9 w-9",
-                    isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
-                  )}
-                >
-                  <AnimatePresence mode="wait">
-                    {isDark ? (
-                      <motion.div
-                        key="sun"
-                        initial={{ rotate: -90, opacity: 0 }}
-                        animate={{ rotate: 0, opacity: 1 }}
-                        exit={{ rotate: 90, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Sun className="w-5 h-5" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="moon"
-                        initial={{ rotate: 90, opacity: 0 }}
-                        animate={{ rotate: 0, opacity: 1 }}
-                        exit={{ rotate: -90, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <MoonStar className="w-5 h-5" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Button>
-              </motion.div>
-              
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  asChild
-                  className={cn(
-                    "rounded-full h-9 w-9",
-                    isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
-                  )}
-                >
-                  <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
-                    <Github className="w-5 h-5" />
-                  </a>
-                </Button>
-              </motion.div>
-            </div>
-          </div>
-        </motion.nav>
+        {/* 导航栏 - 药丸胶囊形式 */}
+        <NavBar 
+          isDark={isDark}
+          isPlaying={isPlaying}
+          currentStation={currentStation}
+          stationColor={stationColor}
+          onThemeToggle={handleThemeToggle}
+          theme={theme}
+        />
         
         {/* Hero Section */}
         <section className="pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6">
@@ -373,27 +541,26 @@ export default function Home() {
               variants={stagger}
             >
               {/* 标签 */}
-              <motion.div variants={fadeInUp} className="mb-6">
-                <motion.span
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium cursor-pointer"
+              <motion.div variants={fadeInUp} className="mb-5">
+                <span
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors"
                   style={{
                     background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.08)',
                     color: isDark ? '#a78bfa' : '#7c3aed',
                     border: isDark ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.12)',
                   }}
-                  whileHover={{ scale: 1.05, backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.12)' }}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   网页版全新上线
                   <ExternalLink className="w-3 h-3 opacity-50" />
-                </motion.span>
+                </span>
               </motion.div>
               
               {/* 标题 */}
               <motion.h1
                 variants={fadeInUp}
                 className={cn(
-                  "text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6",
+                  "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-5",
                   isDark ? "text-white" : "text-zinc-900"
                 )}
               >
@@ -408,7 +575,7 @@ export default function Home() {
               <motion.p
                 variants={fadeInUp}
                 className={cn(
-                  "text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed",
+                  "text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed",
                   isDark ? "text-white/50" : "text-zinc-600"
                 )}
               >
@@ -418,53 +585,45 @@ export default function Home() {
               </motion.p>
               
               {/* 操作按钮 */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                   <Button
                     size="lg"
                     onClick={() => {
                       togglePlay();
                       if (!isPlaying) setMiniMode(false);
                     }}
-                    className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium shadow-lg transition-all relative overflow-hidden group"
+                    className="w-full sm:w-auto rounded-full px-7 h-11 sm:h-12 text-sm font-medium shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                   >
-                    {/* 按钮内光效 */}
-                    <motion.div
-                      className="absolute inset-0 bg-white/20"
-                      initial={{ x: '-100%' }}
-                      whileHover={{ x: '100%' }}
-                      transition={{ duration: 0.5 }}
-                    />
-                    
                     {isPlaying ? (
                       <>
-                        <Pause className="w-5 h-5 mr-2 relative z-10" />
-                        <span className="relative z-10">正在播放</span>
+                        <Pause className="w-4 h-4 mr-2" />
+                        <span>正在播放</span>
                       </>
                     ) : (
                       <>
-                        <Play className="w-5 h-5 mr-2 relative z-10" />
-                        <span className="relative z-10">开始播放</span>
+                        <Play className="w-4 h-4 mr-2" />
+                        <span>开始播放</span>
                       </>
                     )}
                   </Button>
                 </motion.div>
                 
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                   <Button
                     variant="outline"
                     size="lg"
                     className={cn(
-                      "w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium group",
+                      "w-full sm:w-auto rounded-full px-7 h-11 sm:h-12 text-sm font-medium group",
                       isDark && "border-white/20 text-white hover:bg-white/10"
                     )}
                     asChild
                   >
                     <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
-                      <Github className="w-5 h-5 mr-2" />
+                      <Github className="w-4 h-4 mr-2" />
                       查看源码
-                      <ExternalLink className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="w-3.5 h-3.5 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
                     </a>
                   </Button>
                 </motion.div>
@@ -475,17 +634,17 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              className="mt-12"
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mt-10"
             >
               <div className={cn(
-                "inline-flex flex-wrap items-center justify-center gap-3 sm:gap-5 px-6 py-3 rounded-2xl",
-                isDark ? "bg-white/[0.03]" : "bg-black/[0.02]"
+                "inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-5 py-2.5 rounded-2xl",
+                isDark ? "bg-white/[0.02]" : "bg-black/[0.02]"
               )}>
                 {shortcuts.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="flex items-center gap-1.5">
                     <kbd className={cn(
-                      "px-2 py-1 rounded-lg text-xs font-mono shadow-sm",
+                      "px-1.5 py-0.5 rounded-md text-xs font-mono",
                       isDark ? "bg-white/10 text-white/60" : "bg-black/5 text-zinc-600"
                     )}>
                       {item.key}
@@ -502,19 +661,18 @@ export default function Home() {
             <AnimatePresence>
               {isPlaying && currentStation && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                  exit={{ opacity: 0, y: 15, scale: 0.95 }}
                   transition={{ type: 'spring', damping: 20 }}
-                  className="mt-8"
+                  className="mt-6"
                 >
                   <motion.div
-                    className="inline-flex items-center gap-3 px-5 py-3 rounded-full cursor-pointer"
+                    className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full cursor-pointer"
                     style={{
-                      background: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)',
-                      backdropFilter: 'blur(20px)',
-                      border: `1px solid ${stationColor}30`,
-                      boxShadow: `0 0 30px ${stationColor}20`,
+                      background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
+                      backdropFilter: 'blur(12px)',
+                      border: `1px solid ${stationColor}25`,
                     }}
                     onClick={() => setMiniMode(false)}
                     whileHover={{ scale: 1.02 }}
@@ -522,25 +680,25 @@ export default function Home() {
                   >
                     {/* 唱片旋转图标 */}
                     <motion.div
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      className="w-7 h-7 rounded-full flex items-center justify-center"
                       style={{ background: `${stationColor}20` }}
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                      transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                     >
-                      <Music4 className="w-4 h-4" style={{ color: stationColor }} />
+                      <Music4 className="w-3.5 h-3.5" style={{ color: stationColor }} />
                     </motion.div>
                     
                     <div className="flex flex-col">
-                      <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-zinc-900")}>
+                      <span className={cn("text-xs font-medium", isDark ? "text-white" : "text-zinc-900")}>
                         正在播放
                       </span>
-                      <span className={cn("text-xs", isDark ? "text-white/50" : "text-zinc-500")}>
+                      <span className={cn("text-[10px]", isDark ? "text-white/50" : "text-zinc-500")}>
                         {currentStation.name}
                       </span>
                     </div>
                     
                     <span
-                      className="text-xs px-2.5 py-1 rounded-full font-medium"
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                       style={{ 
                         background: `${stationColor}20`,
                         color: stationColor,
@@ -550,10 +708,10 @@ export default function Home() {
                     </span>
                     
                     <motion.div
-                      className="w-2 h-2 rounded-full ml-1"
+                      className="w-1.5 h-1.5 rounded-full"
                       style={{ background: stationColor }}
-                      animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
+                      animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
                     />
                   </motion.div>
                 </motion.div>
@@ -563,23 +721,23 @@ export default function Home() {
         </section>
         
         {/* Features Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6">
+        <section className="py-12 sm:py-20 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-12"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-10"
             >
               <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
+                "text-xl sm:text-2xl font-bold mb-2",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 为什么选择 Lofi Radio
               </h2>
               <p className={cn(
-                "text-sm sm:text-base max-w-xl mx-auto",
+                "text-sm max-w-xl mx-auto",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 专为专注设计，让音乐成为你工作和学习的最佳伴侣
@@ -589,85 +747,35 @@ export default function Home() {
             <motion.div
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
+              viewport={{ once: true, margin: "-50px" }}
               variants={stagger}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
             >
-              {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  variants={scaleIn}
-                  whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                  className={cn(
-                    "relative p-6 rounded-2xl transition-all duration-300 overflow-hidden group",
-                    isDark ? "bg-white/[0.03] hover:bg-white/[0.06]" : "bg-white hover:shadow-lg"
-                  )}
-                  style={{
-                    boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  {/* Hover 光效 */}
-                  <motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      background: `radial-gradient(circle at 50% 0%, ${feature.color}12 0%, transparent 60%)`,
-                    }}
-                  />
-                  
-                  {/* 图标容器 */}
-                  <motion.div
-                    className={cn(
-                      "relative w-12 h-12 rounded-xl flex items-center justify-center mb-5",
-                      `bg-gradient-to-br ${feature.gradient}`
-                    )}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
-                    <feature.icon className="w-6 h-6 text-white" />
-                    <motion.div
-                      className="absolute inset-0 rounded-xl bg-white/20"
-                      initial={{ x: '-100%', y: '-100%' }}
-                      whileHover={{ x: '100%', y: '100%' }}
-                      transition={{ duration: 0.4 }}
-                    />
-                  </motion.div>
-                  
-                  <h3 className={cn(
-                    "relative text-lg font-semibold mb-2",
-                    isDark ? "text-white" : "text-zinc-900"
-                  )}>
-                    {feature.title}
-                  </h3>
-                  <p className={cn(
-                    "relative text-sm leading-relaxed",
-                    isDark ? "text-white/40" : "text-zinc-600"
-                  )}>
-                    {feature.description}
-                  </p>
-                </motion.div>
+              {features.map((feature) => (
+                <FeatureCard key={feature.title} feature={feature} isDark={isDark} />
               ))}
             </motion.div>
           </div>
         </section>
         
         {/* 使用场景 Section */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6">
+        <section className="py-12 sm:py-16 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-10"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-8"
             >
               <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
+                "text-xl sm:text-2xl font-bold mb-2",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 适用场景
               </h2>
               <p className={cn(
-                "text-sm sm:text-base",
+                "text-sm",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 无论学习、工作还是放松，总有一个电台适合你
@@ -679,55 +787,33 @@ export default function Home() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={stagger}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
             >
-              {scenes.map((scene, index) => (
-                <motion.div
-                  key={index}
-                  variants={scaleIn}
-                  whileHover={{ y: -4 }}
-                  className={cn(
-                    "p-5 rounded-2xl text-center transition-all",
-                    isDark ? "bg-white/[0.03]" : "bg-white shadow-sm"
-                  )}
-                >
-                  <div className="text-3xl mb-3">{scene.icon}</div>
-                  <h4 className={cn(
-                    "font-semibold mb-1",
-                    isDark ? "text-white" : "text-zinc-900"
-                  )}>
-                    {scene.title}
-                  </h4>
-                  <p className={cn(
-                    "text-xs",
-                    isDark ? "text-white/40" : "text-zinc-500"
-                  )}>
-                    {scene.description}
-                  </p>
-                </motion.div>
+              {scenes.map((scene) => (
+                <SceneCard key={scene.title} scene={scene} isDark={isDark} />
               ))}
             </motion.div>
           </div>
         </section>
         
         {/* 电台展示 */}
-        <section className="py-16 sm:py-20 px-4 sm:px-6">
+        <section className="py-12 sm:py-16 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-10"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-8"
             >
               <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
+                "text-xl sm:text-2xl font-bold mb-2",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 精选电台
               </h2>
               <p className={cn(
-                "text-sm sm:text-base",
+                "text-sm",
                 isDark ? "text-white/40" : "text-zinc-600"
               )}>
                 涵盖多种风格，总有适合你的音乐
@@ -739,54 +825,15 @@ export default function Home() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={stagger}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
             >
-              {stations.slice(0, 8).map((station, index) => (
-                <motion.div
-                  key={station.id}
-                  variants={scaleIn}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+              {stations.slice(0, 8).map((station) => (
+                <StationCard 
+                  key={station.id} 
+                  station={station} 
+                  isDark={isDark}
                   onClick={() => handleStationClick(station.id)}
-                  className={cn(
-                    "relative p-4 rounded-xl cursor-pointer overflow-hidden group",
-                    isDark ? "bg-white/[0.03] hover:bg-white/[0.06]" : "bg-white hover:shadow-lg"
-                  )}
-                  style={{
-                    borderLeft: `3px solid ${station.color}`,
-                  }}
-                >
-                  {/* Hover 背景光效 */}
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{
-                      background: `linear-gradient(135deg, ${station.color}08 0%, transparent 50%)`,
-                    }}
-                  />
-                  
-                  <div className="relative flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${station.color}15` }}
-                    >
-                      <Waves className="w-5 h-5" style={{ color: station.color }} />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className={cn(
-                        "text-sm font-medium truncate",
-                        isDark ? "text-white" : "text-zinc-900"
-                      )}>
-                        {station.name}
-                      </h4>
-                      <span className={cn(
-                        "text-xs",
-                        isDark ? "text-white/30" : "text-zinc-500"
-                      )}>
-                        {station.style1}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
+                />
               ))}
             </motion.div>
             
@@ -795,12 +842,13 @@ export default function Home() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-center mt-8"
+              className="text-center mt-6"
             >
               <Button
                 variant="outline"
+                size="sm"
                 className={cn(
-                  "rounded-full gap-2",
+                  "rounded-full gap-1.5",
                   isDark && "border-white/20 text-white hover:bg-white/10"
                 )}
                 onClick={() => setMiniMode(false)}
@@ -813,64 +861,54 @@ export default function Home() {
         </section>
         
         {/* CTA Section */}
-        <section className="py-20 sm:py-28 px-4 sm:px-6">
+        <section className="py-16 sm:py-24 px-4 sm:px-6">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
             className="max-w-3xl mx-auto text-center"
           >
             <div
-              className="relative p-8 sm:p-12 rounded-3xl overflow-hidden"
+              className="relative p-6 sm:p-10 rounded-3xl overflow-hidden"
               style={{
                 background: isDark 
-                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(217, 70, 239, 0.05) 100%)'
-                  : 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(217, 70, 239, 0.04) 100%)',
-                border: isDark ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.12)',
+                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(217, 70, 239, 0.04) 100%)'
+                  : 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(217, 70, 239, 0.03) 100%)',
+                border: isDark ? '1px solid rgba(139, 92, 246, 0.15)' : '1px solid rgba(139, 92, 246, 0.1)',
               }}
             >
-              {/* 背景装饰 */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <motion.div
-                  className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl"
-                  style={{ background: 'rgba(139, 92, 246, 0.2)' }}
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
-              </div>
-              
               <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-4 relative",
+                "text-xl sm:text-2xl font-bold mb-3 relative",
                 isDark ? "text-white" : "text-zinc-900"
               )}>
                 开始你的专注之旅
               </h2>
               <p className={cn(
-                "text-sm sm:text-base mb-8 relative max-w-xl mx-auto",
+                "text-sm mb-6 relative max-w-xl mx-auto",
                 isDark ? "text-white/50" : "text-zinc-600"
               )}>
                 无需注册，无需下载，打开网页即可享受高品质的专注音乐。让 Lofi Radio 成为你每天工作学习的最佳伴侣。
               </p>
               
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="relative">
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
                 <Button
                   size="lg"
                   onClick={() => {
                     togglePlay();
                     if (!isPlaying) setMiniMode(false);
                   }}
-                  className="rounded-full px-10 h-14 text-base font-medium shadow-lg"
+                  className="rounded-full px-8 h-12 text-sm font-medium shadow-lg"
                   style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                 >
                   {isPlaying ? (
                     <>
-                      <Pause className="w-5 h-5 mr-2" />
+                      <Pause className="w-4 h-4 mr-2" />
                       正在播放
                     </>
                   ) : (
                     <>
-                      <Play className="w-5 h-5 mr-2" />
+                      <Play className="w-4 h-4 mr-2" />
                       立即开始
                     </>
                   )}
@@ -882,41 +920,35 @@ export default function Home() {
         
         {/* 底部 */}
         <footer className={cn(
-          "py-10 px-4 sm:px-6",
+          "py-8 px-4 sm:px-6",
           isDark ? "border-t border-white/5" : "border-t border-zinc-100"
         )}>
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <motion.div 
-                className={cn("flex items-center gap-2 text-sm", isDark ? "text-white/40" : "text-zinc-500")}
-                whileHover={{ scale: 1.02 }}
-              >
-                <Heart className="w-4 h-4 text-pink-500" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className={cn("flex items-center gap-1.5 text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
                 <span>Made with love for focus lovers</span>
-              </motion.div>
+              </div>
               
-              <div className={cn("flex items-center gap-4 text-sm", isDark ? "text-white/40" : "text-zinc-500")}>
-                <motion.a
+              <div className={cn("flex items-center gap-3 text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
+                <a
                   href="https://github.com/88lin/lofi-radio-web"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-current transition-colors flex items-center gap-1.5"
-                  whileHover={{ scale: 1.05 }}
+                  className="hover:text-current transition-colors flex items-center gap-1"
                 >
-                  <Github className="w-4 h-4" />
+                  <Github className="w-3.5 h-3.5" />
                   本项目
-                </motion.a>
-                <span className={isDark ? "text-white/20" : "text-zinc-300"}>·</span>
-                <motion.a
+                </a>
+                <span className={isDark ? "text-white/20" : "text-zinc-300"}>|</span>
+                <a
                   href="https://github.com/labilio/lofi-radio"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-current transition-colors flex items-center gap-1.5"
-                  whileHover={{ scale: 1.05 }}
+                  className="hover:text-current transition-colors"
                 >
                   原项目
-                </motion.a>
-                <span className={isDark ? "text-white/20" : "text-zinc-300"}>·</span>
+                </a>
+                <span className={isDark ? "text-white/20" : "text-zinc-300"}>|</span>
                 <span>MIT License</span>
               </div>
             </div>
