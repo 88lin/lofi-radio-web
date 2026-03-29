@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, Headphones, X, Sparkles, Music4, Music, Music2 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, Headphones, X, Sparkles, Music4 } from 'lucide-react';
 import { useAudioStore } from '@/store/audioStore';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
 import { stations, categories, getFilteredStations, Station } from '@/lib/stations';
@@ -57,13 +57,13 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
         ))}
       </div>
       
-      {/* 中心标签 - 音乐符号 */}
+      {/* 中心标签 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '22%',
+          inset: '25%',
           background: `
-            radial-gradient(circle at 35% 35%, ${color}40 0%, transparent 50%),
+            radial-gradient(circle at 35% 35%, ${color}50 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
           `,
           boxShadow: `
@@ -73,16 +73,16 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        <Music className="w-5 h-5 text-white/90" />
+        <Headphones className="w-4 h-4 text-white/85" />
       </div>
       
-      {/* 中心小圆点装饰 */}
+      {/* 中心孔 */}
       <div
         className="absolute rounded-full"
         style={{
-          inset: '46%',
-          background: `radial-gradient(circle, ${color}60 0%, ${color}30 100%)`,
-          boxShadow: `0 0 8px ${color}40`
+          inset: '44%',
+          background: 'radial-gradient(circle, #000 0%, #151515 100%)',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)'
         }}
       />
     </div>
@@ -399,9 +399,6 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   const { focusTime } = useFocusTimer();
   const stationColor = currentStation?.color || '#8B5CF6';
   const [showStationList, setShowStationList] = useState(false);
-  const { selectedCategory, setSelectedCategory } = useAudioStore();
-  
-  const filteredStations = getFilteredStations(selectedCategory);
   
   const handleStationSelect = useCallback((station: Station) => {
     selectStationById(station.id);
@@ -409,10 +406,10 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   
   return (
     <div 
-      className="relative w-full h-full flex flex-col overflow-hidden"
+      className="relative w-full h-full flex overflow-hidden"
       style={{ background: 'rgb(13, 13, 13)' }}
     >
-      {/* 背景渐变 */}
+      {/* 背景渐变 + 模糊效果 */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -423,219 +420,153 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
         }}
       />
       
-      {/* 顶部栏 */}
-      <div className="relative z-20 flex items-center justify-between px-4 py-3">
-        <button
-          onClick={onClose}
-          className="w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] transition-all duration-200"
-        >
-          <X className="w-4 h-4 text-white/70" />
-        </button>
-        
-        <div className="flex items-center gap-2">
-          <div
-            className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
-            style={{ 
-              background: stationColor,
-              boxShadow: `0 0 8px ${stationColor}`
-            }}
-          />
-          <span className="text-white/60 text-sm font-medium">Lofi Radio</span>
-        </div>
-        
-        <button
-          onClick={() => setShowStationList(true)}
-          className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] transition-all duration-200"
-        >
-          <List className="w-4 h-4 text-white/70" />
-        </button>
-      </div>
-      
-      {/* 主内容区 */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 overflow-hidden">
-        {/* 唱片容器 */}
-        <motion.div 
-          onClick={togglePlay}
-          className="cursor-pointer mb-4"
-          animate={{ 
-            scale: isPlaying ? 1 : 0.95,
-          }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        >
-          <VinylRecord isPlaying={isPlaying} size={160} color={stationColor} />
-        </motion.div>
-        
-        {/* 歌曲信息 */}
-        <div className="text-center mb-4">
-          <h3 className="text-white text-lg sm:text-xl font-bold mb-1 truncate max-w-[280px]">
-            {currentStation?.name || 'Lofi Radio'}
-          </h3>
-          <p className="text-white/40 text-sm mb-3">专注音乐，触手可及</p>
-          
-          {/* 标签 */}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {currentStation?.style1 && (
-              <span
-                className="px-3 py-1 rounded-full text-xs font-medium"
-                style={{
-                  background: `${stationColor}20`,
-                  color: stationColor
-                }}
-              >
-                {currentStation.style1}
-              </span>
-            )}
-            {currentStation?.scene && (
-              <span className="px-3 py-1 rounded-full text-xs bg-white/[0.06] text-white/50">
-                {currentStation.scene}
-              </span>
-            )}
-          </div>
-        </div>
-        
-        {/* 播放控制 */}
-        <div className="flex items-center justify-center gap-6 mb-4">
-          <button
-            onClick={prevStation}
-            className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
-          >
-            <SkipBack className="w-5 h-5 text-white/60" />
-          </button>
-          
-          <button
+      {/* 主内容区 - 桌面端左右布局 */}
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* 左侧：播放器主体 */}
+        <div className="flex-1 flex flex-col min-w-0 flex items-center justify-center">
+          {/* 唱片容器 - 添加缩放动画 */}
+          <motion.div 
             onClick={togglePlay}
-            className="w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-200 hover:scale-105"
-            style={{ 
-              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
-              boxShadow: `0 8px 32px ${stationColor}40`
+            className="cursor-pointer mb-6"
+            animate={{ 
+              scale: isPlaying ? 1 : 0.95,
             }}
-            disabled={isLoading}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 text-white animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-6 h-6 text-white" />
-            ) : (
-              <Play className="w-6 h-6 text-white ml-0.5" />
-            )}
-          </button>
+            <VinylRecord isPlaying={isPlaying} size={180} color={stationColor} />
+          </motion.div>
           
-          <button
-            onClick={nextStation}
-            className="w-11 h-11 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
-          >
-            <SkipForward className="w-5 h-5 text-white/60" />
-          </button>
-        </div>
-        
-        {/* 音量控制 */}
-        <div className="w-full max-w-[280px] mb-3">
+          {/* 歌曲信息 */}
+          <div className="text-center mb-6 px-6">
+            <h3 className="text-white text-xl sm:text-2xl font-bold mb-2 truncate max-w-sm">
+              {currentStation?.name || 'Lofi Radio'}
+            </h3>
+            <p className="text-white/40 text-sm mb-4">专注音乐，触手可及</p>
+            
+            {/* 标签 */}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {currentStation?.style1 && (
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-medium"
+                  style={{
+                    background: `${stationColor}20`,
+                    color: stationColor
+                  }}
+                >
+                  {currentStation.style1}
+                </span>
+              )}
+              {currentStation?.scene && (
+                <span className="px-3 py-1 rounded-full text-xs bg-white/[0.06] text-white/50">
+                  {currentStation.scene}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* 播放控制 */}
+          <div className="flex items-center justify-center gap-8 mb-6">
+            <button
+              onClick={prevStation}
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
+            >
+              <SkipBack className="w-5 h-5 text-white/60" />
+            </button>
+            
+            <button
+              onClick={togglePlay}
+              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-200 hover:scale-105"
+              style={{ 
+                background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
+                boxShadow: `0 8px 32px ${stationColor}40`
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="w-7 h-7 text-white animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="w-7 h-7 text-white" />
+              ) : (
+                <Play className="w-7 h-7 text-white ml-0.5" />
+              )}
+            </button>
+            
+            <button
+              onClick={nextStation}
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
+            >
+              <SkipForward className="w-5 h-5 text-white/60" />
+            </button>
+          </div>
+          
+          {/* 音量控制 */}
+          <div className="w-full max-w-xs mb-4">
+            <div 
+              className="px-4 py-3 rounded-2xl"
+              style={{ background: 'rgba(255, 255, 255, 0.04)' }}
+            >
+              <VolumeSlider
+                volume={volume}
+                isMuted={isMuted}
+                onVolumeChange={setVolume}
+                onMuteToggle={toggleMute}
+                stationColor={stationColor}
+              />
+            </div>
+          </div>
+          
+          {/* 专注时间 */}
           <div 
-            className="px-3 py-2.5 rounded-2xl"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
             style={{ background: 'rgba(255, 255, 255, 0.04)' }}
           >
-            <VolumeSlider
-              volume={volume}
-              isMuted={isMuted}
-              onVolumeChange={setVolume}
-              onMuteToggle={toggleMute}
-              stationColor={stationColor}
-            />
+            <Sparkles className="w-3.5 h-3.5 text-white/30" />
+            <span className="text-white/40 text-xs">今日专注</span>
+            <span 
+              className="text-xs font-semibold tabular-nums"
+              style={{ color: stationColor }}
+            >
+              {focusTime} 分钟
+            </span>
           </div>
+          
+          {/* 移动端电台列表按钮 */}
+          <button
+            onClick={() => setShowStationList(true)}
+            className="lg:hidden mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          >
+            <List className="w-4 h-4 text-white/60" />
+            <span className="text-white/60 text-sm">电台列表</span>
+          </button>
         </div>
         
-        {/* 专注时间 */}
+        {/* 右侧：电台列表 - 桌面端固定显示 */}
         <div 
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-          style={{ background: 'rgba(255, 255, 255, 0.04)' }}
+          className="hidden lg:flex w-80 flex-col border-l border-white/[0.06]"
+          style={{ background: 'rgba(0, 0, 0, 0.3)' }}
         >
-          <Sparkles className="w-3.5 h-3.5 text-white/30" />
-          <span className="text-white/40 text-xs">今日专注</span>
-          <span 
-            className="text-xs font-semibold tabular-nums"
-            style={{ color: stationColor }}
-          >
-            {focusTime} 分钟
-          </span>
+          <StationList onClose={() => {}} onSelect={handleStationSelect} />
         </div>
       </div>
       
-      {/* 底部：电台列表 - 桌面端横向显示 */}
-      <div className="hidden lg:flex flex-col border-t border-white/[0.06]" style={{ background: 'rgba(0, 0, 0, 0.3)' }}>
-        {/* 分类标签 */}
-        <div className="px-4 py-2 border-b border-white/[0.04]">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
-                  selectedCategory === cat.id
-                    ? "text-white"
-                    : "text-white/60 hover:text-white/80 bg-white/[0.06] hover:bg-white/[0.1]"
-                )}
-                style={{
-                  background: selectedCategory === cat.id
-                    ? `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`
-                    : undefined,
-                  boxShadow: selectedCategory === cat.id
-                    ? `0 4px 15px ${stationColor}30`
-                    : undefined,
-                }}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* 电台横向列表 */}
-        <div className="flex gap-3 p-4 overflow-x-auto no-scrollbar">
-          {filteredStations.map((station) => {
-            const isActive = currentStation?.id === station.id;
-            return (
-              <button
-                key={station.id}
-                onClick={() => handleStationSelect(station)}
-                className={cn(
-                  "flex-shrink-0 p-3 rounded-2xl transition-all w-40 text-left",
-                  isActive 
-                    ? "bg-white/[0.1]" 
-                    : "bg-white/[0.04] hover:bg-white/[0.08]"
-                )}
-                style={{
-                  borderLeft: isActive ? `3px solid ${station.color}` : '3px solid transparent',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: `${station.color}15` }}
-                  >
-                    {isActive && isPlaying ? (
-                      <div
-                        className="w-3 h-3 rounded-full animate-pulse"
-                        style={{ background: station.color }}
-                      />
-                    ) : (
-                      <Music4 className="w-4 h-4" style={{ color: station.color }} />
-                    )}
-                  </div>
-                  <span className={cn(
-                    "text-sm font-medium truncate flex-1",
-                    isActive ? "text-white" : "text-white/80"
-                  )}>
-                    {station.name}
-                  </span>
-                </div>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50">
-                  {station.style1}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      {/* 关闭按钮 - 固定在左上角 */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200"
+      >
+        <Minimize2 className="w-4 h-4 text-white/60" />
+      </button>
+      
+      {/* 播放状态指示 */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <div
+          className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
+          style={{ 
+            background: stationColor,
+            boxShadow: `0 0 8px ${stationColor}`
+          }}
+        />
+        <span className="text-white/50 text-sm font-medium">Lofi Radio</span>
       </div>
       
       {/* 移动端电台列表弹窗 */}
