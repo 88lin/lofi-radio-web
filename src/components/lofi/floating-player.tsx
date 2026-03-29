@@ -388,7 +388,7 @@ const StationList = memo(({ onClose, onSelect, initialScene }: { onClose: () => 
 });
 StationList.displayName = 'StationList';
 
-// ==================== 全屏播放器 ====================
+// ==================== 全屏播放器 - 灵感来自HeoMusic ====================
 const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   const {
     isPlaying, isLoading, currentStation, volume, isMuted,
@@ -402,102 +402,83 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   
   const handleStationSelect = useCallback((station: Station) => {
     selectStationById(station.id);
-    setShowStationList(false);
   }, [selectStationById]);
   
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {/* 背景渐变 */}
+    <div 
+      className="relative w-full h-full flex overflow-hidden"
+      style={{ background: 'rgb(13, 13, 13)' }}
+    >
+      {/* 背景渐变 + 模糊效果 */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 z-0"
         style={{
           background: `
-            radial-gradient(ellipse 70% 40% at 20% -5%, ${stationColor}10 0%, transparent 50%),
-            radial-gradient(ellipse 50% 30% at 80% 105%, ${stationColor}06 0%, transparent 50%),
-            linear-gradient(180deg, rgba(15, 15, 18, 0.98) 0%, rgba(10, 10, 12, 0.99) 100%)
+            radial-gradient(ellipse 100% 80% at 50% -20%, ${stationColor}12 0%, transparent 50%),
+            radial-gradient(ellipse 80% 60% at 80% 120%, ${stationColor}08 0%, transparent 50%)
           `
         }}
       />
       
-      {/* 顶部导航 */}
-      <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
-        >
-          <Minimize2 className="w-4 h-4 text-white/50" />
-        </button>
-        
-        <div className="flex items-center gap-2">
-          <div
-            className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
-            style={{ 
-              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
+      {/* 主内容区 - 桌面端左右布局 */}
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* 左侧：播放器主体 */}
+        <div className="flex-1 flex flex-col min-w-0 flex items-center justify-center">
+          {/* 唱片容器 - 添加缩放动画 */}
+          <motion.div 
+            onClick={togglePlay}
+            className="cursor-pointer mb-6"
+            animate={{ 
+              scale: isPlaying ? 1 : 0.95,
             }}
-          />
-          <h2 className="text-white/70 font-medium text-sm">Lofi Radio</h2>
-        </div>
-        
-        <button
-          onClick={() => setShowStationList(true)}
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
-        >
-          <List className="w-4 h-4 text-white/50" />
-        </button>
-      </div>
-      
-      {/* 主内容区 */}
-      <div className="relative flex-1 flex flex-col overflow-hidden">
-        {/* 当前播放区域 */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
-          {/* 唱片 */}
-          <div onClick={togglePlay} className="mb-5">
-            <VinylRecord isPlaying={isPlaying} size={140} color={stationColor} />
-          </div>
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <VinylRecord isPlaying={isPlaying} size={180} color={stationColor} />
+          </motion.div>
           
-          {/* 信息 */}
-          <div className="text-center mb-5">
-            <h3 className="text-white text-xl sm:text-2xl font-bold mb-1.5">
+          {/* 歌曲信息 */}
+          <div className="text-center mb-6 px-6">
+            <h3 className="text-white text-xl sm:text-2xl font-bold mb-2 truncate max-w-sm">
               {currentStation?.name || 'Lofi Radio'}
             </h3>
-            <p className="text-white/30 text-xs mb-3">专注音乐，触手可及</p>
+            <p className="text-white/40 text-sm mb-4">专注音乐，触手可及</p>
             
             {/* 标签 */}
             <div className="flex items-center justify-center gap-2 flex-wrap">
               {currentStation?.style1 && (
                 <span
-                  className="px-2.5 py-1 rounded-full text-xs font-medium"
+                  className="px-3 py-1 rounded-full text-xs font-medium"
                   style={{
-                    background: `${stationColor}15`,
+                    background: `${stationColor}20`,
                     color: stationColor
                   }}
                 >
                   {currentStation.style1}
                 </span>
               )}
-              {currentStation?.style2 && (
-                <span className="px-2.5 py-1 rounded-full text-xs bg-white/[0.05] text-white/50">
-                  {currentStation.style2}
+              {currentStation?.scene && (
+                <span className="px-3 py-1 rounded-full text-xs bg-white/[0.06] text-white/50">
+                  {currentStation.scene}
                 </span>
               )}
             </div>
           </div>
           
           {/* 播放控制 */}
-          <div className="flex items-center justify-center gap-6 mb-6">
+          <div className="flex items-center justify-center gap-8 mb-6">
             <button
               onClick={prevStation}
-              className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
             >
-              <SkipBack className="w-5 h-5 text-white/50" />
+              <SkipBack className="w-5 h-5 text-white/60" />
             </button>
             
             <button
               onClick={togglePlay}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center relative overflow-hidden"
+              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-200 hover:scale-105"
               style={{ 
-                background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
-                boxShadow: `0 8px 30px ${stationColor}30`
+                background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
+                boxShadow: `0 8px 32px ${stationColor}40`
               }}
               disabled={isLoading}
             >
@@ -512,15 +493,18 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
             
             <button
               onClick={nextStation}
-              className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200 hover:scale-105"
             >
-              <SkipForward className="w-5 h-5 text-white/50" />
+              <SkipForward className="w-5 h-5 text-white/60" />
             </button>
           </div>
           
           {/* 音量控制 */}
-          <div className="w-full max-w-xs px-4">
-            <div className="px-4 py-3 rounded-xl bg-white/[0.02]">
+          <div className="w-full max-w-xs mb-4">
+            <div 
+              className="px-4 py-3 rounded-2xl"
+              style={{ background: 'rgba(255, 255, 255, 0.04)' }}
+            >
               <VolumeSlider
                 volume={volume}
                 isMuted={isMuted}
@@ -532,51 +516,87 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
           </div>
           
           {/* 专注时间 */}
-          <div className="mt-6 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.02]">
-              <Sparkles className="w-3.5 h-3.5 text-white/30" />
-              <span className="text-white/30 text-xs">今日专注</span>
-              <span 
-                className="text-xs font-semibold tabular-nums"
-                style={{ color: stationColor }}
-              >
-                {focusTime} 分钟
-              </span>
-            </div>
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ background: 'rgba(255, 255, 255, 0.04)' }}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-white/30" />
+            <span className="text-white/40 text-xs">今日专注</span>
+            <span 
+              className="text-xs font-semibold tabular-nums"
+              style={{ color: stationColor }}
+            >
+              {focusTime} 分钟
+            </span>
           </div>
+          
+          {/* 移动端电台列表按钮 */}
+          <button
+            onClick={() => setShowStationList(true)}
+            className="lg:hidden mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          >
+            <List className="w-4 h-4 text-white/60" />
+            <span className="text-white/60 text-sm">电台列表</span>
+          </button>
         </div>
         
-        {/* 电台列表按钮 - 桌面端侧边栏 */}
-        <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-72 border-l border-white/[0.04] bg-black/20">
-          <StationList onClose={() => setShowStationList(false)} onSelect={handleStationSelect} />
+        {/* 右侧：电台列表 - 桌面端固定显示 */}
+        <div 
+          className="hidden lg:flex w-80 flex-col border-l border-white/[0.06]"
+          style={{ background: 'rgba(0, 0, 0, 0.3)' }}
+        >
+          <StationList onClose={() => {}} onSelect={handleStationSelect} />
         </div>
+      </div>
+      
+      {/* 关闭按钮 - 固定在左上角 */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.12] transition-all duration-200"
+      >
+        <Minimize2 className="w-4 h-4 text-white/60" />
+      </button>
+      
+      {/* 播放状态指示 */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <div
+          className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
+          style={{ 
+            background: stationColor,
+            boxShadow: `0 0 8px ${stationColor}`
+          }}
+        />
+        <span className="text-white/50 text-sm font-medium">Lofi Radio</span>
       </div>
       
       {/* 移动端电台列表弹窗 */}
       <AnimatePresence>
         {showStationList && (
-          <div className="lg:hidden fixed inset-0 z-50">
-            <motion.div 
-              className="absolute inset-0 bg-black/60"
+          <motion.div 
+            className="lg:hidden fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div 
+              className="absolute inset-0 bg-black/70"
               onClick={() => setShowStationList(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
             />
             <motion.div
-              className="absolute inset-x-0 bottom-0 h-[75vh] rounded-t-2xl overflow-hidden bg-gradient-to-b from-zinc-900/95 to-black/98"
+              className="absolute inset-x-0 bottom-0 h-[80vh] rounded-t-3xl overflow-hidden"
+              style={{ background: 'rgb(20, 20, 22)' }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
               {/* 拖动指示器 */}
-              <div className="flex justify-center pt-2.5 pb-1.5">
-                <div className="w-9 h-1 rounded-full bg-white/20" />
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 rounded-full bg-white/20" />
               </div>
               <StationList onClose={() => setShowStationList(false)} onSelect={handleStationSelect} />
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -694,29 +714,33 @@ export function FloatingPlayer() {
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const lastTapRef = useRef<number>(0);
   
-  // 灵动岛边界约束 - 精致版尺寸
+  // 灵动岛边界约束 - 严格边界防止越界
   useEffect(() => {
     const updateConstraints = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       
-      // 灵动岛尺寸 - 紧凑精致
+      // 灵动岛尺寸
       const islandWidth = windowWidth < 640 ? 200 : 220;
-      const islandHeight = windowWidth < 640 ? 44 : 48;
-      const padding = 12;
+      const islandHeight = windowWidth < 640 ? 46 : 50;
+      // 边距 - 确保不越界
+      const padding = 16;
+      const topPadding = 80; // 顶部留出导航空间
       
+      // 计算边界
       const leftLimit = padding;
-      const rightLimit = windowWidth - islandWidth - padding;
-      const topLimit = padding + 70;
-      const bottomLimit = windowHeight - islandHeight - padding - 20;
+      const rightLimit = Math.max(padding, windowWidth - islandWidth - padding);
+      const topLimit = topPadding;
+      const bottomLimit = Math.max(topPadding, windowHeight - islandHeight - padding - 60);
       
+      // 初始位置
       const initialX = (windowWidth - islandWidth) / 2;
-      const initialY = 80;
+      const initialY = topPadding + 10;
       
       setConstraints({
         left: leftLimit - initialX,
         right: rightLimit - initialX,
-        top: topLimit - initialY,
+        top: 0, // 相对于初始位置，向下为正
         bottom: bottomLimit - initialY
       });
       
@@ -784,7 +808,7 @@ export function FloatingPlayer() {
             className={cn("fixed pointer-events-auto z-50", isDragging ? "cursor-grabbing" : "cursor-grab")}
             style={{ 
               left: '50%', 
-              top: '80px',
+              top: '90px',
               marginLeft: '-110px',
               x: position.x,
               y: position.y,
