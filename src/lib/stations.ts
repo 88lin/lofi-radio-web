@@ -21,7 +21,7 @@ export const stations: Station[] = [
     style1: 'Lo-fi',
     style2: 'Chill',
     custom: '最稳定',
-    color: '#8B5CF6'
+    color: '#10B981'
   },
   {
     id: 'lofi-box',
@@ -32,7 +32,7 @@ export const stations: Station[] = [
     style1: 'Lo-fi',
     style2: 'Chill',
     custom: '高性能',
-    color: '#A78BFA'
+    color: '#14B8A6'
   },
   {
     id: 'groove-salad',
@@ -42,7 +42,7 @@ export const stations: Station[] = [
     url: 'https://ice1.somafm.com/groovesalad-128-mp3',
     style1: 'Chill',
     style2: 'Ambient',
-    color: '#10B981'
+    color: '#06B6D4'
   },
   {
     id: 'chill-sky',
@@ -52,7 +52,7 @@ export const stations: Station[] = [
     url: 'http://chill.radioca.st/stream',
     style1: 'Chill',
     style2: 'Electro',
-    color: '#06B6D4'
+    color: '#0EA5E9'
   },
   {
     id: 'jazz-box',
@@ -62,7 +62,7 @@ export const stations: Station[] = [
     url: 'https://boxradio-edge-01.streamafrica.net/jazz',
     style1: 'Jazz',
     style2: 'Smooth',
-    color: '#D946EF'
+    color: '#F59E0B'
   },
   {
     id: 'chill-wave',
@@ -82,7 +82,7 @@ export const stations: Station[] = [
     url: 'https://stream.radioparadise.com/mellow-128',
     style1: 'Chill',
     style2: 'Alt',
-    color: '#F59E0B'
+    color: '#F97316'
   },
   {
     id: 'rain-sounds',
@@ -92,7 +92,7 @@ export const stations: Station[] = [
     url: 'https://boxradio-edge-01.streamafrica.net/rain',
     style1: 'Ambient',
     style2: 'Nature',
-    color: '#0EA5E9'
+    color: '#22D3EE'
   },
   {
     id: 'asp',
@@ -102,7 +102,7 @@ export const stations: Station[] = [
     url: 'http://radio.stereoscenic.com/asp-s',
     style1: 'Ambient',
     style2: 'Sleep',
-    color: '#6366F1'
+    color: '#3B82F6'
   },
   {
     id: 'drone-zone',
@@ -112,7 +112,7 @@ export const stations: Station[] = [
     url: 'https://ice1.somafm.com/dronezone-128-mp3',
     style1: 'Ambient',
     style2: 'Deep',
-    color: '#64748B'
+    color: '#6366F1'
   },
   {
     id: 'swiss-classic',
@@ -142,7 +142,7 @@ export const stations: Station[] = [
     url: 'http://west-mp3-128.streamthejazzgroove.com/stream',
     style1: 'Jazz',
     style2: 'Groove',
-    color: '#F97316'
+    color: '#EAB308'
   },
   {
     id: 'jazz-smooth',
@@ -152,7 +152,7 @@ export const stations: Station[] = [
     url: 'http://smoothjazz.cdnstream1.com/2585_128.mp3',
     style1: 'Jazz',
     style2: 'Mellow',
-    color: '#A855F7'
+    color: '#FB923C'
   },
   {
     id: 'rap',

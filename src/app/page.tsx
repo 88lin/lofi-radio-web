@@ -154,7 +154,7 @@ const shortcuts = [
   { key: 'T', label: '切换主题' },
 ];
 
-// 导航栏组件 - 药丸胶囊形式
+// 导航栏组件 - 药丸胶囊形式 + 高斯模糊
 const NavBar = memo(({ 
   isDark, 
   isPlaying, 
@@ -178,22 +178,27 @@ const NavBar = memo(({
   >
     <div 
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded-full",
-        "backdrop-blur-xl shadow-lg border",
+        "flex items-center gap-1.5 px-2 py-1.5 rounded-full",
+        "backdrop-blur-2xl shadow-2xl",
         isDark 
-          ? "bg-black/50 border-white/[0.08]" 
-          : "bg-white/70 border-black/[0.05]"
+          ? "bg-zinc-900/60 border border-white/[0.08]" 
+          : "bg-white/70 border border-black/[0.04]"
       )}
+      style={{
+        boxShadow: isDark 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+          : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+      }}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-2 py-1">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
         >
-          <Headphones className="w-4 h-4 text-white" />
+          <Headphones className="w-3.5 h-3.5 text-white" />
         </div>
-        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white" : "text-zinc-900")}>
+        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
           Lofi Radio
         </span>
       </div>
@@ -206,11 +211,11 @@ const NavBar = memo(({
         {isPlaying && currentStation && (
           <motion.div
             initial={{ opacity: 0, width: 0, marginRight: 0 }}
-            animate={{ opacity: 1, width: 'auto', marginRight: 8 }}
+            animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
             exit={{ opacity: 0, width: 0, marginRight: 0 }}
-            className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full overflow-hidden"
+            className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full overflow-hidden"
             style={{ 
-              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
             }}
           >
             <motion.div
@@ -219,7 +224,7 @@ const NavBar = memo(({
               animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/70" : "text-zinc-600")}>
+            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/60" : "text-zinc-600")}>
               {currentStation.name}
             </span>
           </motion.div>
@@ -230,8 +235,8 @@ const NavBar = memo(({
       <motion.button
         onClick={onThemeToggle}
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-          isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
+          "w-7 h-7 rounded-full flex items-center justify-center transition-colors",
+          isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
         )}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -245,7 +250,7 @@ const NavBar = memo(({
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Sun className="w-4 h-4" />
+              <Sun className="w-3.5 h-3.5" />
             </motion.div>
           ) : (
             <motion.div
@@ -255,7 +260,7 @@ const NavBar = memo(({
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Moon className="w-4 h-4" />
+              <Moon className="w-3.5 h-3.5" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -270,13 +275,13 @@ const NavBar = memo(({
         target="_blank"
         rel="noopener noreferrer"
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
-          isDark ? "text-white/70 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-black/5"
+          "w-7 h-7 rounded-full flex items-center justify-center transition-colors",
+          isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
         )}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <Github className="w-4 h-4" />
+        <Github className="w-3.5 h-3.5" />
       </motion.a>
     </div>
   </motion.nav>
@@ -501,7 +506,7 @@ export default function Home() {
 
   // 避免闪屏 - 在未挂载时默认使用暗色主题
   const isDark = mounted ? resolvedTheme === 'dark' : true;
-  const stationColor = currentStation?.color || '#8B5CF6';
+  const stationColor = currentStation?.color || '#10B981';
   
   return (
     <main className="relative min-h-screen overflow-x-hidden">
@@ -561,9 +566,9 @@ export default function Home() {
                 <span
                   className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors"
                   style={{
-                    background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.08)',
-                    color: isDark ? '#a78bfa' : '#7c3aed',
-                    border: isDark ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.12)',
+                    background: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.08)',
+                    color: isDark ? '#34d399' : '#059669',
+                    border: isDark ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(16, 185, 129, 0.12)',
                   }}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -582,7 +587,7 @@ export default function Home() {
               >
                 专注音乐
                 <br />
-                <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
                   触手可及
                 </span>
               </motion.h1>
@@ -610,7 +615,7 @@ export default function Home() {
                       if (!isPlaying) setMiniMode(false);
                     }}
                     className="w-full sm:w-auto rounded-full px-8 h-12 sm:h-14 text-base font-medium shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
+                    style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
                   >
                     {isPlaying ? (
                       <>
@@ -894,9 +899,9 @@ export default function Home() {
               className="relative p-6 sm:p-10 rounded-3xl overflow-hidden"
               style={{
                 background: isDark 
-                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(217, 70, 239, 0.04) 100%)'
-                  : 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(217, 70, 239, 0.03) 100%)',
-                border: isDark ? '1px solid rgba(139, 92, 246, 0.15)' : '1px solid rgba(139, 92, 246, 0.1)',
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)'
+                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 182, 212, 0.03) 100%)',
+                border: isDark ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(16, 185, 129, 0.1)',
               }}
             >
               <h2 className={cn(
@@ -920,7 +925,7 @@ export default function Home() {
                     if (!isPlaying) setMiniMode(false);
                   }}
                   className="rounded-full px-8 h-12 text-sm font-medium shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
+                  style={{ background: 'linear-gradient(135deg, #10B981, #06B6D4)' }}
                 >
                   {isPlaying ? (
                     <>

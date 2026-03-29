@@ -5,29 +5,11 @@ import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
 import Hls from 'hls.js';
 
-// Wake Lock API 类型定义
-interface WakeLockSentinel {
-  released: boolean;
-  release: () => Promise<void>;
-  addEventListener: (event: string, callback: () => void) => void;
-  removeEventListener: (event: string, callback: () => void) => void;
-}
-
-// 扩展 Navigator 类型
-declare global {
-  interface Navigator {
-    wakeLock?: {
-      request: (type: 'screen') => Promise<WakeLockSentinel>;
-    };
-  }
-}
-
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const maxRetries = 3;
   
   const {
@@ -41,48 +23,6 @@ export function useAudioPlayer() {
     prevStation,
     togglePlay,
   } = useAudioStore();
-
-  // Wake Lock - 屏幕常亮
-  const requestWakeLock = useCallback(async () => {
-    if ('wakeLock' in navigator && navigator.wakeLock) {
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-        console.log('🔒 Wake Lock acquired');
-        
-        // 监听释放事件
-        wakeLockRef.current.addEventListener('release', () => {
-          console.log('🔓 Wake Lock released');
-        });
-      } catch (err) {
-        console.log('Wake Lock request failed:', err);
-      }
-    }
-  }, []);
-
-  const releaseWakeLock = useCallback(async () => {
-    if (wakeLockRef.current) {
-      try {
-        await wakeLockRef.current.release();
-        wakeLockRef.current = null;
-      } catch (err) {
-        console.log('Wake Lock release failed:', err);
-      }
-    }
-  }, []);
-
-  // 页面可见性变化时重新获取 Wake Lock
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && isPlaying) {
-        await requestWakeLock();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isPlaying, requestWakeLock]);
 
   // Media Session API - 更新媒体信息
   const updateMediaSession = useCallback((station: Station | null) => {
@@ -209,24 +149,25 @@ export function useAudioPlayer() {
       return;
     }
     
-    // HLS 流
+    // HLS 流 - 优化配置减少功耗
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {
-        console.log('Using HLS.js for m3u8 stream');
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: false, // 关闭低延迟模式减少CPU占用
           startLevel: -1,
+          maxBufferLength: 30, // 减少缓冲区大小
+          maxMaxBufferLength: 60,
+          maxBufferSize: 30 * 1000 * 1000, // 30MB
+          maxBufferHole: 0.5,
         });
         
         hls.loadSource(station.url);
         hls.attachMedia(audio);
         
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log('HLS manifest parsed, starting playback');
           audio.play()
             .then(() => {
-              console.log('HLS playback started');
               setLoading(false);
               setPlaying(true);
             })
@@ -237,13 +178,11 @@ export function useAudioPlayer() {
         });
         
         hls.on(Hls.Events.ERROR, (_, data) => {
-          console.error('HLS error:', data);
           if (data.fatal) {
             setLoading(false);
             setPlaying(false);
             if (retryCountRef.current < maxRetries) {
               retryCountRef.current++;
-              console.log(`Retrying HLS (${retryCountRef.current}/${maxRetries})...`);
               hls.recoverMediaError();
             }
           }
@@ -251,11 +190,9 @@ export function useAudioPlayer() {
         
         hlsRef.current = hls;
       } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-        console.log('Using native HLS (Safari)');
         audio.src = station.url;
         audio.play()
           .then(() => {
-            console.log('Native HLS playback started');
             setLoading(false);
             setPlaying(true);
           })
@@ -264,18 +201,15 @@ export function useAudioPlayer() {
             setLoading(false);
           });
       } else {
-        console.error('HLS not supported');
         setLoading(false);
       }
     } else {
       // MP3 流
-      console.log('Loading MP3 stream');
       audio.src = station.url;
       audio.load();
       
       audio.play()
         .then(() => {
-          console.log('MP3 playback started');
           setLoading(false);
           setPlaying(true);
         })
@@ -284,7 +218,6 @@ export function useAudioPlayer() {
           setLoading(false);
           if (retryCountRef.current < maxRetries) {
             retryCountRef.current++;
-            console.log(`Retrying MP3 (${retryCountRef.current}/${maxRetries})...`);
             retryTimeoutRef.current = setTimeout(() => {
               audio.play().catch(e => console.error('Retry failed:', e));
             }, 1000 * retryCountRef.current);
@@ -297,53 +230,31 @@ export function useAudioPlayer() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    console.log('Initializing audio player');
     const audio = new Audio();
-    audio.preload = 'auto';
+    audio.preload = 'metadata'; // 减少预加载
     audio.volume = volume;
     audioRef.current = audio;
     
-    // 设置 Media Session 处理器
     setupMediaSessionHandlers();
     
-    // 音频事件
-    const handleCanPlay = () => {
-      console.log('Audio can play');
-      setLoading(false);
-    };
-    
+    const handleCanPlay = () => setLoading(false);
     const handlePlaying = () => {
-      console.log('Audio is playing');
       setLoading(false);
       setPlaying(true);
       updateMediaSessionPlaybackState(true);
     };
-    
-    const handlePause = () => {
-      updateMediaSessionPlaybackState(false);
-    };
-    
-    const handleWaiting = () => {
-      console.log('Audio waiting for data');
-      setLoading(true);
-    };
-    
+    const handlePause = () => updateMediaSessionPlaybackState(false);
+    const handleWaiting = () => setLoading(true);
     const handleError = (e: Event) => {
       const audioEl = e.target as HTMLAudioElement;
       const error = audioEl?.error;
       console.error('Audio error:', error?.code, error?.message);
       setLoading(false);
     };
-    
     const handleEnded = () => {
-      console.log('Audio ended, reconnecting...');
       if (currentStation && currentStation.type !== 'bilibili') {
         setTimeout(() => loadStation(currentStation), 2000);
       }
-    };
-    
-    const handleStalled = () => {
-      console.log('Audio stalled');
     };
     
     audio.addEventListener('canplay', handleCanPlay);
@@ -352,7 +263,6 @@ export function useAudioPlayer() {
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('stalled', handleStalled);
     
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
@@ -361,7 +271,6 @@ export function useAudioPlayer() {
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('stalled', handleStalled);
       cleanup();
       audio.pause();
     };
@@ -383,10 +292,8 @@ export function useAudioPlayer() {
         console.error('Play failed:', err);
         setPlaying(false);
       });
-      requestWakeLock();
     } else {
       audioRef.current.pause();
-      releaseWakeLock();
     }
     
     updateMediaSessionPlaybackState(isPlaying);
