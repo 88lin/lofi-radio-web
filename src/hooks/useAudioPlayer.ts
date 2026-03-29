@@ -4,11 +4,25 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
 import Hls from 'hls.js';
+import flvjs from 'flv.js';
+
+// Bilibili 直播流信息接口
+interface BilibiliStreamInfo {
+  success: boolean;
+  room_id: string;
+  title: string;
+  live_status: number;
+  flv_url: string;
+  backup_urls: string[];
+  timestamp: number;
+}
 
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const flvPlayerRef = useRef<flvjs.Player | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
   
@@ -40,7 +54,7 @@ export function useAudioPlayer() {
     });
 
     mediaSession.setPositionState?.({
-      duration: Infinity, // 直播流
+      duration: Infinity,
       playbackRate: 1,
     });
   }, []);
@@ -48,7 +62,6 @@ export function useAudioPlayer() {
   // Media Session API - 设置播放状态
   const updateMediaSessionPlaybackState = useCallback((playing: boolean) => {
     if (!('mediaSession' in navigator)) return;
-    
     navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
   }, []);
 
@@ -58,40 +71,14 @@ export function useAudioPlayer() {
 
     const mediaSession = navigator.mediaSession;
 
-    mediaSession.setActionHandler('play', () => {
-      togglePlay();
-    });
+    mediaSession.setActionHandler('play', () => togglePlay());
+    mediaSession.setActionHandler('pause', () => togglePlay());
+    mediaSession.setActionHandler('previoustrack', () => prevStation());
+    mediaSession.setActionHandler('nexttrack', () => nextStation());
 
-    mediaSession.setActionHandler('pause', () => {
-      togglePlay();
-    });
-
-    mediaSession.setActionHandler('previoustrack', () => {
-      prevStation();
-    });
-
-    mediaSession.setActionHandler('nexttrack', () => {
-      nextStation();
-    });
-
-    // 某些浏览器不支持这些操作，所以用 try-catch
-    try {
-      mediaSession.setActionHandler('seekbackward', () => {
-        prevStation();
-      });
-    } catch {}
-
-    try {
-      mediaSession.setActionHandler('seekforward', () => {
-        nextStation();
-      });
-    } catch {}
-
-    try {
-      mediaSession.setActionHandler('stop', () => {
-        if (isPlaying) togglePlay();
-      });
-    } catch {}
+    try { mediaSession.setActionHandler('seekbackward', () => prevStation()); } catch {}
+    try { mediaSession.setActionHandler('seekforward', () => nextStation()); } catch {}
+    try { mediaSession.setActionHandler('stop', () => { if (isPlaying) togglePlay(); }); } catch {}
   }, [togglePlay, prevStation, nextStation, isPlaying]);
 
   // 清理函数
@@ -100,9 +87,17 @@ export function useAudioPlayer() {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
+    }
+    if (flvPlayerRef.current) {
+      flvPlayerRef.current.destroy();
+      flvPlayerRef.current = null;
     }
     if (audioRef.current) {
       audioRef.current.pause();
@@ -110,6 +105,98 @@ export function useAudioPlayer() {
       audioRef.current.load();
     }
   }, []);
+
+  // 加载 Bilibili 直播流
+  const loadBilibiliStream = useCallback(async (station: Station) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      // 从 URL 提取房间号
+      const urlMatch = station.url.match(/live\.bilibili\.com\/(\d+)/);
+      const roomId = urlMatch ? urlMatch[1] : '27519423';
+
+      console.log('Fetching Bilibili stream for room:', roomId);
+
+      // 通过我们的 API 获取直播流地址
+      const res = await fetch(`/api/bilibili-stream?room_id=${roomId}`);
+      const data: BilibiliStreamInfo = await res.json();
+
+      if (!data.success || !data.flv_url) {
+        console.error('Failed to get Bilibili stream:', data.error || 'Unknown error');
+        setLoading(false);
+        // 跳到下一个电台
+        setTimeout(() => nextStation(), 500);
+        return;
+      }
+
+      console.log('Got Bilibili FLV URL, loading with flv.js...');
+
+      // 检查 flv.js 支持
+      if (!flvjs.isSupported()) {
+        console.error('flv.js is not supported');
+        setLoading(false);
+        setTimeout(() => nextStation(), 500);
+        return;
+      }
+
+      // 创建 flv.js 播放器
+      const flvPlayer = flvjs.createPlayer({
+        type: 'flv',
+        url: data.flv_url,
+        isLive: true,
+        hasAudio: true,
+        hasVideo: false,
+        cors: true,
+      }, {
+        enableWorker: true,
+        enableStashBuffer: false,
+        stashInitialSize: 128,
+        lazyLoad: false,
+      });
+
+      flvPlayer.attachMediaElement(audio);
+      flvPlayer.load();
+
+      // 尝试播放
+      await flvPlayer.play();
+      setLoading(false);
+      setPlaying(true);
+
+      // 保存播放器引用
+      flvPlayerRef.current = flvPlayer;
+
+      // 设置错误处理
+      flvPlayer.on(flvjs.Events.ERROR, (errorType: string, errorDetail: string) => {
+        console.error('FLV player error:', errorType, errorDetail);
+        if (errorType === flvjs.ErrorTypes.NETWORK_ERROR) {
+          // 网络错误，尝试重新加载
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++;
+            setTimeout(() => loadBilibiliStream(station), 2000);
+          } else {
+            setLoading(false);
+            setPlaying(false);
+          }
+        }
+      });
+
+      // 定时刷新流地址（每 5 分钟）
+      refreshTimeoutRef.current = setTimeout(() => {
+        console.log('Refreshing Bilibili stream URL...');
+        if (flvPlayerRef.current) {
+          flvPlayerRef.current.destroy();
+          flvPlayerRef.current = null;
+        }
+        loadBilibiliStream(station);
+      }, 5 * 60 * 1000);
+
+    } catch (error) {
+      console.error('Bilibili stream load error:', error);
+      setLoading(false);
+      setTimeout(() => nextStation(), 500);
+    }
+  }, [setLoading, setPlaying, nextStation]);
 
   // 加载电台
   const loadStation = useCallback((station: Station) => {
@@ -131,28 +218,22 @@ export function useAudioPlayer() {
     // 更新 Media Session
     updateMediaSession(station);
     
-    // Bilibili 类型需要特殊处理，网页版不支持直播流
+    // Bilibili 直播流
     if (station.type === 'bilibili') {
-      console.warn('Bilibili live stream not supported on web, skipping to next station');
-      setLoading(false);
-      // 自动跳到下一个电台
-      setTimeout(() => {
-        const { nextStation } = useAudioStore.getState();
-        nextStation();
-      }, 300);
+      loadBilibiliStream(station);
       return;
     }
     
-    // HLS 流 - 优化配置减少功耗
+    // HLS 流
     if (station.type === 'm3u8') {
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: false, // 关闭低延迟模式减少CPU占用
+          lowLatencyMode: false,
           startLevel: -1,
-          maxBufferLength: 30, // 减少缓冲区大小
+          maxBufferLength: 30,
           maxMaxBufferLength: 60,
-          maxBufferSize: 30 * 1000 * 1000, // 30MB
+          maxBufferSize: 30 * 1000 * 1000,
           maxBufferHole: 0.5,
         });
         
@@ -218,14 +299,14 @@ export function useAudioPlayer() {
           }
         });
     }
-  }, [cleanup, volume, isMuted, setLoading, setPlaying, updateMediaSession]);
+  }, [cleanup, volume, isMuted, setLoading, setPlaying, updateMediaSession, loadBilibiliStream]);
 
   // 初始化音频元素
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const audio = new Audio();
-    audio.preload = 'metadata'; // 减少预加载
+    audio.preload = 'metadata';
     audio.volume = volume;
     audioRef.current = audio;
     
@@ -246,7 +327,7 @@ export function useAudioPlayer() {
       setLoading(false);
     };
     const handleEnded = () => {
-      if (currentStation) {
+      if (currentStation && currentStation.type !== 'bilibili') {
         setTimeout(() => loadStation(currentStation), 2000);
       }
     };
