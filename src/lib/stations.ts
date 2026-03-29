@@ -13,17 +13,6 @@ export interface Station {
 
 export const stations: Station[] = [
   {
-    id: 'lofi-box',
-    name: 'Lofi Box',
-    scene: '学习',
-    type: 'mp3',
-    url: 'https://boxradio-edge-00.streamafrica.net/lofi',
-    style1: 'Lo-fi',
-    style2: 'Chill',
-    custom: '高性能',
-    color: '#A78BFA'
-  },
-  {
     id: 'lofi-girl',
     name: 'Lofi Girl',
     scene: '学习',
@@ -33,6 +22,17 @@ export const stations: Station[] = [
     style2: 'Chill',
     custom: 'B站直播',
     color: '#8B5CF6'
+  },
+  {
+    id: 'lofi-box',
+    name: 'Lofi Box',
+    scene: '学习',
+    type: 'mp3',
+    url: 'https://boxradio-edge-00.streamafrica.net/lofi',
+    style1: 'Lo-fi',
+    style2: 'Chill',
+    custom: '高性能',
+    color: '#A78BFA'
   },
   {
     id: 'groove-salad',
