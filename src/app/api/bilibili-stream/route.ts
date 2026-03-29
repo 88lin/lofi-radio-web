@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 // Bilibili 直播流代理 API
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
