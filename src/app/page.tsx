@@ -190,46 +190,28 @@ const NavBar = memo(({
           : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
       }}
     >
-      {/* 移动端：主题切换按钮 */}
-      <motion.button
-        onClick={onThemeToggle}
-        className={cn(
-          "sm:hidden w-7 h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-          isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
-        )}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <AnimatePresence mode="wait">
-          {isDark ? (
-            <motion.div
-              key="sun"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Sun className="w-3.5 h-3.5" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="moon"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Moon className="w-3.5 h-3.5" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.button>
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-2 py-1">
+        <div
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
+          style={{ 
+            background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)'
+          }}
+        >
+          <Music4 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+        </div>
+        {/* 桌面端显示标题 */}
+        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
+          Lofi Radio
+        </span>
+      </div>
 
-      {/* 分隔线 - 仅移动端 */}
-      <div className={cn("sm:hidden w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      {/* 分隔线 */}
+      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
 
-      {/* 移动端：播放状态指示 - 居中显示歌曲名称 */}
-      <div className="sm:hidden flex-1 flex items-center justify-center gap-2 min-w-0 px-2">
+      {/* 播放状态指示 - 移动端和桌面端都显示，居中 */}
+      <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2">
         {isPlaying && currentStation ? (
           <>
             <motion.div
@@ -238,73 +220,25 @@ const NavBar = memo(({
               animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className={cn("text-xs font-medium truncate", isDark ? "text-white/70" : "text-zinc-700")}>
+            <span className={cn("text-xs font-medium text-center", isDark ? "text-white/60" : "text-zinc-600")}>
               {currentStation.name}
             </span>
           </>
         ) : (
-          <span className={cn("text-xs font-medium", isDark ? "text-white/50" : "text-zinc-500")}>
-            Lofi Radio
+          <span className={cn("text-xs font-medium", isDark ? "text-white/40" : "text-zinc-400")}>
+            未播放
           </span>
         )}
       </div>
 
-      {/* 分隔线 - 仅移动端 */}
-      <div className={cn("sm:hidden w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      {/* 分隔线 */}
+      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
 
-      {/* 移动端：占位保持对称 */}
-      <div className="sm:hidden w-7 h-7 flex-shrink-0" />
-
-      {/* 桌面端布局 */}
-      {/* Logo - 仅桌面端 */}
-      <div className="hidden sm:flex items-center gap-2 px-2 py-1">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
-          style={{ 
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
-            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)'
-          }}
-        >
-          <Music4 className="w-3.5 h-3.5 text-white" />
-        </div>
-        <span className={cn("font-semibold text-sm", isDark ? "text-white/90" : "text-zinc-900")}>
-          Lofi Radio
-        </span>
-      </div>
-
-      {/* 分隔线 - 仅桌面端 */}
-      <div className={cn("hidden sm:block w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
-
-      {/* 播放状态指示 - 仅桌面端 */}
-      <AnimatePresence>
-        {isPlaying && currentStation && (
-          <motion.div
-            initial={{ opacity: 0, width: 0, marginRight: 0 }}
-            animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
-            exit={{ opacity: 0, width: 0, marginRight: 0 }}
-            className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full overflow-hidden"
-            style={{ 
-              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-            }}
-          >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: '#22C55E', boxShadow: '0 0 6px #22C55E' }}
-              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/60" : "text-zinc-600")}>
-              {currentStation.name}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 主题切换 - 仅桌面端 */}
+      {/* 主题切换 */}
       <motion.button
         onClick={onThemeToggle}
         className={cn(
-          "hidden sm:flex w-7 h-7 rounded-full items-center justify-center transition-colors flex-shrink-0",
+          "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
           isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
         )}
         whileHover={{ scale: 1.05 }}
@@ -319,7 +253,7 @@ const NavBar = memo(({
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Sun className="w-3.5 h-3.5" />
+              <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </motion.div>
           ) : (
             <motion.div
@@ -329,16 +263,13 @@ const NavBar = memo(({
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <Moon className="w-3.5 h-3.5" />
+              <Moon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </motion.div>
           )}
         </AnimatePresence>
       </motion.button>
 
-      {/* 分隔线 - 仅桌面端 */}
-      <div className={cn("hidden sm:block w-px h-5", isDark ? "bg-white/10" : "bg-black/10")} />
-
-      {/* GitHub - 仅桌面端 */}
+      {/* GitHub - 仅桌面端显示 */}
       <motion.a
         href="https://github.com/88lin/lofi-radio-web"
         target="_blank"
