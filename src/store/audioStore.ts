@@ -46,8 +46,8 @@ export const useAudioStore = create<AudioState>()(
       isLoading: false,
       volume: 0.3,
       isMuted: false,
-      currentStation: stations[1], // 默认使用 Lofi Box（跳过 Bilibili 源）
-      stationIndex: 1,
+      currentStation: stations[0], // 默认使用第一个电台
+      stationIndex: 0,
       focusTime: 0,
       focusDate: getCurrentDate(),
       isMiniMode: true, // 默认迷你模式，可以点击展开
@@ -94,17 +94,13 @@ export const useAudioStore = create<AudioState>()(
       
       nextStation: () => {
         const { stationIndex } = get();
-        // 跳过 Bilibili 源（索引 0）
-        let newIndex = (stationIndex + 1) % stations.length;
-        if (newIndex === 0) newIndex = 1;
+        const newIndex = (stationIndex + 1) % stations.length;
         get().selectStation(newIndex);
       },
       
       prevStation: () => {
         const { stationIndex } = get();
-        // 跳过 Bilibili 源（索引 0）
-        let newIndex = (stationIndex - 1 + stations.length) % stations.length;
-        if (newIndex === 0) newIndex = stations.length - 1;
+        const newIndex = (stationIndex - 1 + stations.length) % stations.length;
         get().selectStation(newIndex);
       },
       

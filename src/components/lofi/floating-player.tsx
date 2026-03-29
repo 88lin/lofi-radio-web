@@ -73,18 +73,11 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        <Music className="w-10 h-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+        <Music 
+          className="w-10 h-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" 
+          style={{ color: 'rgba(255,255,255,0.95)' }}
+        />
       </div>
-      
-      {/* 中心小孔 - 更小 */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          inset: '48%',
-          background: 'radial-gradient(circle, #000 0%, #1a1a1a 100%)',
-          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8)'
-        }}
-      />
     </div>
   );
 });
@@ -290,15 +283,12 @@ const StationList = memo(({
               className={cn(
                 "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
                 selectedCategory === cat.id
-                  ? "text-white shadow-lg"
+                  ? "text-white"
                   : "text-white/60 hover:text-white/80 bg-white/[0.06] hover:bg-white/[0.1]"
               )}
               style={{
                 background: selectedCategory === cat.id
                   ? `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`
-                  : undefined,
-                boxShadow: selectedCategory === cat.id
-                  ? `0 4px 15px ${stationColor}30`
                   : undefined,
               }}
             >
@@ -435,37 +425,22 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   
   return (
     <div className="relative w-full h-full flex overflow-hidden">
-      {/* 主背景 */}
+      {/* 背景层 - 使用伪元素实现高斯模糊 */}
       <div 
         className="absolute inset-0 z-0"
-        style={{ background: '#0a0a0f' }}
-      />
-      
-      {/* 左上光晕 - 纯色大块 + blur */}
-      <div
-        className="absolute z-0"
         style={{
-          top: '-20%',
-          left: '-10%',
-          width: '60%',
-          height: '60%',
-          background: stationColor,
-          opacity: 0.25,
-          filter: 'blur(150px)',
-        }}
-      />
-      
-      {/* 右下光晕 - 纯色大块 + blur */}
-      <div
-        className="absolute z-0"
-        style={{
-          bottom: '-15%',
-          right: '-10%',
-          width: '50%',
-          height: '50%',
-          background: stationColor,
-          opacity: 0.18,
-          filter: 'blur(120px)',
+          background: `linear-gradient(135deg, 
+            ${stationColor}18 0%, 
+            transparent 30%,
+            transparent 70%,
+            ${stationColor}12 100%
+          ),
+          linear-gradient(45deg,
+            transparent 0%,
+            ${stationColor}08 50%,
+            transparent 100%
+          ),
+          #0a0a0f`
         }}
       />
       
