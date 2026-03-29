@@ -435,33 +435,39 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   
   return (
     <div className="relative w-full h-full flex overflow-hidden">
-      {/* 主背景色 */}
+      {/* 主背景 */}
       <div 
         className="absolute inset-0 z-0"
         style={{ background: '#0a0a0f' }}
       />
       
-      {/* 渐变光晕层 - 两个大面积模糊色块 */}
-      <div className="absolute inset-0 z-0">
-        {/* 左上角主题色光晕 */}
-        <div
-          className="absolute -top-1/4 -left-1/4 w-[900px] h-[900px]"
-          style={{
-            background: `radial-gradient(ellipse at center, ${stationColor} 0%, transparent 70%)`,
-            opacity: 0.35,
-            filter: 'blur(120px)',
-          }}
-        />
-        {/* 右下角主题色光晕 */}
-        <div
-          className="absolute -bottom-1/4 -right-1/4 w-[700px] h-[700px]"
-          style={{
-            background: `radial-gradient(ellipse at center, ${stationColor} 0%, transparent 70%)`,
-            opacity: 0.25,
-            filter: 'blur(100px)',
-          }}
-        />
-      </div>
+      {/* 左上光晕 - 纯色大块 + blur */}
+      <div
+        className="absolute z-0"
+        style={{
+          top: '-20%',
+          left: '-10%',
+          width: '60%',
+          height: '60%',
+          background: stationColor,
+          opacity: 0.25,
+          filter: 'blur(150px)',
+        }}
+      />
+      
+      {/* 右下光晕 - 纯色大块 + blur */}
+      <div
+        className="absolute z-0"
+        style={{
+          bottom: '-15%',
+          right: '-10%',
+          width: '50%',
+          height: '50%',
+          background: stationColor,
+          opacity: 0.18,
+          filter: 'blur(120px)',
+        }}
+      />
       
       {/* 主内容区 - 桌面端左右布局 */}
       <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
