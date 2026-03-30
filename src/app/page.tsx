@@ -461,6 +461,7 @@ export default function Home() {
   const prevStation = useAudioStore((state) => state.prevStation);
   const toggleMute = useAudioStore((state) => state.toggleMute);
   const isPlaying = useAudioStore((state) => state.isPlaying);
+  const isLoading = useAudioStore((state) => state.isLoading);
   const userWantsPlay = useAudioStore((state) => state.userWantsPlay);
   const currentStation = useAudioStore((state) => state.currentStation);
   const setMiniMode = useAudioStore((state) => state.setMiniMode);
@@ -956,15 +957,15 @@ export default function Home() {
                   size="lg"
                   onClick={() => {
                     togglePlay();
-                    if (!isPlaying) setMiniMode(false);
+                    if (!userWantsPlay) setMiniMode(false);
                   }}
                   className="rounded-full px-6 h-11 text-sm font-medium shadow-lg"
                   style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
                 >
-                  {isPlaying ? (
+                  {userWantsPlay ? (
                     <>
                       <Pause className="w-4 h-4 mr-2" />
-                      正在播放
+                      {isLoading ? '加载中...' : '正在播放'}
                     </>
                   ) : (
                     <>

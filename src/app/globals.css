@@ -356,15 +356,6 @@
   box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.5);
 }
 
-/* Smooth Image Loading */
-img {
-  transition: opacity 0.3s ease;
-}
-
-img[loading] {
-  opacity: 0;
-}
-
 /* Button Press Effect */
 .btn-press {
   transition: transform 0.1s ease, box-shadow 0.1s ease;

@@ -36,11 +36,17 @@ export function PWAInstallPrompt() {
       return standalone;
     };
 
-    // 检查是否是 iOS 设备
+    // 检查是否是 iOS 设备（更可靠的检测方式）
     const checkIOS = () => {
+      // 方法1: 检查 User Agent
       const isAppleDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      setIsIOS(isAppleDevice);
-      return isAppleDevice;
+      
+      // 方法2: 检查 iPadOS 桌面模式（iPadOS 13+ 在桌面模式下 UA 不包含 iPad）
+      const isIPadDesktop = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+      
+      const isIOS = isAppleDevice || isIPadDesktop;
+      setIsIOS(isIOS);
+      return isIOS;
     };
 
     // 如果已经安装，不显示提示
