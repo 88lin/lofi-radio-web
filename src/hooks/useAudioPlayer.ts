@@ -86,6 +86,7 @@ export function useAudioPlayer() {
     currentStation,
     volume,
     isMuted,
+    userWantsPlay,
     setPlaying,
     setLoading,
     setError,
@@ -540,25 +541,23 @@ export function useAudioPlayer() {
     }
   }, [currentStation?.id, loadStation]);
 
-  // 监听用户播放意图
+  // 监听用户播放意图 - 订阅 userWantsPlay 变化
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // 从 store 读取最新的用户播放意图
-    const userWantsPlay = useAudioStore.getState().userWantsPlay;
-    
     if (userWantsPlay) {
-      // 如果电台已加载完成，尝试播放
+      // 用户想要播放 - 如果电台已加载完成，尝试播放
       if (currentLoadingIdRef.current === currentStation?.id) {
         const requestId = loadRequestIdRef.current;
         tryPlay(requestId);
       }
     } else {
+      // 用户想要暂停 - 立即暂停
       audio.pause();
       setLoading(false);
     }
-  }, [currentStation, tryPlay, setLoading]);
+  }, [userWantsPlay, currentStation, tryPlay, setLoading]);
 
   // 监听音量变化
   useEffect(() => {
