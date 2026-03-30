@@ -45,6 +45,16 @@ export const stations: Station[] = [
     color: '#10B981'
   },
   {
+    id: 'chill-sky',
+    name: 'Chill Sky',
+    scene: '阅读',
+    type: 'mp3',
+    url: 'http://chill.radioca.st/stream',
+    style1: 'Chill',
+    style2: 'Electro',
+    color: '#06B6D4'
+  },
+  {
     id: 'jazz-box',
     name: 'Jazz Box',
     scene: '阅读',
@@ -83,6 +93,16 @@ export const stations: Station[] = [
     style1: 'Ambient',
     style2: 'Nature',
     color: '#0EA5E9'
+  },
+  {
+    id: 'asp',
+    name: 'ASP',
+    scene: '助眠',
+    type: 'mp3',
+    url: 'http://radio.stereoscenic.com/asp-s',
+    style1: 'Ambient',
+    style2: 'Sleep',
+    color: '#6366F1'
   },
   {
     id: 'drone-zone',
