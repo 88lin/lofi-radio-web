@@ -491,6 +491,14 @@ export function useAudioPlayer() {
     const handleError = (e: Event) => {
       const audioEl = e.target as HTMLAudioElement;
       const error = audioEl?.error;
+      
+      // 如果是 Bilibili 流，忽略 audio 元素的错误（flv.js 会处理）
+      // flvPlayerRef 存在说明正在使用 flv.js
+      if (flvPlayerRef.current) {
+        console.log('[Player] Audio error ignored (using flv.js):', error?.code);
+        return;
+      }
+      
       console.error('[Player] Audio error:', error?.code, error?.message);
       
       if (error) {

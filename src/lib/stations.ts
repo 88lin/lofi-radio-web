@@ -45,17 +45,6 @@ export const stations: Station[] = [
     color: '#10B981'
   },
   {
-    id: 'chill-sky',
-    name: 'Chill Sky',
-    scene: '阅读',
-    type: 'mp3',
-    // 注意：该电台可能不支持 HTTPS，在 HTTPS 页面下可能被浏览器拦截
-    url: 'https://chill.radioca.st/stream',
-    style1: 'Chill',
-    style2: 'Electro',
-    color: '#06B6D4'
-  },
-  {
     id: 'jazz-box',
     name: 'Jazz Box',
     scene: '阅读',
@@ -96,17 +85,6 @@ export const stations: Station[] = [
     color: '#0EA5E9'
   },
   {
-    id: 'asp',
-    name: 'ASP',
-    scene: '助眠',
-    type: 'mp3',
-    // 该电台仅支持 HTTP，在 HTTPS 页面下可能被浏览器拦截
-    url: 'https://radio.stereoscenic.com/asp-s',
-    style1: 'Ambient',
-    style2: 'Sleep',
-    color: '#6366F1'
-  },
-  {
     id: 'drone-zone',
     name: 'Drone Zone',
     scene: '助眠',
@@ -127,21 +105,10 @@ export const stations: Station[] = [
     color: '#84CC16'
   },
   {
-    id: 'bbc-3',
-    name: 'BBC 3',
-    scene: '专注',
-    type: 'm3u8',
-    url: 'https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio=320000.m3u8',
-    style1: 'Classical',
-    style2: 'Arts',
-    color: '#EF4444'
-  },
-  {
     id: 'jazz-groove',
     name: 'Jazz Groove',
     scene: '写作',
     type: 'mp3',
-    // 该电台有 HTTPS 版本
     url: 'https://west-mp3-128.streamthejazzgroove.com/stream',
     style1: 'Jazz',
     style2: 'Groove',
