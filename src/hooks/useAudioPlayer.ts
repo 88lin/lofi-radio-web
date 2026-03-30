@@ -83,7 +83,6 @@ export function useAudioPlayer() {
   const currentLoadingIdRef = useRef<string | null>(null);
 
   const {
-    userWantsPlay,
     currentStation,
     volume,
     isMuted,
@@ -121,6 +120,14 @@ export function useAudioPlayer() {
     // 检查是否是最新请求
     if (requestId !== loadRequestIdRef.current) {
       console.log('[Player] Stale play request, ignoring');
+      return;
+    }
+    
+    // 再次从 store 读取最新的用户意图
+    const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
+    if (!latestUserWantsPlay) {
+      console.log('[Player] User no longer wants to play, skipping');
+      setLoading(false);
       return;
     }
 
@@ -255,7 +262,7 @@ export function useAudioPlayer() {
     }
   }, [setError]);
 
-  // 加载电台 - 带版本控制
+  // 加载电台 - 带版本控制，从 store 读取最新播放意图
   const loadStation = useCallback(async (station: Station) => {
     if (!audioRef.current || !station) return;
 
@@ -295,7 +302,9 @@ export function useAudioPlayer() {
           // 再次检查
           if (requestId !== loadRequestIdRef.current) return;
           
-          if (userWantsPlay) {
+          // 从 store 读取最新的用户播放意图
+          const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
+          if (latestUserWantsPlay) {
             tryPlay(requestId);
           } else {
             setLoading(false);
@@ -323,7 +332,9 @@ export function useAudioPlayer() {
               return;
             }
             
-            if (userWantsPlay) {
+            // 从 store 读取最新的用户播放意图
+            const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
+            if (latestUserWantsPlay) {
               tryPlay(requestId);
             } else {
               setLoading(false);
@@ -372,7 +383,9 @@ export function useAudioPlayer() {
           // 检查请求是否有效
           if (requestId !== loadRequestIdRef.current) return;
           
-          if (userWantsPlay) {
+          // 从 store 读取最新的用户播放意图
+          const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
+          if (latestUserWantsPlay) {
             tryPlay(requestId);
           } else {
             setLoading(false);
@@ -422,7 +435,9 @@ export function useAudioPlayer() {
         // 检查请求是否有效
         if (requestId !== loadRequestIdRef.current) return;
         
-        if (userWantsPlay) {
+        // 从 store 读取最新的用户播放意图
+        const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
+        if (latestUserWantsPlay) {
           tryPlay(requestId);
         } else {
           setLoading(false);
@@ -439,7 +454,7 @@ export function useAudioPlayer() {
     if (!success && requestId === loadRequestIdRef.current) {
       setLoading(false);
     }
-  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setError, userWantsPlay, tryPlay]);
+  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setError, tryPlay]);
 
   // 初始化音频元素
   useEffect(() => {
@@ -530,6 +545,9 @@ export function useAudioPlayer() {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // 从 store 读取最新的用户播放意图
+    const userWantsPlay = useAudioStore.getState().userWantsPlay;
+    
     if (userWantsPlay) {
       // 如果电台已加载完成，尝试播放
       if (currentLoadingIdRef.current === currentStation?.id) {
@@ -540,7 +558,7 @@ export function useAudioPlayer() {
       audio.pause();
       setLoading(false);
     }
-  }, [userWantsPlay, currentStation, tryPlay, setLoading]);
+  }, [currentStation, tryPlay, setLoading]);
 
   // 监听音量变化
   useEffect(() => {

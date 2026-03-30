@@ -411,6 +411,7 @@ StationList.displayName = 'StationList';
 const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   const {
     isPlaying, isLoading, currentStation, volume, isMuted, userWantsPlay,
+    hasError, errorMessage,
     requestPlay, requestPause, toggleMute, setVolume,
     nextStation, prevStation, selectStationById,
   } = useAudioStore();
@@ -498,6 +499,21 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
               )}
             </div>
           </div>
+          
+          {/* 错误提示 */}
+          <AnimatePresence>
+            {hasError && errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20"
+              >
+                <p className="text-red-400 text-sm text-center">{errorMessage}</p>
+                <p className="text-red-400/60 text-xs text-center mt-1">试试切换到其他电台</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* 播放控制 */}
           <div className="flex items-center justify-center gap-8 mb-6">
@@ -648,9 +664,9 @@ FullScreenPlayer.displayName = 'FullScreenPlayer';
 
 // ==================== 迷你灵动岛 - 精致玻璃版 ====================
 const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
-  const { isPlaying, currentStation, isLoading, userWantsPlay, requestPlay, requestPause } = useAudioStore();
+  const { isPlaying, currentStation, isLoading, userWantsPlay, hasError, requestPlay, requestPause } = useAudioStore();
   const { focusTime } = useFocusTimer();
-  const stationColor = currentStation?.color || '#8B5CF6';
+  const stationColor = hasError ? '#EF4444' : (currentStation?.color || '#8B5CF6');
   
   // 切换播放状态
   const togglePlay = useCallback(() => {
@@ -720,8 +736,14 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
             {currentStation?.name || 'Lofi Radio'}
           </span>
           <div className="flex items-center gap-1 text-white/60 text-[10px] sm:text-xs">
-            <Clock className="w-2.5 h-2.5" />
-            <span className="tabular-nums font-medium">{focusTime} min</span>
+            {hasError ? (
+              <span className="text-red-400">播放失败</span>
+            ) : (
+              <>
+                <Clock className="w-2.5 h-2.5" />
+                <span className="tabular-nums font-medium">{focusTime} min</span>
+              </>
+            )}
           </div>
         </div>
         
