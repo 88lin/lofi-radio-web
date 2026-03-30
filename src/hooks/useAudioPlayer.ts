@@ -464,16 +464,16 @@ export function useAudioPlayer() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // 如果电台还没加载完成，不处理
-    if (currentStationIdRef.current !== currentStation?.id) {
-      return;
-    }
-
-    console.log('[Player] isPlaying changed to:', isPlaying);
+    console.log('[Player] isPlaying changed to:', isPlaying, 'station:', currentStation?.name);
 
     if (isPlaying) {
+      // 用户想要播放 - 无论电台是否加载完成都要记录
       userWantsPlayRef.current = true;
-      tryPlay();
+      
+      // 如果电台已加载完成，尝试播放
+      if (currentStationIdRef.current === currentStation?.id) {
+        tryPlay();
+      }
     } else {
       userWantsPlayRef.current = false;
       audio.pause();

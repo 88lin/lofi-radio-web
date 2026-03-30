@@ -423,13 +423,12 @@ img[loading] {
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
-  /* 桌面端滚动阻尼 */
-  scroll-snap-type: y proximity;
 }
 
 /* 桌面端滚动阻尼效果 */
 @media (min-width: 640px) {
   html {
+    scroll-behavior: smooth;
     scroll-snap-type: y proximity;
   }
   
@@ -442,6 +441,11 @@ html {
   section {
     scroll-snap-align: start;
     scroll-snap-stop: normal;
+  }
+  
+  /* footer 也作为停靠点 */
+  footer {
+    scroll-snap-align: start;
   }
 }
 
