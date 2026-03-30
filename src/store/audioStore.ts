@@ -44,7 +44,7 @@ export const useAudioStore = create<AudioState>()(
     (set, get) => ({
       isPlaying: false,
       isLoading: false,
-      volume: 0.3,
+      volume: 0.5, // 默认音量50%
       isMuted: false,
       currentStation: stations[0], // 默认使用第一个电台
       stationIndex: 0,

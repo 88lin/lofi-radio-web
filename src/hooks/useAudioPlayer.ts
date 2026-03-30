@@ -262,8 +262,10 @@ export function useAudioPlayer() {
             setLoading(false);
           }
         } else {
+          // 加载失败，但仍允许用户点击播放
           isLoadingStationRef.current = false;
           setLoading(false);
+          console.log('[Player] Bilibili stream load failed, user can still try to play');
         }
       }
       // HLS 流
@@ -378,7 +380,7 @@ export function useAudioPlayer() {
     
     const audio = new Audio();
     audio.preload = 'metadata';
-    audio.volume = 0.3;
+    audio.volume = 0.5; // 默认音量50%
     audioRef.current = audio;
     
     // playing 事件 - 只有音频真正在播放时才触发
@@ -446,10 +448,16 @@ export function useAudioPlayer() {
     
     // 只有电台 ID 真正改变时才加载
     if (currentStationIdRef.current !== currentStation.id) {
-      console.log('[Player] Station changed to:', currentStation.name);
+      console.log('[Player] Station changed to:', currentStation.name, 'isPlaying:', isPlaying);
+      
+      // 如果当前是播放状态（用户主动切换电台），标记为想要播放
+      if (isPlaying) {
+        userWantsPlayRef.current = true;
+      }
+      
       loadStation(currentStation);
     }
-  }, [currentStation?.id, loadStation]);
+  }, [currentStation?.id, isPlaying, loadStation]);
 
   // 监听播放状态变化 - 控制播放/暂停
   useEffect(() => {

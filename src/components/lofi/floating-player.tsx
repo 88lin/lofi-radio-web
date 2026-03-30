@@ -506,7 +506,6 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
                 background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
                 boxShadow: `0 8px 32px ${stationColor}40`
               }}
-              disabled={isLoading}
             >
               {isLoading ? (
                 <Loader2 className="w-7 h-7 text-white animate-spin" />
@@ -716,7 +715,6 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
             background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
             boxShadow: `0 2px 12px ${stationColor}40`
           }}
-          disabled={isLoading}
         >
           {isLoading ? (
             <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />

@@ -419,21 +419,40 @@ img[loading] {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* Smooth Scroll with Damping */
+/* Smooth Scroll with Damping - 滑动阻尼效果 */
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
+  /* 桌面端滚动阻尼 */
+  scroll-snap-type: y proximity;
 }
 
-/* Desktop scroll damping effect */
+/* 桌面端滚动阻尼效果 */
 @media (min-width: 640px) {
   html {
-    scroll-behavior: smooth;
+    scroll-snap-type: y proximity;
   }
   
   body {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 每个 section 作为滚动停靠点 */
+  section {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+  }
+}
+
+/* 移动端不需要 scroll-snap */
+@media (max-width: 639px) {
+  html {
+    scroll-snap-type: none;
+  }
+  
+  section {
+    scroll-snap-align: none;
   }
 }
 
