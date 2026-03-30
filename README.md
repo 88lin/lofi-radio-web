@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**几乎所有手机都有灵动岛功能，电脑为什么不能有呢？**
+**Lofi 音乐被科学家认为是最适合专注工作学习的音乐**
 
 macOS 风格灵动岛设计，16 个精选电台，打开即用，无需下载
 
