@@ -100,28 +100,19 @@ export function useAudioPlayer() {
   // 尝试播放音频 - 只有真正播放成功才更新状态
   const tryPlay = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio) {
-      console.log('[Player] No audio element');
-      return;
-    }
+    if (!audio) return;
 
-    console.log('[Player] Attempting to play... userWantsPlay:', userWantsPlayRef.current);
-    
     audio.play()
       .then(() => {
-        console.log('[Player] Play promise resolved');
-        // 注意：play() resolve 不代表音频正在播放
+        // play() resolve 不代表音频正在播放
         // 真正的播放状态由 playing 事件处理
       })
       .catch((err) => {
-        console.error('[Player] Play failed:', err.message);
         if (err.name === 'NotAllowedError') {
-          console.log('[Player] Autoplay blocked, waiting for user interaction');
           setPlaying(false);
           setLoading(false);
           userWantsPlayRef.current = true;
         } else {
-          // 其他错误
           setLoading(false);
           setPlaying(false);
         }
@@ -230,8 +221,6 @@ export function useAudioPlayer() {
     // 直接从 store 获取最新的 isPlaying 状态
     const { isPlaying: currentIsPlaying } = useAudioStore.getState();
     
-    console.log('[Player] === Loading station:', station.name, station.type, '=== isPlaying:', currentIsPlaying);
-    
     // 如果当前是播放状态，标记用户想要播放
     if (currentIsPlaying) {
       userWantsPlayRef.current = true;
@@ -261,21 +250,16 @@ export function useAudioPlayer() {
           // 等待数据准备好
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          console.log('[Player] Bilibili: ready, userWantsPlay:', userWantsPlayRef.current);
-          
           // 如果用户想要播放，尝试播放
           if (userWantsPlayRef.current) {
-            console.log('[Player] Bilibili: user wants play, calling tryPlay');
             tryPlay();
           } else {
-            console.log('[Player] Bilibili: user does not want play, just setLoading(false)');
             setLoading(false);
           }
         } else {
           // 加载失败，但仍允许用户点击播放
           isLoadingStationRef.current = false;
           setLoading(false);
-          console.log('[Player] Bilibili stream load failed, user can still try to play');
         }
       }
       // HLS 流
@@ -291,16 +275,13 @@ export function useAudioPlayer() {
           hls.attachMedia(audio);
           
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            console.log('[Player] HLS manifest parsed, userWantsPlay:', userWantsPlayRef.current);
             currentStationIdRef.current = station.id;
             isLoadingStationRef.current = false;
             
             // 如果用户想要播放，尝试播放
             if (userWantsPlayRef.current) {
-              console.log('[Player] HLS: user wants play, calling tryPlay');
               tryPlay();
             } else {
-              console.log('[Player] HLS: user does not want play, just setLoading(false)');
               setLoading(false);
             }
           });
@@ -366,13 +347,9 @@ export function useAudioPlayer() {
           setTimeout(resolve, 5000); // 超时保护
         });
         
-        console.log('[Player] MP3: ready, userWantsPlay:', userWantsPlayRef.current);
-        
         if (userWantsPlayRef.current) {
-          console.log('[Player] MP3: user wants play, calling tryPlay');
           tryPlay();
         } else {
-          console.log('[Player] MP3: user does not want play, just setLoading(false)');
           setLoading(false);
         }
       }
@@ -401,26 +378,22 @@ export function useAudioPlayer() {
     
     // playing 事件 - 只有音频真正在播放时才触发
     const handlePlaying = () => {
-      console.log('[Player] Audio PLAYING event - actually playing now');
       setLoading(false);
       setPlaying(true);
     };
     
     // pause 事件
     const handlePause = () => {
-      console.log('[Player] Audio pause event');
       // 不要在这里设置 isPlaying = false，因为可能是切换电台
     };
     
     // waiting 事件 - 缓冲中
     const handleWaiting = () => {
-      console.log('[Player] Audio waiting/buffering event');
       setLoading(true);
     };
     
     // canplay 事件 - 可以播放了
     const handleCanPlay = () => {
-      console.log('[Player] Audio canplay event');
       setLoading(false);
     };
     
@@ -435,7 +408,7 @@ export function useAudioPlayer() {
     
     // stalled 事件
     const handleStalled = () => {
-      console.log('[Player] Audio stalled event');
+      // 网络停滞，等待恢复
     };
     
     audio.addEventListener('playing', handlePlaying);
@@ -464,13 +437,6 @@ export function useAudioPlayer() {
     
     // 只有电台 ID 真正改变时才加载
     if (currentStationIdRef.current !== currentStation.id) {
-      console.log('[Player] Station changed to:', currentStation.name, 'isPlaying:', isPlaying);
-      
-      // 如果当前是播放状态（用户主动切换电台），标记为想要播放
-      if (isPlaying) {
-        userWantsPlayRef.current = true;
-      }
-      
       loadStation(currentStation);
     }
   }, [currentStation?.id, isPlaying, loadStation]);
@@ -479,8 +445,6 @@ export function useAudioPlayer() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    console.log('[Player] isPlaying changed to:', isPlaying, 'station:', currentStation?.name);
 
     if (isPlaying) {
       // 用户想要播放 - 无论电台是否加载完成都要记录

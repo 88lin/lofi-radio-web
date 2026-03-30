@@ -420,47 +420,21 @@ img[loading] {
 }
 
 /* Smooth Scroll with Damping - 滑动阻尼效果 */
+
+/* 基础滚动设置 */
 html {
   scroll-behavior: smooth;
-  overscroll-behavior-y: contain;
 }
 
-body {
-  overflow-x: hidden;
-}
-
-/* 桌面端滚动阻尼效果 - 使用 mandatory 模式更明显 */
-@media (min-width: 640px) and (hover: hover) {
+/* 滚动阻尼效果 - 仅桌面端 */
+@media only screen and (min-width: 1024px) {
   html {
     scroll-snap-type: y mandatory;
     scroll-padding-top: 70px;
   }
   
-  body {
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* 每个 section 作为滚动停靠点 */
-  section {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-  
-  /* footer 也作为停靠点 */
-  footer {
-    scroll-snap-align: start;
-  }
-}
-
-/* 移动端不需要 scroll-snap */
-@media (max-width: 639px), (hover: none) {
-  html {
-    scroll-snap-type: none;
-  }
-  
   section, footer {
-    scroll-snap-align: none;
+    scroll-snap-align: start;
   }
 }
 
