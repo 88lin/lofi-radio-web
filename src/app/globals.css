@@ -429,11 +429,11 @@ body {
   overflow-x: hidden;
 }
 
-/* 桌面端滚动阻尼效果 */
+/* 桌面端滚动阻尼效果 - 使用 mandatory 模式更明显 */
 @media (min-width: 640px) and (hover: hover) {
   html {
-    scroll-snap-type: y proximity;
-    scroll-padding-top: 80px;
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: 70px;
   }
   
   body {
@@ -444,7 +444,7 @@ body {
   /* 每个 section 作为滚动停靠点 */
   section {
     scroll-snap-align: start;
-    scroll-snap-stop: normal;
+    scroll-snap-stop: always;
   }
   
   /* footer 也作为停靠点 */
