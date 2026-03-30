@@ -7,7 +7,7 @@ import { useTheme } from 'next-themes';
 import { FloatingPlayer } from '@/components/lofi/floating-player';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
-import { useSmoothScroll } from '@/hooks/useSmoothScroll';
+
 import { useAudioStore } from '@/store/audioStore';
 import { stations } from '@/lib/stations';
 import { Button } from '@/components/ui/button';
@@ -462,7 +462,6 @@ export default function Home() {
   const setSelectedCategory = useAudioStore((state) => state.setSelectedCategory);
   
   // 初始化
-  useSmoothScroll(); // 平滑滚动
   useAudioPlayer();
   useFocusTimer();
   
