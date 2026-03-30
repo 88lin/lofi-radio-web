@@ -410,10 +410,19 @@ StationList.displayName = 'StationList';
 // ==================== 全屏播放器 - 灵感来自HeoMusic ====================
 const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   const {
-    isPlaying, isLoading, currentStation, volume, isMuted,
-    togglePlay, toggleMute, setVolume,
+    isPlaying, isLoading, currentStation, volume, isMuted, userWantsPlay,
+    requestPlay, requestPause, toggleMute, setVolume,
     nextStation, prevStation, selectStationById,
   } = useAudioStore();
+  
+  // 切换播放状态
+  const togglePlay = useCallback(() => {
+    if (userWantsPlay) {
+      requestPause();
+    } else {
+      requestPlay();
+    }
+  }, [userWantsPlay, requestPlay, requestPause]);
   
   const { focusTime } = useFocusTimer();
   const stationColor = currentStation?.color || '#8B5CF6';
@@ -639,9 +648,18 @@ FullScreenPlayer.displayName = 'FullScreenPlayer';
 
 // ==================== 迷你灵动岛 - 精致玻璃版 ====================
 const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
-  const { isPlaying, currentStation, togglePlay, isLoading } = useAudioStore();
+  const { isPlaying, currentStation, isLoading, userWantsPlay, requestPlay, requestPause } = useAudioStore();
   const { focusTime } = useFocusTimer();
   const stationColor = currentStation?.color || '#8B5CF6';
+  
+  // 切换播放状态
+  const togglePlay = useCallback(() => {
+    if (userWantsPlay) {
+      requestPause();
+    } else {
+      requestPlay();
+    }
+  }, [userWantsPlay, requestPlay, requestPause]);
   
   return (
     <div className="relative cursor-grab active:cursor-grabbing select-none">

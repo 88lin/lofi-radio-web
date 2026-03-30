@@ -49,7 +49,8 @@ export const stations: Station[] = [
     name: 'Chill Sky',
     scene: '阅读',
     type: 'mp3',
-    url: 'http://chill.radioca.st/stream',
+    // 注意：该电台可能不支持 HTTPS，在 HTTPS 页面下可能被浏览器拦截
+    url: 'https://chill.radioca.st/stream',
     style1: 'Chill',
     style2: 'Electro',
     color: '#06B6D4'
@@ -99,7 +100,8 @@ export const stations: Station[] = [
     name: 'ASP',
     scene: '助眠',
     type: 'mp3',
-    url: 'http://radio.stereoscenic.com/asp-s',
+    // 该电台仅支持 HTTP，在 HTTPS 页面下可能被浏览器拦截
+    url: 'https://radio.stereoscenic.com/asp-s',
     style1: 'Ambient',
     style2: 'Sleep',
     color: '#6366F1'
@@ -119,7 +121,7 @@ export const stations: Station[] = [
     name: 'Swiss Classic',
     scene: '专注',
     type: 'mp3',
-    url: 'http://stream.srg-ssr.ch/m/rsc_de/mp3_128',
+    url: 'https://stream.srg-ssr.ch/m/rsc_de/mp3_128',
     style1: 'Classical',
     style2: 'Symphony',
     color: '#84CC16'
@@ -129,7 +131,7 @@ export const stations: Station[] = [
     name: 'BBC 3',
     scene: '专注',
     type: 'm3u8',
-    url: 'http://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio=320000.m3u8',
+    url: 'https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio=320000.m3u8',
     style1: 'Classical',
     style2: 'Arts',
     color: '#EF4444'
@@ -139,7 +141,8 @@ export const stations: Station[] = [
     name: 'Jazz Groove',
     scene: '写作',
     type: 'mp3',
-    url: 'http://west-mp3-128.streamthejazzgroove.com/stream',
+    // 该电台有 HTTPS 版本
+    url: 'https://west-mp3-128.streamthejazzgroove.com/stream',
     style1: 'Jazz',
     style2: 'Groove',
     color: '#F97316'
@@ -149,7 +152,8 @@ export const stations: Station[] = [
     name: 'Jazz Smooth',
     scene: '办公',
     type: 'mp3',
-    url: 'http://smoothjazz.cdnstream1.com/2585_128.mp3',
+    // 该电台有 HTTPS 版本
+    url: 'https://smoothjazz.cdnstream1.com/2585_128.mp3',
     style1: 'Jazz',
     style2: 'Mellow',
     color: '#A855F7'

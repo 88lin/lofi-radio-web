@@ -35,10 +35,8 @@ const loadFlvJs = async (): Promise<FlvJs | null> => {
   if (flvjs) return flvjs;
   if (typeof window === 'undefined') return null;
   try {
-    console.log('[Player] Loading flv.js module...');
     const module = await import('flv.js');
     flvjs = module.default || module;
-    console.log('[Player] flv.js loaded successfully');
     return flvjs;
   } catch (e) {
     console.error('[Player] Failed to load flv.js:', e);
@@ -57,23 +55,41 @@ interface BilibiliStreamInfo {
   timestamp: number;
 }
 
+// 手动实现带超时的 fetch（兼容性更好）
+const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
+  }
+};
+
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const flvPlayerRef = useRef<FlvPlayer | null>(null);
   
-  // 使用 ref 跟踪状态，避免闭包问题
-  const currentStationIdRef = useRef<string | null>(null);
-  const isLoadingStationRef = useRef(false);
-  const userWantsPlayRef = useRef(false); // 用户是否想要播放
+  // 请求版本控制 - 解决竞态条件
+  const loadRequestIdRef = useRef(0);
+  const currentLoadingIdRef = useRef<string | null>(null);
 
   const {
-    isPlaying,
+    userWantsPlay,
     currentStation,
     volume,
     isMuted,
     setPlaying,
     setLoading,
+    setError,
   } = useAudioStore();
 
   // 清理函数
@@ -97,10 +113,16 @@ export function useAudioPlayer() {
     }
   }, []);
 
-  // 尝试播放音频 - 只有真正播放成功才更新状态
-  const tryPlay = useCallback(() => {
+  // 尝试播放音频
+  const tryPlay = useCallback((requestId: number) => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // 检查是否是最新请求
+    if (requestId !== loadRequestIdRef.current) {
+      console.log('[Player] Stale play request, ignoring');
+      return;
+    }
 
     audio.play()
       .then(() => {
@@ -108,11 +130,15 @@ export function useAudioPlayer() {
         // 真正的播放状态由 playing 事件处理
       })
       .catch((err) => {
+        // 再次检查是否是最新请求
+        if (requestId !== loadRequestIdRef.current) return;
+        
         if (err.name === 'NotAllowedError') {
+          console.log('[Player] Autoplay blocked, user interaction required');
           setPlaying(false);
           setLoading(false);
-          userWantsPlayRef.current = true;
         } else {
+          console.error('[Player] Play error:', err);
           setLoading(false);
           setPlaying(false);
         }
@@ -120,7 +146,7 @@ export function useAudioPlayer() {
   }, [setPlaying, setLoading]);
 
   // 加载 Bilibili 直播流
-  const loadBilibiliStream = useCallback(async (station: Station): Promise<boolean> => {
+  const loadBilibiliStream = useCallback(async (station: Station, requestId: number): Promise<boolean> => {
     const audio = audioRef.current;
     if (!audio) return false;
 
@@ -133,10 +159,14 @@ export function useAudioPlayer() {
 
       console.log('[Player] Fetching stream for room:', roomId);
 
-      // 通过 API 获取直播流地址
-      const res = await fetch(`/api/bilibili-stream?room_id=${roomId}`, {
-        signal: AbortSignal.timeout(15000)
-      });
+      // 使用手动超时的 fetch
+      const res = await fetchWithTimeout(`/api/bilibili-stream?room_id=${roomId}`, 15000);
+      
+      // 检查请求是否已过期
+      if (requestId !== loadRequestIdRef.current) {
+        console.log('[Player] Request expired, ignoring Bilibili response');
+        return false;
+      }
       
       if (!res.ok) {
         console.error('[Player] API request failed:', res.status);
@@ -144,6 +174,13 @@ export function useAudioPlayer() {
       }
 
       const data: BilibiliStreamInfo = await res.json();
+
+      // 检查直播状态
+      if (data.live_status !== 1) {
+        console.log('[Player] Stream is not live');
+        setError(true, '直播未开始');
+        return false;
+      }
 
       if (!data.success || !data.flv_url) {
         console.error('[Player] No stream URL in response');
@@ -156,6 +193,13 @@ export function useAudioPlayer() {
       const flv = await loadFlvJs();
       if (!flv || !flv.isSupported()) {
         console.error('[Player] flv.js not supported');
+        setError(true, '浏览器不支持 FLV 播放');
+        return false;
+      }
+
+      // 再次检查请求是否过期
+      if (requestId !== loadRequestIdRef.current) {
+        console.log('[Player] Request expired after loading flv.js');
         return false;
       }
 
@@ -189,13 +233,13 @@ export function useAudioPlayer() {
       flvPlayer.load();
       flvPlayerRef.current = flvPlayer;
 
-      // 错误处理 - 只记录日志，不自动跳转
+      // 错误处理
       flvPlayer.on(flv.Events.ERROR, (errorType: string, errorDetail: string) => {
         console.error('[Player] FLV error:', errorType, errorDetail);
-        // 如果是致命错误，停止加载状态
+        if (requestId !== loadRequestIdRef.current) return;
+        
         if (errorType === flv?.ErrorTypes?.NETWORK_ERROR) {
-          console.error('[Player] FLV network error, stream may be unavailable');
-          setLoading(false);
+          setError(true, '网络错误，请重试');
         }
       });
 
@@ -204,30 +248,23 @@ export function useAudioPlayer() {
 
     } catch (error) {
       console.error('[Player] Bilibili stream load error:', error);
+      if (requestId === loadRequestIdRef.current) {
+        setError(true, '加载失败，请重试');
+      }
       return false;
     }
-  }, [setLoading]);
+  }, [setError]);
 
-  // 加载电台 - 核心函数
+  // 加载电台 - 带版本控制
   const loadStation = useCallback(async (station: Station) => {
     if (!audioRef.current || !station) return;
-    
-    // 防止重复加载同一个电台
-    if (isLoadingStationRef.current && currentStationIdRef.current === station.id) {
-      console.log('[Player] Already loading this station:', station.name);
-      return;
-    }
 
-    // 直接从 store 获取最新的 isPlaying 状态
-    const { isPlaying: currentIsPlaying } = useAudioStore.getState();
+    // 生成新的请求 ID
+    const requestId = ++loadRequestIdRef.current;
+    currentLoadingIdRef.current = station.id;
     
-    // 如果当前是播放状态，标记用户想要播放
-    if (currentIsPlaying) {
-      userWantsPlayRef.current = true;
-    }
-    
-    isLoadingStationRef.current = true;
-    
+    console.log('[Player] Loading station:', station.name, 'requestId:', requestId);
+
     // 清理之前的资源
     cleanup();
     
@@ -236,29 +273,34 @@ export function useAudioPlayer() {
     
     // 设置加载状态
     setLoading(true);
+    setError(false, null);
 
     let success = false;
 
     try {
       // Bilibili 直播流
       if (station.type === 'bilibili') {
-        success = await loadBilibiliStream(station);
+        success = await loadBilibiliStream(station, requestId);
+        
+        // 检查请求是否仍然有效
+        if (requestId !== loadRequestIdRef.current) {
+          console.log('[Player] Request expired after Bilibili load');
+          return;
+        }
+        
         if (success) {
-          currentStationIdRef.current = station.id;
-          isLoadingStationRef.current = false;
-          
           // 等待数据准备好
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          // 如果用户想要播放，尝试播放
-          if (userWantsPlayRef.current) {
-            tryPlay();
+          // 再次检查
+          if (requestId !== loadRequestIdRef.current) return;
+          
+          if (userWantsPlay) {
+            tryPlay(requestId);
           } else {
             setLoading(false);
           }
         } else {
-          // 加载失败，但仍允许用户点击播放
-          isLoadingStationRef.current = false;
           setLoading(false);
         }
       }
@@ -275,12 +317,14 @@ export function useAudioPlayer() {
           hls.attachMedia(audio);
           
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            currentStationIdRef.current = station.id;
-            isLoadingStationRef.current = false;
+            // 检查请求是否有效
+            if (requestId !== loadRequestIdRef.current) {
+              console.log('[Player] Stale HLS manifest, ignoring');
+              return;
+            }
             
-            // 如果用户想要播放，尝试播放
-            if (userWantsPlayRef.current) {
-              tryPlay();
+            if (userWantsPlay) {
+              tryPlay(requestId);
             } else {
               setLoading(false);
             }
@@ -288,10 +332,10 @@ export function useAudioPlayer() {
           
           hls.on(Hls.Events.ERROR, (_, data) => {
             console.error('[Player] HLS error:', data.type, data.details);
+            if (requestId !== loadRequestIdRef.current) return;
+            
             if (data.fatal) {
-              console.error('[Player] HLS fatal error');
-              isLoadingStationRef.current = false;
-              setLoading(false);
+              setError(true, '加载失败，请重试');
             }
           });
           
@@ -301,22 +345,35 @@ export function useAudioPlayer() {
           // Safari 原生支持
           audio.src = station.url;
           audio.load();
-          currentStationIdRef.current = station.id;
           success = true;
-          isLoadingStationRef.current = false;
           
-          // Safari 等待数据
+          // Safari 等待数据 - 带清理
           await new Promise<void>((resolve) => {
+            let resolved = false;
+            let timeoutId: number | null = null;
+            
             const onCanPlay = () => {
+              if (resolved) return;
+              resolved = true;
               audio.removeEventListener('canplay', onCanPlay);
+              if (timeoutId) clearTimeout(timeoutId);
               resolve();
             };
+            
             audio.addEventListener('canplay', onCanPlay);
-            setTimeout(resolve, 3000); // 超时保护
+            timeoutId = window.setTimeout(() => {
+              if (resolved) return;
+              resolved = true;
+              audio.removeEventListener('canplay', onCanPlay);
+              resolve();
+            }, 3000);
           });
           
-          if (userWantsPlayRef.current) {
-            tryPlay();
+          // 检查请求是否有效
+          if (requestId !== loadRequestIdRef.current) return;
+          
+          if (userWantsPlay) {
+            tryPlay(requestId);
           } else {
             setLoading(false);
           }
@@ -326,29 +383,47 @@ export function useAudioPlayer() {
       else {
         audio.src = station.url;
         audio.load();
-        currentStationIdRef.current = station.id;
         success = true;
-        isLoadingStationRef.current = false;
         
-        // 等待数据准备好
+        // 等待数据准备好 - 带清理
         await new Promise<void>((resolve) => {
+          let resolved = false;
+          let timeoutId: number | null = null;
+          
           const onCanPlay = () => {
+            if (resolved) return;
+            resolved = true;
             audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('error', onError);
+            if (timeoutId) clearTimeout(timeoutId);
             resolve();
           };
+          
           const onError = () => {
+            if (resolved) return;
+            resolved = true;
             audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('error', onError);
+            if (timeoutId) clearTimeout(timeoutId);
             resolve();
           };
+          
           audio.addEventListener('canplay', onCanPlay);
           audio.addEventListener('error', onError);
-          setTimeout(resolve, 5000); // 超时保护
+          timeoutId = window.setTimeout(() => {
+            if (resolved) return;
+            resolved = true;
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            resolve();
+          }, 5000);
         });
         
-        if (userWantsPlayRef.current) {
-          tryPlay();
+        // 检查请求是否有效
+        if (requestId !== loadRequestIdRef.current) return;
+        
+        if (userWantsPlay) {
+          tryPlay(requestId);
         } else {
           setLoading(false);
         }
@@ -356,16 +431,15 @@ export function useAudioPlayer() {
 
     } catch (error) {
       console.error('[Player] Load station error:', error);
-      isLoadingStationRef.current = false;
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setError(true, '加载失败，请重试');
+      }
     }
 
-    // 如果加载失败，确保状态重置
-    if (!success) {
-      isLoadingStationRef.current = false;
+    if (!success && requestId === loadRequestIdRef.current) {
       setLoading(false);
     }
-  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setPlaying, tryPlay]);
+  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setError, userWantsPlay, tryPlay]);
 
   // 初始化音频元素
   useEffect(() => {
@@ -373,7 +447,7 @@ export function useAudioPlayer() {
     
     const audio = new Audio();
     audio.preload = 'metadata';
-    audio.volume = 0.5; // 默认音量50%
+    audio.volume = 0.5;
     audioRef.current = audio;
     
     // playing 事件 - 只有音频真正在播放时才触发
@@ -384,7 +458,7 @@ export function useAudioPlayer() {
     
     // pause 事件
     const handlePause = () => {
-      // 不要在这里设置 isPlaying = false，因为可能是切换电台
+      setPlaying(false);
     };
     
     // waiting 事件 - 缓冲中
@@ -402,13 +476,25 @@ export function useAudioPlayer() {
       const audioEl = e.target as HTMLAudioElement;
       const error = audioEl?.error;
       console.error('[Player] Audio error:', error?.code, error?.message);
-      setLoading(false);
-      isLoadingStationRef.current = false;
-    };
-    
-    // stalled 事件
-    const handleStalled = () => {
-      // 网络停滞，等待恢复
+      
+      if (error) {
+        let message = '播放失败';
+        switch (error.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            message = '播放被中止';
+            break;
+          case MediaError.MEDIA_ERR_NETWORK:
+            message = '网络错误';
+            break;
+          case MediaError.MEDIA_ERR_DECODE:
+            message = '解码错误';
+            break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            message = '不支持的格式';
+            break;
+        }
+        setError(true, message);
+      }
     };
     
     audio.addEventListener('playing', handlePlaying);
@@ -416,7 +502,6 @@ export function useAudioPlayer() {
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('error', handleError);
-    audio.addEventListener('stalled', handleStalled);
     
     return () => {
       audio.removeEventListener('playing', handlePlaying);
@@ -424,42 +509,38 @@ export function useAudioPlayer() {
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('error', handleError);
-      audio.removeEventListener('stalled', handleStalled);
       cleanup();
       audio.pause();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 监听电台变化 - 加载新电台
+  // 监听电台变化
   useEffect(() => {
     if (!currentStation || !audioRef.current) return;
     
     // 只有电台 ID 真正改变时才加载
-    if (currentStationIdRef.current !== currentStation.id) {
+    if (currentLoadingIdRef.current !== currentStation.id) {
       loadStation(currentStation);
     }
-  }, [currentStation?.id, isPlaying, loadStation]);
+  }, [currentStation?.id, loadStation]);
 
-  // 监听播放状态变化 - 控制播放/暂停
+  // 监听用户播放意图
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      // 用户想要播放 - 无论电台是否加载完成都要记录
-      userWantsPlayRef.current = true;
-      
+    if (userWantsPlay) {
       // 如果电台已加载完成，尝试播放
-      if (currentStationIdRef.current === currentStation?.id) {
-        tryPlay();
+      if (currentLoadingIdRef.current === currentStation?.id) {
+        const requestId = loadRequestIdRef.current;
+        tryPlay(requestId);
       }
     } else {
-      userWantsPlayRef.current = false;
       audio.pause();
       setLoading(false);
     }
-  }, [isPlaying, currentStation, tryPlay, setLoading]);
+  }, [userWantsPlay, currentStation, tryPlay, setLoading]);
 
   // 监听音量变化
   useEffect(() => {

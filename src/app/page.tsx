@@ -354,7 +354,7 @@ const FeatureCard = memo(({
 ));
 FeatureCard.displayName = 'FeatureCard';
 
-// 场景卡片组件
+// 场景卡片组件 - 使用 button 提升可访问性
 const SceneCard = memo(({ 
   scene, 
   isDark,
@@ -364,14 +364,16 @@ const SceneCard = memo(({
   isDark: boolean;
   onClick: () => void;
 }) => (
-  <motion.div
+  <motion.button
     variants={scaleIn}
     whileHover={{ y: -3 }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
+    aria-label={`播放${scene.title}场景音乐`}
     className={cn(
-      "p-4 rounded-2xl text-center transition-all cursor-pointer",
-      isDark ? "bg-white/[0.03] hover:bg-white/[0.06]" : "bg-white shadow-sm hover:shadow-md"
+      "p-4 rounded-2xl text-center transition-all cursor-pointer w-full",
+      "focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.06] focus-visible:ring-offset-zinc-950" : "bg-white shadow-sm hover:shadow-md focus-visible:ring-offset-gray-50"
     )}
   >
     <div className="text-2xl mb-2">{scene.icon}</div>
@@ -387,11 +389,11 @@ const SceneCard = memo(({
     )}>
       {scene.description}
     </p>
-  </motion.div>
+  </motion.button>
 ));
 SceneCard.displayName = 'SceneCard';
 
-// 电台卡片组件
+// 电台卡片组件 - 使用 button 提升可访问性
 const StationCard = memo(({ 
   station, 
   isDark,
@@ -401,14 +403,16 @@ const StationCard = memo(({
   isDark: boolean;
   onClick: () => void;
 }) => (
-  <motion.div
+  <motion.button
     variants={scaleIn}
     whileHover={{ y: -3, scale: 1.01 }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
+    aria-label={`播放${station.name}电台`}
     className={cn(
-      "relative p-3.5 rounded-xl cursor-pointer overflow-hidden group",
-      isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:shadow-lg"
+      "relative p-3.5 rounded-xl cursor-pointer overflow-hidden group w-full text-left",
+      "focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.05] focus-visible:ring-offset-zinc-950" : "bg-white hover:shadow-lg focus-visible:ring-offset-gray-50"
     )}
     style={{
       borderLeft: `3px solid ${station.color}`,
@@ -416,7 +420,7 @@ const StationCard = memo(({
   >
     {/* Hover 背景光效 */}
     <div
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
       style={{
         background: `linear-gradient(135deg, ${station.color}08 0%, transparent 50%)`,
       }}
@@ -444,18 +448,20 @@ const StationCard = memo(({
         </span>
       </div>
     </div>
-  </motion.div>
+  </motion.button>
 ));
 StationCard.displayName = 'StationCard';
 
 export default function Home() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
-  const togglePlay = useAudioStore((state) => state.togglePlay);
+  const requestPlay = useAudioStore((state) => state.requestPlay);
+  const requestPause = useAudioStore((state) => state.requestPause);
   const nextStation = useAudioStore((state) => state.nextStation);
   const prevStation = useAudioStore((state) => state.prevStation);
   const toggleMute = useAudioStore((state) => state.toggleMute);
   const isPlaying = useAudioStore((state) => state.isPlaying);
+  const userWantsPlay = useAudioStore((state) => state.userWantsPlay);
   const currentStation = useAudioStore((state) => state.currentStation);
   const setMiniMode = useAudioStore((state) => state.setMiniMode);
   const selectStationById = useAudioStore((state) => state.selectStationById);
@@ -486,6 +492,15 @@ export default function Home() {
   const handleThemeToggle = useCallback(() => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   }, [theme, setTheme]);
+  
+  // 切换播放状态
+  const togglePlay = useCallback(() => {
+    if (userWantsPlay) {
+      requestPause();
+    } else {
+      requestPlay();
+    }
+  }, [userWantsPlay, requestPlay, requestPause]);
   
   // 键盘快捷键
   useEffect(() => {
@@ -520,8 +535,8 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
 
-  // 避免闪屏 - 在未挂载时默认使用暗色主题
-  const isDark = mounted ? resolvedTheme === 'dark' : true;
+  // 统一默认主题策略：未挂载时使用亮色主题（与 layout.tsx 一致）
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
   
   return (
@@ -631,7 +646,7 @@ export default function Home() {
                     size="lg"
                     onClick={() => {
                       togglePlay();
-                      if (!isPlaying) setMiniMode(false);
+                      if (!userWantsPlay) setMiniMode(false);
                     }}
                     className="w-full sm:w-auto rounded-full px-6 h-11 sm:h-12 text-base font-medium shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}

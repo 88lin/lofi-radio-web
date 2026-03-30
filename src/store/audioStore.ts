@@ -5,20 +5,34 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Station, stations } from '@/lib/stations';
 
 interface AudioState {
+  // 播放状态 - 由音频事件驱动
   isPlaying: boolean;
   isLoading: boolean;
+  hasError: boolean;
+  errorMessage: string | null;
+  
+  // 用户意图状态
+  userWantsPlay: boolean;
+  
   volume: number;
   isMuted: boolean;
   currentStation: Station | null;
   stationIndex: number;
-  focusTime: number;
+  
+  // 专注时间 - 改用时间戳累计
+  focusStartTime: number | null;  // 开始播放时的时间戳
+  accumulatedFocusTime: number;   // 累计的专注时间（秒）
   focusDate: string;
+  
   isMiniMode: boolean;
   selectedCategory: string;
   
-  togglePlay: () => void;
+  // 播放控制
+  requestPlay: () => void;
+  requestPause: () => void;
   setPlaying: (playing: boolean) => void;
   setLoading: (loading: boolean) => void;
+  setError: (hasError: boolean, message?: string | null) => void;
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   setMuted: (muted: boolean) => void;
@@ -26,8 +40,13 @@ interface AudioState {
   selectStationById: (id: string) => void;
   nextStation: () => void;
   prevStation: () => void;
-  incrementFocusTime: () => void;
+  
+  // 专注时间
+  startFocusTime: () => void;
+  pauseFocusTime: () => void;
+  getFocusTime: () => number;
   resetFocusTime: () => void;
+  
   setMiniMode: (mini: boolean) => void;
   toggleMiniMode: () => void;
   setSelectedCategory: (category: string) => void;
@@ -44,27 +63,78 @@ export const useAudioStore = create<AudioState>()(
     (set, get) => ({
       isPlaying: false,
       isLoading: false,
-      volume: 0.5, // 默认音量50%
+      hasError: false,
+      errorMessage: null,
+      userWantsPlay: false,
+      volume: 0.5,
       isMuted: false,
-      currentStation: stations[0], // 默认使用第一个电台
+      currentStation: stations[0],
       stationIndex: 0,
-      focusTime: 0,
+      focusStartTime: null,
+      accumulatedFocusTime: 0,
       focusDate: getCurrentDate(),
-      isMiniMode: true, // 默认迷你模式，可以点击展开
+      isMiniMode: true,
       selectedCategory: 'all',
       
-      // 检查并重置每日专注时间
       checkAndResetDailyFocus: () => {
         const { focusDate } = get();
         const currentDate = getCurrentDate();
         if (focusDate !== currentDate) {
-          set({ focusTime: 0, focusDate: currentDate });
+          set({ 
+            accumulatedFocusTime: 0, 
+            focusDate: currentDate,
+            focusStartTime: null 
+          });
         }
       },
       
-      togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
-      setPlaying: (playing) => set({ isPlaying: playing }),
+      // 用户请求播放 - 只是表达意图
+      requestPlay: () => set({ 
+        userWantsPlay: true, 
+        hasError: false, 
+        errorMessage: null 
+      }),
+      
+      // 用户请求暂停
+      requestPause: () => set({ 
+        userWantsPlay: false 
+      }),
+      
+      // 由音频事件设置真实播放状态
+      setPlaying: (playing) => {
+        const state = get();
+        if (playing) {
+          set({ 
+            isPlaying: true, 
+            isLoading: false,
+            hasError: false,
+            errorMessage: null
+          });
+          // 开始计时
+          if (!state.focusStartTime) {
+            set({ focusStartTime: Date.now() });
+          }
+        } else {
+          set({ isPlaying: false });
+          // 暂停计时 - 累加已播放时间
+          if (state.focusStartTime) {
+            const elapsed = Math.floor((Date.now() - state.focusStartTime) / 1000);
+            set({ 
+              focusStartTime: null,
+              accumulatedFocusTime: state.accumulatedFocusTime + elapsed
+            });
+          }
+        }
+      },
+      
       setLoading: (loading) => set({ isLoading: loading }),
+      
+      setError: (hasError, message = null) => set({ 
+        hasError, 
+        errorMessage: message,
+        isLoading: false
+      }),
+      
       setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
       setMuted: (muted) => set({ isMuted: muted }),
@@ -74,8 +144,10 @@ export const useAudioStore = create<AudioState>()(
           set({ 
             stationIndex: index, 
             currentStation: stations[index],
-            isPlaying: true,
+            userWantsPlay: true,
             isLoading: true,
+            hasError: false,
+            errorMessage: null
           });
         }
       },
@@ -86,8 +158,10 @@ export const useAudioStore = create<AudioState>()(
           set({ 
             stationIndex: index, 
             currentStation: stations[index],
-            isPlaying: true,
+            userWantsPlay: true,
             isLoading: true,
+            hasError: false,
+            errorMessage: null
           });
         }
       },
@@ -104,19 +178,40 @@ export const useAudioStore = create<AudioState>()(
         get().selectStation(newIndex);
       },
       
-      incrementFocusTime: () => {
-        const { focusDate } = get();
-        const currentDate = getCurrentDate();
-        
-        set((state) => {
-          if (focusDate !== currentDate) {
-            return { focusTime: 1, focusDate: currentDate };
-          }
-          return { focusTime: state.focusTime + 1 };
-        });
+      // 开始专注计时
+      startFocusTime: () => {
+        const { focusStartTime } = get();
+        if (!focusStartTime) {
+          set({ focusStartTime: Date.now() });
+        }
       },
       
-      resetFocusTime: () => set({ focusTime: 0, focusDate: getCurrentDate() }),
+      // 暂停专注计时
+      pauseFocusTime: () => {
+        const { focusStartTime, accumulatedFocusTime } = get();
+        if (focusStartTime) {
+          const elapsed = Math.floor((Date.now() - focusStartTime) / 1000);
+          set({ 
+            focusStartTime: null,
+            accumulatedFocusTime: accumulatedFocusTime + elapsed
+          });
+        }
+      },
+      
+      // 获取当前专注时间（秒）
+      getFocusTime: () => {
+        const { focusStartTime, accumulatedFocusTime } = get();
+        if (focusStartTime) {
+          return accumulatedFocusTime + Math.floor((Date.now() - focusStartTime) / 1000);
+        }
+        return accumulatedFocusTime;
+      },
+      
+      resetFocusTime: () => set({ 
+        accumulatedFocusTime: 0, 
+        focusDate: getCurrentDate(),
+        focusStartTime: null
+      }),
       
       setMiniMode: (mini) => set({ isMiniMode: mini }),
       toggleMiniMode: () => set((state) => ({ isMiniMode: !state.isMiniMode })),
@@ -127,11 +222,10 @@ export const useAudioStore = create<AudioState>()(
       partialize: (state) => ({
         volume: state.volume,
         stationIndex: state.stationIndex,
-        focusTime: state.focusTime,
+        accumulatedFocusTime: state.accumulatedFocusTime,
         focusDate: state.focusDate,
         isMiniMode: state.isMiniMode,
       }),
-      // hydration 后根据 stationIndex 恢复 currentStation
       onRehydrateStorage: () => (state) => {
         if (state && state.stationIndex !== undefined) {
           state.currentStation = stations[state.stationIndex] || stations[0];

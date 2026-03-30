@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 
 export function useFocusTimer() {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isPlaying = useAudioStore((state) => state.isPlaying);
-  const incrementFocusTime = useAudioStore((state) => state.incrementFocusTime);
-  const focusTime = useAudioStore((state) => state.focusTime);
+  const getFocusTime = useAudioStore((state) => state.getFocusTime);
   const checkAndResetDailyFocus = useAudioStore((state) => state.checkAndResetDailyFocus);
   
   // 初始化时检查日期并重置专注时间
@@ -15,20 +13,14 @@ export function useFocusTimer() {
     checkAndResetDailyFocus();
   }, [checkAndResetDailyFocus]);
   
-  useEffect(() => {
-    if (isPlaying) {
-      timerRef.current = setInterval(() => {
-        incrementFocusTime();
-      }, 60000); // 1分钟
-    }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [isPlaying, incrementFocusTime]);
+  // 使用时间戳计算精确的专注时间（分钟）
+  const focusTime = useMemo(() => {
+    const seconds = getFocusTime();
+    return Math.floor(seconds / 60);
+  }, [getFocusTime]);
+  
+  // 注意：实际的计时逻辑在 audioStore 的 setPlaying 中处理
+  // 这里只是读取当前专注时间
   
   return { focusTime };
 }
