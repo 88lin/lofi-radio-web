@@ -81,6 +81,8 @@ export function useAudioPlayer() {
   // 请求版本控制 - 解决竞态条件
   const loadRequestIdRef = useRef(0);
   const currentLoadingIdRef = useRef<string | null>(null);
+  // 标记当前是否正在加载 Bilibili 流（flv.js 会处理错误）
+  const isLoadingBilibiliRef = useRef(false);
 
   const {
     currentStation,
@@ -94,6 +96,7 @@ export function useAudioPlayer() {
 
   // 清理函数
   const cleanup = useCallback(() => {
+    isLoadingBilibiliRef.current = false;
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -101,9 +104,7 @@ export function useAudioPlayer() {
     if (flvPlayerRef.current) {
       try {
         flvPlayerRef.current.destroy();
-      } catch (e) {
-        console.error('[Player] Error destroying flv player:', e);
-      }
+      } catch (e) {}
       flvPlayerRef.current = null;
     }
     if (audioRef.current) {
@@ -282,6 +283,9 @@ export function useAudioPlayer() {
     // 设置加载状态
     setLoading(true);
     setError(false, null);
+    
+    // 标记是否正在加载 Bilibili 流
+    isLoadingBilibiliRef.current = station.type === 'bilibili';
 
     let success = false;
 
@@ -448,11 +452,13 @@ export function useAudioPlayer() {
     } catch (error) {
       console.error('[Player] Load station error:', error);
       if (requestId === loadRequestIdRef.current) {
+        isLoadingBilibiliRef.current = false;
         setError(true, '加载失败，请重试');
       }
     }
 
     if (!success && requestId === loadRequestIdRef.current) {
+      isLoadingBilibiliRef.current = false;
       setLoading(false);
     }
   }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setError, tryPlay]);
@@ -493,9 +499,9 @@ export function useAudioPlayer() {
       const error = audioEl?.error;
       
       // 如果是 Bilibili 流，忽略 audio 元素的错误（flv.js 会处理）
-      // flvPlayerRef 存在说明正在使用 flv.js
-      if (flvPlayerRef.current) {
-        console.log('[Player] Audio error ignored (using flv.js):', error?.code);
+      // isLoadingBilibiliRef 标记当前正在使用 flv.js 加载 Bilibili 流
+      if (isLoadingBilibiliRef.current) {
+        console.log('[Player] Audio error ignored (loading Bilibili stream):', error?.code);
         return;
       }
       
