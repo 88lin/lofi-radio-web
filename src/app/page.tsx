@@ -110,7 +110,7 @@ GradientOrb.displayName = 'GradientOrb';
 const features = [
   {
     icon: Headphones,
-    title: '16 精选电台',
+    title: `${stations.length} 精选电台`,
     description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景',
     color: '#8B5CF6',
     gradient: 'from-violet-500 to-purple-500',
