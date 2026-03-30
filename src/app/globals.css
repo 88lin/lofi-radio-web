@@ -419,23 +419,9 @@ img[loading] {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* Smooth Scroll with Damping - 滑动阻尼效果 */
-
-/* 基础滚动设置 */
+/* Smooth Scroll */
 html {
   scroll-behavior: smooth;
-}
-
-/* 滚动阻尼效果 - 仅桌面端 */
-@media only screen and (min-width: 1024px) {
-  html {
-    scroll-snap-type: y mandatory;
-    scroll-padding-top: 70px;
-  }
-  
-  section, footer {
-    scroll-snap-align: start;
-  }
 }
 
 /* Better Font Rendering */
