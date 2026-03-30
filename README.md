@@ -147,6 +147,14 @@ npm run start
 
 ## 📦 部署指南
 
+> 📌 **首先，Fork 本仓库到你自己的 GitHub 账号下。**
+>
+> 1. 访问 [lofi-radio-web](https://github.com/88lin/lofi-radio-web) 仓库主页
+> 2. 点击右上角的 **Fork** 按钮
+> 3. 等待 Fork 完成，你将在自己的 GitHub 账号下看到 `lofi-radio-web` 仓库的副本
+>
+> 以下所有部署方式都将基于你 Fork 的仓库进行操作。
+
 ### 部署到 Vercel（推荐）
 
 [Vercel](https://vercel.com) 是 Next.js 的官方部署平台，部署最简单：
@@ -154,7 +162,7 @@ npm run start
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/88lin/lofi-radio-web)
 
 1. 点击上方按钮，或访问 [Vercel Dashboard](https://vercel.com/dashboard)
-2. 导入 GitHub 仓库 `lofi-radio-web`
+2. 导入你 Fork 的 `lofi-radio-web` 仓库
 3. Vercel 会自动检测 Next.js 并配置构建设置
 4. 点击 "Deploy" 即可完成部署
 
@@ -168,7 +176,7 @@ npm run start
 
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
 2. 进入 "Workers 和 Pages" → "创建" → "Pages" → "连接到 Git"
-3. 授权 GitHub 并选择 `lofi-radio-web` 仓库
+3. 授权 GitHub 并选择你 Fork 的 `lofi-radio-web` 仓库
 4. 配置构建设置：
    - **框架预设**: `Next.js`
    - **构建命令**: `npx @cloudflare/next-on-pages@1`
@@ -207,7 +215,7 @@ wrangler pages deploy .vercel/output/static --project-name=lofi-radio-web
 1. 登录 [Netlify](https://app.netlify.com)
 2. 点击 "Add new site" > "Import an existing project"
 3. 选择 GitHub 并授权
-4. 选择 `lofi-radio-web` 仓库
+4. 选择你 Fork 的 `lofi-radio-web` 仓库
 5. 配置构建设置：
    - **Build command**: `npm run build`
    - **Publish directory**: `.next`
