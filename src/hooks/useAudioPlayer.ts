@@ -105,7 +105,7 @@ export function useAudioPlayer() {
       return;
     }
 
-    console.log('[Player] Attempting to play...');
+    console.log('[Player] Attempting to play... userWantsPlay:', userWantsPlayRef.current);
     
     audio.play()
       .then(() => {
@@ -227,7 +227,15 @@ export function useAudioPlayer() {
       return;
     }
 
-    console.log('[Player] === Loading station:', station.name, station.type, '===');
+    // 直接从 store 获取最新的 isPlaying 状态
+    const { isPlaying: currentIsPlaying } = useAudioStore.getState();
+    
+    console.log('[Player] === Loading station:', station.name, station.type, '=== isPlaying:', currentIsPlaying);
+    
+    // 如果当前是播放状态，标记用户想要播放
+    if (currentIsPlaying) {
+      userWantsPlayRef.current = true;
+    }
     
     isLoadingStationRef.current = true;
     
@@ -239,8 +247,6 @@ export function useAudioPlayer() {
     
     // 设置加载状态
     setLoading(true);
-    // 先重置播放状态，等真正播放时再设置
-    setPlaying(false);
 
     let success = false;
 
@@ -255,10 +261,14 @@ export function useAudioPlayer() {
           // 等待数据准备好
           await new Promise(resolve => setTimeout(resolve, 300));
           
+          console.log('[Player] Bilibili: ready, userWantsPlay:', userWantsPlayRef.current);
+          
           // 如果用户想要播放，尝试播放
           if (userWantsPlayRef.current) {
+            console.log('[Player] Bilibili: user wants play, calling tryPlay');
             tryPlay();
           } else {
+            console.log('[Player] Bilibili: user does not want play, just setLoading(false)');
             setLoading(false);
           }
         } else {
@@ -281,14 +291,16 @@ export function useAudioPlayer() {
           hls.attachMedia(audio);
           
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            console.log('[Player] HLS manifest parsed');
+            console.log('[Player] HLS manifest parsed, userWantsPlay:', userWantsPlayRef.current);
             currentStationIdRef.current = station.id;
             isLoadingStationRef.current = false;
             
             // 如果用户想要播放，尝试播放
             if (userWantsPlayRef.current) {
+              console.log('[Player] HLS: user wants play, calling tryPlay');
               tryPlay();
             } else {
+              console.log('[Player] HLS: user does not want play, just setLoading(false)');
               setLoading(false);
             }
           });
@@ -354,9 +366,13 @@ export function useAudioPlayer() {
           setTimeout(resolve, 5000); // 超时保护
         });
         
+        console.log('[Player] MP3: ready, userWantsPlay:', userWantsPlayRef.current);
+        
         if (userWantsPlayRef.current) {
+          console.log('[Player] MP3: user wants play, calling tryPlay');
           tryPlay();
         } else {
+          console.log('[Player] MP3: user does not want play, just setLoading(false)');
           setLoading(false);
         }
       }

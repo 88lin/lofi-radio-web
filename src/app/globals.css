@@ -425,11 +425,15 @@ html {
   overscroll-behavior-y: contain;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 /* 桌面端滚动阻尼效果 */
-@media (min-width: 640px) {
+@media (min-width: 640px) and (hover: hover) {
   html {
-    scroll-behavior: smooth;
     scroll-snap-type: y proximity;
+    scroll-padding-top: 80px;
   }
   
   body {
@@ -450,12 +454,12 @@ html {
 }
 
 /* 移动端不需要 scroll-snap */
-@media (max-width: 639px) {
+@media (max-width: 639px), (hover: none) {
   html {
     scroll-snap-type: none;
   }
   
-  section {
+  section, footer {
     scroll-snap-align: none;
   }
 }
