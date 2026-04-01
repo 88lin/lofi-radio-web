@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' }
+  ]
+};
+
 export const metadata: Metadata = {
   title: "Lofi Radio - 专注音乐电台",
   description: "macOS 风格灵动岛音乐播放器，支持 Lo-Fi、Chill、Jazz 等多种风格电台，助你专注工作学习。",

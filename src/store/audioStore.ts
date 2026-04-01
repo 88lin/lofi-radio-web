@@ -46,7 +46,12 @@ interface AudioState {
   pauseFocusTime: () => void;
   getFocusTime: () => number;
   resetFocusTime: () => void;
-  
+
+  // 睡眠定时器
+  sleepTimerMinutes: number | null;
+  sleepTimerEndTime: number | null;
+  setSleepTimer: (minutes: number | null) => void;
+
   setMiniMode: (mini: boolean) => void;
   toggleMiniMode: () => void;
   setSelectedCategory: (category: string) => void;
@@ -75,7 +80,14 @@ export const useAudioStore = create<AudioState>()(
       focusDate: getCurrentDate(),
       isMiniMode: true,
       selectedCategory: 'all',
+      sleepTimerMinutes: null,
+      sleepTimerEndTime: null,
       
+      setSleepTimer: (minutes) => set({ 
+        sleepTimerMinutes: minutes, 
+        sleepTimerEndTime: minutes ? Date.now() + minutes * 60 * 1000 : null 
+      }),
+
       checkAndResetDailyFocus: () => {
         const { focusDate } = get();
         const currentDate = getCurrentDate();
@@ -225,6 +237,8 @@ export const useAudioStore = create<AudioState>()(
         accumulatedFocusTime: state.accumulatedFocusTime,
         focusDate: state.focusDate,
         isMiniMode: state.isMiniMode,
+        sleepTimerMinutes: state.sleepTimerMinutes,
+        sleepTimerEndTime: state.sleepTimerEndTime,
       }),
       onRehydrateStorage: () => (state) => {
         if (state && state.stationIndex !== undefined) {

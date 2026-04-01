@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, useCallback, memo, useMemo } from 'react';
+import { useEffect, useSyncExternalStore, useCallback, memo, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Github, Headphones, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight } from 'lucide-react';
+import { Sun, Moon, Github, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight, Radio, Clock3 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { FloatingPlayer } from '@/components/lofi/floating-player';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -13,41 +13,61 @@ import { stations } from '@/lib/stations';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// 客户端挂载检测
 function useMounted() {
   return useSyncExternalStore(() => () => {}, () => true, () => false);
 }
 
-// 动画变体 - 简化版
+// ==================== 实时时钟 Hook ====================
+function useClock() {
+  const [time, setTime] = useState<{
+    h: string; m: string; s: string; date: string; greeting: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const greeting = h < 6 ? '深夜好' : h < 12 ? '早上好' : h < 18 ? '下午好' : h < 22 ? '晚上好' : '深夜好';
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      setTime({
+        h: String(h).padStart(2, '0'),
+        m: String(now.getMinutes()).padStart(2, '0'),
+        s: String(now.getSeconds()).padStart(2, '0'),
+        date: `${weekdays[now.getDay()]}  ${now.getMonth() + 1}月${now.getDate()}日`,
+        greeting,
+      });
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return time;
+}
+
+// ==================== 动画变体 ====================
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
-
-const stagger = {
-  visible: { transition: { staggerChildren: 0.1 } },
-};
-
+const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
 };
 
-// 浮动粒子 - 使用 CSS 动画，减少数量
+// ==================== 浮动粒子 ====================
 const FloatingParticles = memo(({ isDark }: { isDark: boolean }) => {
-  // 预计算粒子位置，避免每次渲染重新计算
-  const particles = useMemo(() => 
-    [...Array(8)].map((_, i) => ({
+  const particles = useMemo(() =>
+    [...Array(10)].map((_, i) => ({
       id: i,
-      width: 2 + (i % 3),
-      height: 2 + (i % 3),
-      left: (i * 12.5) + Math.random() * 5,
-      top: 10 + (i * 10) + Math.random() * 5,
-      delay: i * 0.5,
-      duration: 6 + (i % 4),
+      size: 2 + (i % 3),
+      left: (i * 9.8) + (i % 3) * 2.5,
+      top: 8 + (i * 9) + (i % 4) * 2,
+      delay: i * 0.4,
+      duration: 5 + (i % 5),
     })), []
   );
-
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((p) => (
@@ -55,15 +75,10 @@ const FloatingParticles = memo(({ isDark }: { isDark: boolean }) => {
           key={p.id}
           className="absolute rounded-full animate-float"
           style={{
-            width: p.width,
-            height: p.height,
-            background: isDark 
-              ? `rgba(139, 92, 246, ${0.1 + (p.id % 3) * 0.05})`
-              : `rgba(139, 92, 246, ${0.05 + (p.id % 3) * 0.03})`,
-            left: `${p.left}%`,
-            top: `${p.top}%`,
-            animationDelay: `${p.delay}s`,
-            animationDuration: `${p.duration}s`,
+            width: p.size, height: p.size,
+            background: isDark ? `rgba(139,92,246,${0.08 + (p.id % 3) * 0.04})` : `rgba(139,92,246,${0.04 + (p.id % 3) * 0.02})`,
+            left: `${p.left}%`, top: `${p.top}%`,
+            animationDelay: `${p.delay}s`, animationDuration: `${p.duration}s`,
           }}
         />
       ))}
@@ -72,81 +87,103 @@ const FloatingParticles = memo(({ isDark }: { isDark: boolean }) => {
 });
 FloatingParticles.displayName = 'FloatingParticles';
 
-// 流动渐变背景 - 使用 CSS 动画替代 Framer Motion
-const GradientOrb = memo(({ 
-  color1, 
-  color2, 
-  size, 
-  top, 
-  left, 
-  delay = 0,
-  duration = 15 
-}: { 
-  color1: string; 
-  color2: string; 
-  size: number; 
-  top: string; 
-  left: string;
-  delay?: number;
-  duration?: number;
+// ==================== 渐变光球 ====================
+const GradientOrb = memo(({ color1, color2, size, top, left, delay = 0, duration = 15 }: {
+  color1: string; color2: string; size: number; top: string; left: string; delay?: number; duration?: number;
 }) => (
   <div
-    className="absolute rounded-full animate-orb blur-[60px] sm:blur-[80px]"
+    className="absolute rounded-full animate-orb blur-[80px] sm:blur-[100px]"
     style={{
-      width: size,
-      height: size,
-      top,
-      left,
-      background: `linear-gradient(135deg, ${color1}, ${color2})`,
-      opacity: 0.12,
-      animationDelay: `${delay}s`,
-      animationDuration: `${duration}s`,
+      width: size, height: size, top, left,
+      background: `radial-gradient(circle, ${color1}, ${color2})`,
+      opacity: 0.1, animationDelay: `${delay}s`, animationDuration: `${duration}s`,
     }}
   />
 ));
 GradientOrb.displayName = 'GradientOrb';
 
-// 特性数据
+// ==================== 实时时钟组件 ====================
+const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; stationColor: string; isPlaying: boolean }) => {
+  const clock = useClock();
+  if (!clock) return null;
+
+  const timeGradient = isDark
+    ? `linear-gradient(120deg, rgba(255,255,255,0.96), ${stationColor}d0, rgba(255,255,255,0.86))`
+    : `linear-gradient(120deg, #0f172a, ${stationColor}, #4f46e5)`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6, delay: 0.3 }}
+      className={cn(
+        "inline-flex flex-col items-center px-8 py-5 rounded-3xl mb-8",
+        isDark ? "bg-white/[0.03]" : "bg-black/[0.02]"
+      )}
+      style={{
+        border: isDark ? '1px solid rgba(255,255,255,0.06)' : `1px solid ${stationColor}2e`,
+        boxShadow: isDark ? 'none' : `0 10px 30px ${stationColor}12`
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className="w-1.5 h-1.5 rounded-full"
+          style={{
+            background: isPlaying ? stationColor : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'),
+            boxShadow: isPlaying ? `0 0 6px ${stationColor}` : 'none',
+            animation: isPlaying ? 'pulse 2s ease-in-out infinite' : 'none'
+          }}
+        />
+        <span className={cn("text-xs font-medium tracking-widest uppercase", isDark ? "text-white/38" : "text-zinc-600")}>
+          {clock.greeting}
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight"
+          style={{
+            backgroundImage: timeGradient,
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            fontVariantNumeric: 'tabular-nums'
+          }}
+        >
+          {clock.h}:{clock.m}
+        </span>
+        <span
+          className="text-2xl font-semibold tabular-nums self-end pb-1"
+          style={{
+            color: isDark ? `${stationColor}d6` : stationColor,
+            textShadow: isDark ? `0 0 14px ${stationColor}40` : 'none'
+          }}
+        >
+          {clock.s}
+        </span>
+      </div>
+      <span className={cn("text-xs mt-1.5 tracking-wide", isDark ? "text-white/34" : "text-zinc-600")}>
+        {clock.date}
+      </span>
+    </motion.div>
+  );
+});
+LiveClock.displayName = 'LiveClock';
+
+// ==================== 特性数据 ====================
 const features = [
-  {
-    icon: Headphones,
-    title: `${stations.length} 精选电台`,
-    description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景',
-    color: '#8B5CF6',
-    gradient: 'from-violet-500 to-purple-500',
-  },
-  {
-    icon: Sparkles,
-    title: '专注计时',
-    description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光',
-    color: '#EC4899',
-    gradient: 'from-pink-500 to-rose-500',
-  },
-  {
-    icon: Waves,
-    title: '在线收听',
-    description: '无需下载安装，打开网页即可享受高品质音乐，支持 PWA 离线使用',
-    color: '#06B6D4',
-    gradient: 'from-cyan-500 to-teal-500',
-  },
-  {
-    icon: Headphones,
-    title: '快捷键支持',
-    description: 'Space 播放/暂停，方向键切歌，M 静音，T 切换主题，让你的操作更高效',
-    color: '#F59E0B',
-    gradient: 'from-amber-500 to-orange-500',
-  },
+  { icon: Radio, title: `${stations.length} 精选电台`, description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)' },
+  { icon: Sparkles, title: '专注计时', description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光', color: '#EC4899', bg: 'rgba(236,72,153,0.08)' },
+  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐，灵动岛设计可拖动、支持快捷键，支持 PWA 离线使用', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
+  { icon: Moon, title: '睡眠定时', description: '设定 15~120 分钟定时，音乐自动停止，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
 ];
 
-// 使用场景
 const scenes = [
-  { id: '学习', icon: '📚', title: '学习', description: 'Lo-fi 音乐帮助你集中注意力' },
-  { id: '编程', icon: '💻', title: '编程', description: '氛围音乐激发创作灵感' },
-  { id: '阅读', icon: '📖', title: '阅读', description: '轻柔爵士陪伴你的阅读时光' },
-  { id: '助眠', icon: '🌙', title: '助眠', description: '自然白噪音帮助你入眠' },
+  { id: '学习', icon: '📚', title: '学习', description: 'Lo-fi 音乐帮助你集中注意力', color: '#8B5CF6' },
+  { id: '编程', icon: '💻', title: '编程', description: '氛围音乐激发创作灵感', color: '#06B6D4' },
+  { id: '阅读', icon: '📖', title: '阅读', description: '轻柔爵士陪伴你的阅读时光', color: '#10B981' },
+  { id: '助眠', icon: '🌙', title: '助眠', description: '自然白噪音帮助你入眠', color: '#F59E0B' },
 ];
 
-// 快捷键列表
 const shortcuts = [
   { key: 'Space', label: '播放/暂停' },
   { key: '←', label: '上一首' },
@@ -156,147 +193,66 @@ const shortcuts = [
 ];
 
 // 导航栏组件 - 药丸胶囊形式 + 高斯模糊
-const NavBar = memo(({ 
-  isDark, 
-  isPlaying, 
-  currentStation, 
-  stationColor,
-  onThemeToggle,
-  theme
-}: { 
-  isDark: boolean; 
-  isPlaying: boolean; 
-  currentStation: typeof stations[0] | null;
-  stationColor: string;
-  onThemeToggle: () => void;
-  theme: string | undefined;
+const NavBar = memo(({ isDark, isPlaying, currentStation, stationColor, onThemeToggle }: {
+  isDark: boolean; isPlaying: boolean; currentStation: typeof stations[0] | null; stationColor: string; onThemeToggle: () => void;
 }) => (
-  <motion.nav 
+  <motion.nav
     className="fixed top-4 left-1/2 -translate-x-1/2 z-40"
-    initial={{ y: -20, opacity: 0 }}
+    initial={{ y: -24, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
-    transition={{ duration: 0.5 }}
+    transition={{ duration: 0.5, ease: 'easeOut' }}
   >
-    <div 
+    <div
       className={cn(
-        "flex items-center gap-1 px-2 py-1 rounded-full",
-        "backdrop-blur-2xl shadow-2xl",
-        isDark 
-          ? "bg-zinc-900/60 border border-white/[0.08]" 
-          : "bg-white/70 border border-black/[0.04]"
+        "flex items-center gap-1 px-2 py-1 md:py-1.5 rounded-full backdrop-blur-2xl shadow-2xl",
+        isDark ? "bg-zinc-900/65 border border-white/[0.09]" : "bg-white/75 border border-black/[0.05]"
       )}
-      style={{
-        boxShadow: isDark 
-          ? '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
-          : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
-      }}
+      style={{ boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)' }}
     >
-      {/* Logo - 美化版，点击跳转官网 */}
-      <a 
-        href="https://lofi.88lin.eu.org/" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 px-2 py-1 hover:opacity-80 transition-opacity"
-      >
-        <div
-          className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center relative overflow-hidden"
-          style={{ 
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #D946EF 50%, #EC4899 100%)',
-            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)'
-          }}
-        >
+      <a href="https://lofi.88lin.eu.org/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-2 py-1 hover:opacity-80 transition-opacity">
+        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF, #EC4899)', boxShadow: '0 2px 8px rgba(139,92,246,0.45)' }}>
           <Music4 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
         </div>
-        {/* 桌面端显示标题 */}
-        <span className={cn("font-semibold text-sm hidden sm:block", isDark ? "text-white/90" : "text-zinc-900")}>
-          Lofi Radio
-        </span>
+        <span className={cn("font-bold text-sm hidden sm:block tracking-tight", isDark ? "text-white/90" : "text-zinc-900")}>Lofi Radio</span>
       </a>
 
-      {/* 分隔线 */}
-      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      <div className={cn("w-px h-4 sm:h-5 mx-0.5", isDark ? "bg-white/10" : "bg-black/8")} />
 
-      {/* 播放状态指示 - 移动端也显示 */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isPlaying && currentStation ? (
-          <motion.div
-            initial={{ opacity: 0, width: 0, marginRight: 0 }}
-            animate={{ opacity: 1, width: 'auto', marginRight: 4 }}
-            exit={{ opacity: 0, width: 0, marginRight: 0 }}
-            className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 rounded-full overflow-hidden"
-            style={{ 
-              background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-            }}
-          >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: '#22C55E', boxShadow: '0 0 6px #22C55E' }}
-              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/60" : "text-zinc-600")}>
-              {currentStation.name}
-            </span>
+          <motion.div key="playing" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}>
+            <div className="flex items-end gap-0.5 h-3 flex-shrink-0">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="w-0.5 rounded-full animate-equalizer" style={{ background: stationColor, height: `${6 + i * 3}px`, animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
+            <span className={cn("text-xs font-medium whitespace-nowrap max-w-[100px] truncate", isDark ? "text-white/65" : "text-zinc-600")}>{currentStation.name}</span>
           </motion.div>
         ) : (
-          <div className="flex items-center px-2 py-1">
-            <span className={cn("text-xs font-medium whitespace-nowrap", isDark ? "text-white/40" : "text-zinc-400")}>
-              未播放
-            </span>
-          </div>
+          <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-2 py-1">
+            <span className={cn("text-xs whitespace-nowrap", isDark ? "text-white/35" : "text-zinc-400")}>未播放</span>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 分隔线 */}
-      <div className={cn("w-px h-4 sm:h-5", isDark ? "bg-white/10" : "bg-black/10")} />
+      <div className={cn("w-px h-4 sm:h-5 mx-0.5", isDark ? "bg-white/10" : "bg-black/8")} />
 
-      {/* 主题切换 */}
-      <motion.button
-        onClick={onThemeToggle}
-        className={cn(
-          "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-          isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
-        )}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
+      <motion.button onClick={onThemeToggle}
+        className={cn("w-7 h-7 rounded-full flex items-center justify-center transition-colors", isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5")}
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title={isDark ? '切换亮色' : '切换暗色'}>
         <AnimatePresence mode="wait">
           {isDark ? (
-            <motion.div
-              key="sun"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            </motion.div>
+            <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}><Sun className="w-3.5 h-3.5" /></motion.div>
           ) : (
-            <motion.div
-              key="moon"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Moon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            </motion.div>
+            <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}><Moon className="w-3.5 h-3.5" /></motion.div>
           )}
         </AnimatePresence>
       </motion.button>
 
-      {/* GitHub - 仅桌面端显示 */}
-      <motion.a
-        href="https://github.com/88lin/lofi-radio-web"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "hidden sm:flex w-7 h-7 rounded-full items-center justify-center transition-colors flex-shrink-0",
-          isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5"
-        )}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
+      <motion.a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer"
+        className={cn("hidden sm:flex w-7 h-7 rounded-full items-center justify-center transition-colors", isDark ? "text-white/60 hover:text-white hover:bg-white/10" : "text-zinc-500 hover:text-zinc-900 hover:bg-black/5")}
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Github className="w-3.5 h-3.5" />
       </motion.a>
     </div>
@@ -305,680 +261,352 @@ const NavBar = memo(({
 NavBar.displayName = 'NavBar';
 
 // 特性卡片组件
-const FeatureCard = memo(({ 
-  feature, 
-  isDark 
-}: { 
-  feature: typeof features[0];
-  isDark: boolean;
-}) => (
+const FeatureCard = memo(({ feature, isDark }: { feature: typeof features[0]; isDark: boolean }) => (
   <motion.div
     variants={scaleIn}
-    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+    whileHover={{ y: -5, transition: { duration: 0.2 } }}
     className={cn(
-      "relative p-5 rounded-2xl transition-all duration-300 overflow-hidden group",
-      isDark ? "bg-white/[0.03] hover:bg-white/[0.05]" : "bg-white hover:shadow-lg"
+      "relative p-5 rounded-2xl transition-all duration-300 overflow-hidden group cursor-default",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.055] border border-white/[0.05]" : "bg-white hover:shadow-xl border border-black/[0.04]"
     )}
   >
-    {/* Hover 光效 */}
-    <div
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      style={{
-        background: `radial-gradient(circle at 50% 0%, ${feature.color}10 0%, transparent 60%)`,
-      }}
-    />
-    
-    {/* 图标容器 */}
-    <div
-      className={cn(
-        "relative w-11 h-11 rounded-xl flex items-center justify-center mb-4",
-        `bg-gradient-to-br ${feature.gradient}`
-      )}
-    >
-      <feature.icon className="w-5 h-5 text-white" />
+    <div className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `linear-gradient(90deg, transparent, ${feature.color}, transparent)` }} />
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${feature.color}12 0%, transparent 65%)` }} />
+    <div className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: feature.bg, border: `1px solid ${feature.color}20` }}>
+      <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
     </div>
-    
-    <h3 className={cn(
-      "relative text-base font-semibold mb-1.5",
-      isDark ? "text-white" : "text-zinc-900"
-    )}>
-      {feature.title}
-    </h3>
-    <p className={cn(
-      "relative text-sm leading-relaxed",
-      isDark ? "text-white/40" : "text-zinc-600"
-    )}>
-      {feature.description}
-    </p>
+    <h3 className={cn("relative text-base font-semibold mb-1.5", isDark ? "text-white/90" : "text-zinc-900")}>{feature.title}</h3>
+    <p className={cn("relative text-sm leading-relaxed", isDark ? "text-white/38" : "text-zinc-500")}>{feature.description}</p>
   </motion.div>
 ));
 FeatureCard.displayName = 'FeatureCard';
 
-// 场景卡片组件 - 使用 button 提升可访问性
-const SceneCard = memo(({ 
-  scene, 
-  isDark,
-  onClick
-}: { 
-  scene: typeof scenes[0];
-  isDark: boolean;
-  onClick: () => void;
-}) => (
+// ==================== 场景卡片 ====================
+const SceneCard = memo(({ scene, isDark, onClick }: { scene: typeof scenes[0]; isDark: boolean; onClick: () => void }) => (
   <motion.button
     variants={scaleIn}
-    whileHover={{ y: -3 }}
-    whileTap={{ scale: 0.98 }}
+    whileHover={{ y: -4, scale: 1.02 }}
+    whileTap={{ scale: 0.97 }}
     onClick={onClick}
-    aria-label={`播放${scene.title}场景音乐`}
     className={cn(
-      "p-4 rounded-2xl text-center transition-all cursor-pointer w-full",
-      "focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
-      isDark ? "bg-white/[0.03] hover:bg-white/[0.06] focus-visible:ring-offset-zinc-950" : "bg-white shadow-sm hover:shadow-md focus-visible:ring-offset-gray-50"
+      "relative p-5 rounded-2xl text-center transition-all cursor-pointer w-full overflow-hidden group",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+      isDark ? "bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05]" : "bg-white shadow-sm hover:shadow-lg border border-black/[0.04]"
     )}
   >
-    <div className="text-2xl mb-2">{scene.icon}</div>
-    <h4 className={cn(
-      "font-semibold text-sm mb-0.5",
-      isDark ? "text-white" : "text-zinc-900"
-    )}>
-      {scene.title}
-    </h4>
-    <p className={cn(
-      "text-xs",
-      isDark ? "text-white/40" : "text-zinc-500"
-    )}>
-      {scene.description}
-    </p>
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 100%, ${scene.color}12 0%, transparent 65%)` }} />
+    <div className="text-3xl mb-3 relative">{scene.icon}</div>
+    <h4 className={cn("font-semibold text-sm mb-1 relative", isDark ? "text-white/90" : "text-zinc-900")}>{scene.title}</h4>
+    <p className={cn("text-xs leading-relaxed relative", isDark ? "text-white/38" : "text-zinc-500")}>{scene.description}</p>
   </motion.button>
 ));
 SceneCard.displayName = 'SceneCard';
 
 // 电台卡片组件 - 使用 button 提升可访问性
-const StationCard = memo(({ 
-  station, 
-  isDark,
-  onClick
-}: { 
-  station: typeof stations[0];
-  isDark: boolean;
-  onClick: () => void;
+const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
+  station: typeof stations[0]; isDark: boolean; isActive: boolean; isPlaying: boolean; onClick: () => void;
 }) => (
   <motion.button
     variants={scaleIn}
     whileHover={{ y: -3, scale: 1.01 }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
-    aria-label={`播放${station.name}电台`}
     className={cn(
-      "relative p-3.5 rounded-xl cursor-pointer overflow-hidden group w-full text-left",
+      "relative p-4 rounded-xl cursor-pointer overflow-hidden group w-full text-left",
       "focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
       isDark ? "bg-white/[0.03] hover:bg-white/[0.05] focus-visible:ring-offset-zinc-950" : "bg-white hover:shadow-lg focus-visible:ring-offset-gray-50"
     )}
-    style={{
-      borderLeft: `3px solid ${station.color}`,
-    }}
+    style={{ borderLeft: `3px solid ${isActive ? station.color : 'transparent'}` }}
   >
-    {/* Hover 背景光效 */}
-    <div
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-      style={{
-        background: `linear-gradient(135deg, ${station.color}08 0%, transparent 50%)`,
-      }}
-    />
-    
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `linear-gradient(135deg, ${station.color}09 0%, transparent 55%)` }} />
     <div className="relative flex items-center gap-3">
-      <div 
-        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: `${station.color}15` }}
-      >
-        <Waves className="w-4 h-4" style={{ color: station.color }} />
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 relative" style={{ background: `${station.color}18` }}>
+        {isActive && isPlaying ? (
+          <div className="flex items-end gap-0.5 h-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="w-0.5 rounded-full animate-equalizer" style={{ background: station.color, height: `${7 + i * 3}px`, animationDelay: `${i * 0.12}s` }} />
+            ))}
+          </div>
+        ) : (
+          <Waves className="w-4 h-4 transition-transform group-hover:scale-110" style={{ color: station.color }} />
+        )}
       </div>
-      <div className="min-w-0">
-        <h4 className={cn(
-          "text-sm font-medium truncate",
-          isDark ? "text-white" : "text-zinc-900"
-        )}>
+      <div className="min-w-0 flex-1">
+        <h4 className={cn("text-sm font-semibold truncate transition-colors", isActive ? "" : isDark ? "text-white/80 group-hover:text-white/95" : "text-zinc-800")} style={isActive ? { color: station.color } : {}}>
           {station.name}
         </h4>
-        <span className={cn(
-          "text-xs",
-          isDark ? "text-white/30" : "text-zinc-500"
-        )}>
-          {station.style1}
-        </span>
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{station.style1}</span>
+          {station.custom && (
+            <>
+              <span className={cn("text-xs", isDark ? "text-white/15" : "text-zinc-300")}>·</span>
+              <span className="text-[10px] font-medium" style={{ color: `${station.color}bb` }}>{station.custom}</span>
+            </>
+          )}
+        </div>
       </div>
+      {isActive && (
+        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: station.color, boxShadow: `0 0 6px ${station.color}`, animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none' }} />
+      )}
     </div>
   </motion.button>
 ));
 StationCard.displayName = 'StationCard';
 
+// ==================== 主页 ====================
 export default function Home() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
-  const requestPlay = useAudioStore((state) => state.requestPlay);
-  const requestPause = useAudioStore((state) => state.requestPause);
-  const nextStation = useAudioStore((state) => state.nextStation);
-  const prevStation = useAudioStore((state) => state.prevStation);
-  const toggleMute = useAudioStore((state) => state.toggleMute);
-  const isPlaying = useAudioStore((state) => state.isPlaying);
-  const isLoading = useAudioStore((state) => state.isLoading);
-  const userWantsPlay = useAudioStore((state) => state.userWantsPlay);
-  const currentStation = useAudioStore((state) => state.currentStation);
-  const setMiniMode = useAudioStore((state) => state.setMiniMode);
-  const selectStationById = useAudioStore((state) => state.selectStationById);
-  const setSelectedCategory = useAudioStore((state) => state.setSelectedCategory);
-  
-  // 初始化
+
+  const requestPlay = useAudioStore((s) => s.requestPlay);
+  const requestPause = useAudioStore((s) => s.requestPause);
+  const nextStation = useAudioStore((s) => s.nextStation);
+  const prevStation = useAudioStore((s) => s.prevStation);
+  const toggleMute = useAudioStore((s) => s.toggleMute);
+  const isPlaying = useAudioStore((s) => s.isPlaying);
+  const isLoading = useAudioStore((s) => s.isLoading);
+  const userWantsPlay = useAudioStore((s) => s.userWantsPlay);
+  const currentStation = useAudioStore((s) => s.currentStation);
+  const setMiniMode = useAudioStore((s) => s.setMiniMode);
+  const selectStationById = useAudioStore((s) => s.selectStationById);
+  const setSelectedCategory = useAudioStore((s) => s.setSelectedCategory);
+  const { focusTime } = useFocusTimer();
+
   useAudioPlayer();
-  useFocusTimer();
-  
-  // 处理电台卡片点击
-  const handleStationClick = useCallback((stationId: string) => {
-    selectStationById(stationId);
-    setMiniMode(false);
-  }, [selectStationById, setMiniMode]);
 
-  // 处理场景点击
+  const handleStationClick = useCallback((id: string) => { selectStationById(id); setMiniMode(false); }, [selectStationById, setMiniMode]);
   const handleSceneClick = useCallback((sceneId: string) => {
-    // 找到该场景的第一个电台并播放
-    const sceneStations = stations.filter(s => s.scene === sceneId);
-    if (sceneStations.length > 0) {
-      setSelectedCategory(sceneId);
-      selectStationById(sceneStations[0].id);
-      setMiniMode(false);
-    }
+    const s = stations.filter(s => s.scene === sceneId);
+    if (s.length > 0) { setSelectedCategory(sceneId); selectStationById(s[0].id); setMiniMode(false); }
   }, [selectStationById, setMiniMode, setSelectedCategory]);
+  const handleThemeToggle = useCallback(() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }, [theme, setTheme]);
+  const togglePlay = useCallback(() => { if (userWantsPlay) requestPause(); else requestPlay(); }, [userWantsPlay, requestPlay, requestPause]);
 
-  // 主题切换
-  const handleThemeToggle = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, setTheme]);
-  
-  // 切换播放状态
-  const togglePlay = useCallback(() => {
-    if (userWantsPlay) {
-      requestPause();
-    } else {
-      requestPlay();
-    }
-  }, [userWantsPlay, requestPlay, requestPause]);
-  
-  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
       switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-          togglePlay();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          prevStation();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          nextStation();
-          break;
-        case 'KeyM':
-          e.preventDefault();
-          toggleMute();
-          break;
-        case 'KeyT':
-          e.preventDefault();
-          handleThemeToggle();
-          break;
+        case 'Space': e.preventDefault(); togglePlay(); break;
+        case 'ArrowLeft': e.preventDefault(); prevStation(); break;
+        case 'ArrowRight': e.preventDefault(); nextStation(); break;
+        case 'KeyM': e.preventDefault(); toggleMute(); break;
+        case 'KeyT': e.preventDefault(); handleThemeToggle(); break;
       }
     };
-    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
 
-  // 统一默认主题策略：未挂载时使用亮色主题（与 layout.tsx 一致）
   const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
-  
+
   return (
     <main className="relative min-h-screen overflow-x-hidden">
       {/* 背景 */}
       <div className="fixed inset-0">
-        {/* 纯色背景 */}
-        <div
-          className={cn(
-            "absolute inset-0 transition-colors duration-500",
-            isDark ? "bg-zinc-950" : "bg-gray-50"
-          )}
-        />
-        
-        {/* 流动渐变光球 - 减少 blur */}
-        <GradientOrb color1="#8B5CF6" color2="#D946EF" size={400} top="-5%" left="5%" delay={0} duration={20} />
-        <GradientOrb color1="#06B6D4" color2="#8B5CF6" size={350} top="50%" left="55%" delay={3} duration={18} />
-        <GradientOrb color1="#EC4899" color2="#F59E0B" size={280} top="75%" left="10%" delay={6} duration={22} />
-        
-        {/* 网格图案 */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
-              linear-gradient(${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px),
-              linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        
-        {/* 浮动粒子 */}
+        <div className={cn("absolute inset-0 transition-colors duration-700", isDark ? "bg-zinc-950" : "bg-slate-50")} />
+        <GradientOrb color1="#8B5CF6" color2="#D946EF" size={500} top="-10%" left="0%" delay={0} duration={22} />
+        <GradientOrb color1="#06B6D4" color2="#8B5CF6" size={400} top="45%" left="55%" delay={4} duration={20} />
+        <GradientOrb color1="#EC4899" color2="#F59E0B" size={320} top="75%" left="8%" delay={8} duration={25} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `linear-gradient(${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px)`,
+          backgroundSize: '64px 64px', opacity: 0.4,
+        }} />
         <FloatingParticles isDark={isDark} />
       </div>
-      
+
       {/* 内容 */}
       <div className="relative z-10">
-        {/* 导航栏 - 药丸胶囊形式 */}
-        <NavBar 
-          isDark={isDark}
-          isPlaying={isPlaying}
-          currentStation={currentStation}
-          stationColor={stationColor}
-          onThemeToggle={handleThemeToggle}
-          theme={theme}
-        />
-        
+        <NavBar isDark={isDark} isPlaying={isPlaying} currentStation={currentStation} stationColor={stationColor} onThemeToggle={handleThemeToggle} />
+
         {/* Hero Section */}
         <section className="pt-24 sm:pt-28 pb-10 sm:pb-14 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={stagger}
-            >
+            <motion.div initial="hidden" animate="visible" variants={stagger}>
+
               {/* 标签 */}
-              <motion.div variants={fadeInUp} className="mb-5">
-                <a
-                  href="https://lofi.88lin.eu.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors hover:opacity-80"
+              <motion.div variants={fadeInUp} className="mb-6">
+                <a href="https://lofi.88lin.eu.org/" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all hover:scale-105"
                   style={{
-                    background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.08)',
-                    color: isDark ? '#a78bfa' : '#7c3aed',
-                    border: isDark ? '1px solid rgba(139, 92, 246, 0.2)' : '1px solid rgba(139, 92, 246, 0.12)',
-                  }}
-                >
+                    background: isDark ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)',
+                    color: isDark ? '#c4b5fd' : '#6d28d9',
+                    border: isDark ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(139,92,246,0.15)',
+                  }}>
                   <Sparkles className="w-3.5 h-3.5" />
                   网页版全新上线
                   <ExternalLink className="w-3 h-3 opacity-50" />
                 </a>
               </motion.div>
-              
+
+              {/* 实时时钟 */}
+              <motion.div variants={fadeInUp}>
+                <LiveClock isDark={isDark} stationColor={stationColor} isPlaying={isPlaying} />
+              </motion.div>
+
               {/* 标题 */}
-              <motion.h1
-                variants={fadeInUp}
-                className={cn(
-                  "text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6",
-                  isDark ? "text-white" : "text-zinc-900"
-                )}
-              >
-                专注音乐
-                <br />
-                <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-                  触手可及
+              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5 whitespace-nowrap">
+                <span className={cn(
+                  "bg-clip-text text-transparent",
+                  isDark
+                    ? "bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400"
+                    : "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500"
+                )}>
+                  专注音乐 触手可及
                 </span>
               </motion.h1>
-              
+
               {/* 描述 */}
-              <motion.p
-                variants={fadeInUp}
-                className={cn(
-                  "text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed",
-                  isDark ? "text-white/50" : "text-zinc-600"
-                )}
-              >
-                Lofi 音乐被科学家认为是最适合专注工作学习的音乐。
+              <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
+                Lofi 音乐被科学认证为最适合专注工作学习的音乐。
                 <br className="hidden sm:block" />
-                macOS 风格灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
+                macOS 灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
               </motion.p>
-              
-              {/* 操作按钮 */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
+
+              {/* 按钮 */}
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      togglePlay();
-                      if (!userWantsPlay) setMiniMode(false);
-                    }}
-                    className="w-full sm:w-auto rounded-full px-6 h-11 sm:h-12 text-base font-medium shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
-                  >
-                    {isPlaying ? (
-                      <>
-                        <Pause className="w-5 h-5 mr-2" />
-                        <span>正在播放</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-5 h-5 mr-2" />
-                        <span>开始播放</span>
-                      </>
-                    )}
+                  <Button size="lg" onClick={() => { togglePlay(); if (!userWantsPlay) setMiniMode(false); }}
+                    className="w-full sm:w-auto rounded-full px-7 h-12 text-base font-semibold shadow-xl"
+                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)', boxShadow: '0 8px 32px rgba(139,92,246,0.35)' }}>
+                    {isPlaying ? <><Pause className="w-5 h-5 mr-2" /><span>正在播放</span></> : <><Play className="w-5 h-5 mr-2" /><span>开始播放</span></>}
                   </Button>
                 </motion.div>
-                
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className={cn(
-                      "w-full sm:w-auto rounded-full px-6 h-11 sm:h-12 text-base font-medium group",
-                      isDark && "border-white/20 text-white hover:bg-white/10"
-                    )}
-                    asChild
-                  >
+                  <Button variant="outline" size="lg" className={cn("w-full sm:w-auto rounded-full px-7 h-12 text-base font-medium group", isDark && "border-white/15 text-white/80 hover:bg-white/[0.07] hover:border-white/25")} asChild>
                     <a href="https://github.com/88lin/lofi-radio-web" target="_blank" rel="noopener noreferrer">
                       <Github className="w-5 h-5 mr-2" />
                       查看源码
-                      <ExternalLink className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="w-4 h-4 ml-2 opacity-40 group-hover:opacity-80 transition-opacity" />
                     </a>
                   </Button>
                 </motion.div>
               </motion.div>
-            </motion.div>
-            
-            {/* 快捷键提示 */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
-              className="mt-10"
-            >
-              <div className={cn(
-                "inline-flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-5 py-2.5 rounded-2xl",
-                isDark ? "bg-white/[0.02]" : "bg-black/[0.02]"
-              )}>
-                {shortcuts.map((item, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <kbd className={cn(
-                      "px-1.5 py-0.5 rounded-md text-xs font-mono",
-                      isDark ? "bg-white/10 text-white/60" : "bg-black/5 text-zinc-600"
-                    )}>
-                      {item.key}
-                    </kbd>
-                    <span className={cn("text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-            
-            {/* 当前播放状态 */}
-            <AnimatePresence>
-              {isPlaying && currentStation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                  transition={{ type: 'spring', damping: 20 }}
-                  className="mt-6"
-                >
-                  <motion.div
-                    className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full cursor-pointer"
-                    style={{
-                      background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)',
-                      backdropFilter: 'blur(12px)',
-                      border: `1px solid ${stationColor}25`,
-                    }}
-                    onClick={() => setMiniMode(false)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* 唱片旋转图标 */}
-                    <motion.div
-                      className="w-7 h-7 rounded-full flex items-center justify-center"
-                      style={{ background: `${stationColor}20` }}
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                    >
-                      <Music4 className="w-3.5 h-3.5" style={{ color: stationColor }} />
+
+              {/* 快捷键 - 仅桌面 */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.5 }} className="hidden sm:flex justify-center">
+                <div className={cn("inline-flex items-center gap-4 px-5 py-2.5 rounded-2xl", isDark ? "bg-white/[0.025]" : "bg-black/[0.025]")}>
+                  {shortcuts.map((item, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <kbd className={cn("px-2 py-0.5 rounded-md text-xs font-mono font-semibold", isDark ? "bg-white/10 text-white/50 border border-white/10" : "bg-black/5 text-zinc-500 border border-black/8")}>{item.key}</kbd>
+                      <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* 正在播放 */}
+              <AnimatePresence>
+                {isPlaying && currentStation && (
+                  <motion.div initial={{ opacity: 0, y: 12, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                    transition={{ type: 'spring', damping: 22 }} className="mt-6 flex justify-center">
+                    <motion.div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-full cursor-pointer"
+                      style={{ background: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', border: `1px solid ${stationColor}25`, boxShadow: `0 4px 20px ${stationColor}15` }}
+                      onClick={() => setMiniMode(false)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                      <motion.div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${stationColor}22` }}
+                        animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}>
+                        <Music4 className="w-3.5 h-3.5" style={{ color: stationColor }} />
+                      </motion.div>
+                      <div className="flex flex-col">
+                        <span className={cn("text-xs font-semibold", isDark ? "text-white" : "text-zinc-900")}>正在播放</span>
+                        <span className={cn("text-[10px]", isDark ? "text-white/45" : "text-zinc-500")}>{currentStation.name}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: `${stationColor}20`, color: stationColor }}>{currentStation.style1}</span>
+                      <motion.div className="w-1.5 h-1.5 rounded-full" style={{ background: stationColor }} animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
                     </motion.div>
-                    
-                    <div className="flex flex-col">
-                      <span className={cn("text-xs font-medium", isDark ? "text-white" : "text-zinc-900")}>
-                        正在播放
-                      </span>
-                      <span className={cn("text-[10px]", isDark ? "text-white/50" : "text-zinc-500")}>
-                        {currentStation.name}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 专注统计 */}
+              <AnimatePresence>
+                {focusTime > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="mt-4 flex justify-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: isDark ? `${stationColor}12` : `${stationColor}08`, border: `1px solid ${stationColor}20` }}>
+                      <Clock3 className="w-3 h-3" style={{ color: stationColor }} />
+                      <span className="text-xs font-medium" style={{ color: stationColor }}>
+                        今日专注 {focusTime < 60 ? `${focusTime} 分钟` : `${Math.floor(focusTime / 60)} 小时 ${focusTime % 60} 分钟`}
                       </span>
                     </div>
-                    
-                    <span
-                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ 
-                        background: `${stationColor}20`,
-                        color: stationColor,
-                      }}
-                    >
-                      {currentStation.style1}
-                    </span>
-                    
-                    <motion.div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: stationColor }}
-                      animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 1.2, repeat: Infinity }}
-                    />
                   </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+
+            </motion.div>
           </div>
         </section>
-        
+
         {/* Features Section */}
-        <section className="py-6 sm:py-10 px-4 sm:px-6">
+        <section className="sm:py-2 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-12"
-            >
-              <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
-                isDark ? "text-white" : "text-zinc-900"
-              )}>
-                为什么选择 Lofi Radio
-              </h2>
-              <p className={cn(
-                "text-base sm:text-lg max-w-xl mx-auto",
-                isDark ? "text-white/40" : "text-zinc-600"
-              )}>
-                专为专注设计，让音乐成为你工作和学习的最佳伴侣
-              </p>
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
+              <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>为什么选择 Lofi Radio</h2>
+              <p className={cn("text-base sm:text-lg max-w-xl mx-auto", isDark ? "text-white/38" : "text-zinc-500")}>专为专注设计，让音乐成为你工作和学习的最佳伴侣</p>
             </motion.div>
-            
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-              variants={stagger}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            >
-              {features.map((feature) => (
-                <FeatureCard key={feature.title} feature={feature} isDark={isDark} />
-              ))}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {features.map((f) => <FeatureCard key={f.title} feature={f} isDark={isDark} />)}
             </motion.div>
           </div>
         </section>
-        
+
         {/* 使用场景 Section */}
         <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-10"
-            >
-              <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
-                isDark ? "text-white" : "text-zinc-900"
-              )}>
-                适用场景
-              </h2>
-              <p className={cn(
-                "text-base sm:text-lg",
-                isDark ? "text-white/40" : "text-zinc-600"
-              )}>
-                无论学习、工作还是放松，总有一个电台适合你
-              </p>
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
+              <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>适用场景</h2>
+              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>无论学习、工作还是放松，总有一个电台适合你</p>
             </motion.div>
-            
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={stagger}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
-            >
-              {scenes.map((scene) => (
-                <SceneCard 
-                  key={scene.title} 
-                  scene={scene} 
-                  isDark={isDark}
-                  onClick={() => handleSceneClick(scene.id)}
-                />
-              ))}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {scenes.map((s) => <SceneCard key={s.title} scene={s} isDark={isDark} onClick={() => handleSceneClick(s.id)} />)}
             </motion.div>
           </div>
         </section>
-        
+
         {/* 电台展示 */}
         <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-10"
-            >
-              <h2 className={cn(
-                "text-2xl sm:text-3xl font-bold mb-3",
-                isDark ? "text-white" : "text-zinc-900"
-              )}>
-                精选电台
-              </h2>
-              <p className={cn(
-                "text-base sm:text-lg",
-                isDark ? "text-white/40" : "text-zinc-600"
-              )}>
-                涵盖多种风格，总有适合你的音乐
-              </p>
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
+              <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>精选电台</h2>
+              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>涵盖多种风格，总有适合你的音乐</p>
             </motion.div>
-            
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={stagger}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
-            >
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {stations.slice(0, 8).map((station) => (
-                <StationCard 
-                  key={station.id} 
-                  station={station} 
-                  isDark={isDark}
-                  onClick={() => handleStationClick(station.id)}
-                />
+                <StationCard key={station.id} station={station} isDark={isDark} isActive={currentStation?.id === station.id} isPlaying={isPlaying} onClick={() => handleStationClick(station.id)} />
               ))}
             </motion.div>
-            
-            {/* 查看更多按钮 */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="text-center mt-6"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "rounded-full gap-1.5",
-                  isDark && "border-white/20 text-white hover:bg-white/10"
-                )}
-                onClick={() => setMiniMode(false)}
-              >
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mt-6">
+              <Button variant="outline" size="sm" className={cn("rounded-full gap-2 px-5 h-9", isDark && "border-white/15 text-white/60 hover:bg-white/[0.07] hover:text-white/80")} onClick={() => setMiniMode(false)}>
                 查看全部电台
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </motion.div>
           </div>
         </section>
-        
+
         {/* CTA Section */}
         <section className="py-6 sm:py-10 px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <div
-              className="relative p-6 sm:p-10 rounded-3xl overflow-hidden"
-              style={{
-                background: isDark 
-                  ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(217, 70, 239, 0.04) 100%)'
-                  : 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(217, 70, 239, 0.03) 100%)',
-                border: isDark ? '1px solid rgba(139, 92, 246, 0.15)' : '1px solid rgba(139, 92, 246, 0.1)',
-              }}
-            >
-              <h2 className={cn(
-                "text-xl sm:text-2xl font-bold mb-3 relative",
-                isDark ? "text-white" : "text-zinc-900"
-              )}>
-                开始你的专注之旅
-              </h2>
-              <p className={cn(
-                "text-sm mb-6 relative max-w-xl mx-auto",
-                isDark ? "text-white/50" : "text-zinc-600"
-              )}>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="max-w-3xl mx-auto text-center">
+            <div className="relative p-8 sm:p-12 rounded-3xl overflow-hidden" style={{
+              background: isDark ? 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(217,70,239,0.05))' : 'linear-gradient(135deg, rgba(139,92,246,0.07), rgba(217,70,239,0.03))',
+              border: isDark ? '1px solid rgba(139,92,246,0.18)' : '1px solid rgba(139,92,246,0.12)',
+            }}>
+              <div className="absolute top-6 right-8 w-24 h-24 rounded-full blur-2xl opacity-20" style={{ background: 'radial-gradient(circle, #8B5CF6, transparent)' }} />
+              <div className="absolute bottom-4 left-6 w-16 h-16 rounded-full blur-xl opacity-15" style={{ background: 'radial-gradient(circle, #EC4899, transparent)' }} />
+              <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3 relative", isDark ? "text-white" : "text-zinc-900")}>开始你的专注之旅</h2>
+              <p className={cn("text-sm sm:text-base mb-8 relative max-w-xl mx-auto leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
                 无需注册，无需下载，打开网页即可享受高品质的专注音乐。让 Lofi Radio 成为你每天工作学习的最佳伴侣。
               </p>
-              
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
-                <Button
-                  size="lg"
-                  onClick={() => {
-                    togglePlay();
-                    if (!userWantsPlay) setMiniMode(false);
-                  }}
-                  className="rounded-full px-6 h-11 text-sm font-medium shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
-                >
-                  {userWantsPlay ? (
-                    <>
-                      <Pause className="w-4 h-4 mr-2" />
-                      {isLoading ? '加载中...' : '正在播放'}
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      立即开始
-                    </>
-                  )}
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative inline-block">
+                <Button size="lg" onClick={() => { togglePlay(); if (!userWantsPlay) setMiniMode(false); }}
+                  className="rounded-full px-8 h-12 text-base font-semibold shadow-xl"
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)', boxShadow: '0 8px 32px rgba(139,92,246,0.4)' }}>
+                  {userWantsPlay ? <><Pause className="w-5 h-5 mr-2" />{isLoading ? '加载中...' : '正在播放'}</> : <><Play className="w-5 h-5 mr-2" />立即开始</>}
                 </Button>
               </motion.div>
             </div>
           </motion.div>
         </section>
-        
+
         {/* 底部 */}
         <footer className={cn(
           "py-8 px-4 sm:px-6",

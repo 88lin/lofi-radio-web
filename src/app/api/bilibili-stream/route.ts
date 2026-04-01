@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // 2. 获取直播流地址
+    // 2. 获取直播流地址 (FLV)
     const playUrlRes = await fetch(
       `https://api.live.bilibili.com/room/v1/Room/playUrl?cid=${roomId}&quality=4&platform=web`,
       {
@@ -44,6 +44,25 @@ export async function GET(request: NextRequest) {
       }
     );
     const playUrlData = await playUrlRes.json();
+
+    // 3. 获取 HLS 流地址 (for iOS/Safari fallback)
+    let hlsUrlData: { data?: { durl?: Array<{ url: string }> } } | null = null;
+    try {
+      const hlsUrlRes = await fetch(
+        `https://api.live.bilibili.com/room/v1/Room/playUrl?cid=${roomId}&quality=4&platform=h5`,
+        {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+            'Referer': 'https://live.bilibili.com/',
+          },
+        }
+      );
+      if (hlsUrlRes.ok) {
+        hlsUrlData = await hlsUrlRes.json();
+      }
+    } catch {
+      hlsUrlData = null;
+    }
 
     if (playUrlData.code !== 0 || !playUrlData.data?.durl?.[0]?.url) {
       return NextResponse.json({ 
@@ -59,6 +78,7 @@ export async function GET(request: NextRequest) {
       title: infoData.data?.title || 'Bilibili Live',
       live_status: 1,
       flv_url: playUrlData.data.durl[0].url,
+      hls_url: hlsUrlData?.data?.durl?.[0]?.url || null,
       backup_urls: playUrlData.data.durl.slice(1).map((d: { url: string }) => d.url),
       quality: playUrlData.data.quality_description,
       timestamp: Date.now(),

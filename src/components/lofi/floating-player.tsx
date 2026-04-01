@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, Headphones, X, Sparkles, Music4, Music } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Clock, Maximize2, Minimize2, Loader2, List, Radio, X, Sparkles, Music4, Music, Moon, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAudioStore } from '@/store/audioStore';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
+import { useSleepTimer } from '@/hooks/useSleepTimer';
 import { stations, categories, getFilteredStations, Station } from '@/lib/stations';
 import { cn } from '@/lib/utils';
 
@@ -408,7 +409,7 @@ const StationList = memo(({
 StationList.displayName = 'StationList';
 
 // ==================== 全屏播放器 - 灵感来自HeoMusic ====================
-const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
+const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => void; remainingSeconds: number | null }) => {
   const {
     isPlaying, isLoading, currentStation, volume, isMuted, userWantsPlay,
     hasError, errorMessage,
@@ -426,8 +427,37 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
   }, [userWantsPlay, requestPlay, requestPause]);
   
   const { focusTime } = useFocusTimer();
+  const { sleepTimerMinutes, sleepTimerEndTime, setSleepTimer } = useAudioStore();
   const stationColor = currentStation?.color || '#8B5CF6';
   const [showStationList, setShowStationList] = useState(false);
+  const [showSleepTimerPanel, setShowSleepTimerPanel] = useState(false);
+  const [customSleepMinutes, setCustomSleepMinutes] = useState('');
+  const sleepPresetOptions = useMemo(() => [15, 30, 45, 60, 90, 120], []);
+
+  const toggleSleepTimerPanel = useCallback(() => {
+    setShowSleepTimerPanel(prev => !prev);
+  }, []);
+
+  const handleSleepPreset = useCallback((minutes: number | null) => {
+    setSleepTimer(minutes);
+    setShowSleepTimerPanel(false);
+  }, [setSleepTimer]);
+
+  const parsedCustomMinutes = Number(customSleepMinutes);
+  const isCustomMinutesValid = customSleepMinutes.trim().length > 0 && Number.isFinite(parsedCustomMinutes) && parsedCustomMinutes >= 1 && parsedCustomMinutes <= 480;
+
+  const handleCustomSleepTimer = useCallback(() => {
+    if (!isCustomMinutesValid) return;
+    setSleepTimer(Math.round(parsedCustomMinutes));
+    setCustomSleepMinutes('');
+    setShowSleepTimerPanel(false);
+  }, [isCustomMinutesValid, parsedCustomMinutes, setSleepTimer]);
+
+  const formatRemaining = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+  };
   
   const handleStationSelect = useCallback((station: Station) => {
     selectStationById(station.id);
@@ -457,9 +487,9 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
       />
       
       {/* 主内容区 - 桌面端左右布局 */}
-      <div className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="relative z-10 flex-1 h-full flex flex-col lg:flex-row overflow-y-auto overscroll-contain">
         {/* 左侧：播放器主体 */}
-        <div className="flex-1 flex flex-col min-w-0 flex items-center justify-center">
+        <div className="flex-1 flex flex-col min-w-0 flex items-center justify-start lg:justify-center py-14 sm:py-16 lg:py-0">
           {/* 唱片容器 - 添加缩放动画 */}
           <motion.div 
             onClick={togglePlay}
@@ -565,20 +595,137 @@ const FullScreenPlayer = memo(({ onClose }: { onClose: () => void }) => {
             </div>
           </div>
           
-          {/* 专注时间 */}
-          <div 
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-            style={{ background: 'rgba(255, 255, 255, 0.04)' }}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-white/30" />
-            <span className="text-white/40 text-xs">今日专注</span>
-            <span 
-              className="text-xs font-semibold tabular-nums"
-              style={{ color: stationColor }}
+          {/* 专注时间 + 睡眠定时器 */}
+          <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+            {/* 专注时间 */}
+            <div 
+              className="flex items-center justify-center gap-1 px-1 py-2 rounded-full whitespace-nowrap"
+              style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
             >
-              {focusTime} 分钟
-            </span>
+              <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: `${stationColor}80` }} />
+              <span className="text-[11px] text-white/30">今日专注</span>
+              <span 
+                className="text-xs font-bold tabular-nums"
+                style={{ color: stationColor }}
+              >
+                {focusTime}分钟
+              </span>
+            </div>
+
+            {/* 睡眠定时器 */}
+            <button
+              onClick={toggleSleepTimerPanel}
+              className="flex items-center justify-center gap-1 px-1 py-1 rounded-full whitespace-nowrap cursor-pointer transition-all duration-200 hover:bg-white/[0.08] active:scale-[0.97]"
+              style={{
+                background: sleepTimerEndTime ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.04)',
+                border: sleepTimerEndTime ? `1px solid ${stationColor}25` : '1px solid rgba(255, 255, 255, 0.05)'
+              }}
+              title="打开睡眠定时设置"
+            >
+              <Moon className="w-5 h-5 flex-shrink-0" style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }} />
+              <span className="text-[11px] text-white/30">睡眠定时</span>
+              <span
+                className="text-xs font-bold tabular-nums"
+                style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }}
+              >
+                {sleepTimerEndTime && remainingSeconds !== null
+                  ? formatRemaining(remainingSeconds)
+                  : '关闭'}
+              </span>
+              {showSleepTimerPanel ? (
+                <ChevronUp className="w-3.5 h-3.5 text-white/35" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-white/35" />
+              )}
+            </button>
           </div>
+
+          <AnimatePresence>
+            {showSleepTimerPanel && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="w-full max-w-xs sm:max-w-sm mt-3 p-3 rounded-2xl"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(14px)',
+                  WebkitBackdropFilter: 'blur(14px)'
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-white/55">快速设置</span>
+                  <button
+                    onClick={() => handleSleepPreset(null)}
+                    className="text-xs px-2 py-1 rounded-full transition-colors hover:bg-white/[0.09]"
+                    style={{ color: 'rgba(255,255,255,0.7)' }}
+                  >
+                    关闭定时
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {sleepPresetOptions.map((minutes) => {
+                    const isActive = sleepTimerMinutes === minutes;
+                    return (
+                      <button
+                        key={minutes}
+                        onClick={() => handleSleepPreset(minutes)}
+                        className="px-2 py-2 rounded-xl text-xs font-medium transition-all duration-150"
+                        style={{
+                          background: isActive ? `${stationColor}26` : 'rgba(255, 255, 255, 0.05)',
+                          border: isActive ? `1px solid ${stationColor}55` : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: isActive ? stationColor : 'rgba(255, 255, 255, 0.76)'
+                        }}
+                      >
+                        {minutes} 分钟
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={480}
+                    inputMode="numeric"
+                    value={customSleepMinutes}
+                    onChange={(e) => setCustomSleepMinutes(e.target.value.replace(/[^\d]/g, ''))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCustomSleepTimer();
+                      }
+                    }}
+                    placeholder="自定义分钟（1-480）"
+                    className="flex-1 h-10 px-3 rounded-xl text-sm text-white placeholder:text-white/35 outline-none"
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.18)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)'
+                    }}
+                  />
+                  <button
+                    onClick={handleCustomSleepTimer}
+                    disabled={!isCustomMinutesValid}
+                    className="h-10 px-4 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-45 disabled:cursor-not-allowed"
+                    style={{
+                      background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
+                      color: 'white'
+                    }}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    设置
+                  </button>
+                </div>
+                {customSleepMinutes.trim().length > 0 && !isCustomMinutesValid && (
+                  <p className="text-[11px] text-amber-300/90 mt-2">请输入 1 到 480 分钟</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* 移动端电台列表按钮 */}
           <button
@@ -780,44 +927,116 @@ MiniPlayer.displayName = 'MiniPlayer';
 
 // ==================== 主组件 ====================
 export function FloatingPlayer() {
-  const { isMiniMode, setMiniMode } = useAudioStore();
+  const { remainingSeconds } = useSleepTimer();
+  const { isMiniMode, setMiniMode, currentStation } = useAudioStore();
   const dragControls = useDragControls();
+  const miniIslandRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+  const [miniIslandWidth, setMiniIslandWidth] = useState(220);
   const lastTapRef = useRef<number>(0);
+  const scrollYRef = useRef(0);
+
+  // 全屏模式锁定页面滚动，避免移动端滚动穿透到底层页面
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (isMiniMode) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prevBodyPosition = body.style.position;
+    const prevBodyTop = body.style.top;
+    const prevBodyLeft = body.style.left;
+    const prevBodyRight = body.style.right;
+    const prevBodyWidth = body.style.width;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    const prevHtmlOverscroll = html.style.overscrollBehavior;
+
+    scrollYRef.current = window.scrollY || window.pageYOffset || 0;
+
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollYRef.current}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    html.style.overscrollBehavior = 'none';
+
+    return () => {
+      body.style.position = prevBodyPosition;
+      body.style.top = prevBodyTop;
+      body.style.left = prevBodyLeft;
+      body.style.right = prevBodyRight;
+      body.style.width = prevBodyWidth;
+      body.style.overflow = prevBodyOverflow;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+      html.style.overscrollBehavior = prevHtmlOverscroll;
+
+      window.scrollTo(0, scrollYRef.current);
+    };
+  }, [isMiniMode]);
   
   // 灵动岛边界约束 - 允许拖到屏幕边缘
   useEffect(() => {
-    const updateConstraints = () => {
+    const edgePadding = 20;
+    const initialY = 70;
+
+    const getIslandSize = () => {
+      const width = miniIslandRef.current?.offsetWidth;
+      const height = miniIslandRef.current?.offsetHeight;
+
+      if (width && height) {
+        setMiniIslandWidth(width);
+        return { width, height };
+      }
+
+      const fallbackWidth = window.innerWidth < 640 ? 200 : 220;
+      return {
+        width: fallbackWidth,
+        height: window.innerWidth < 640 ? 50 : 56,
+      };
+    };
+
+    const getComputedConstraints = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      
-      // 灵动岛尺寸
-      const islandWidth = windowWidth < 640 ? 200 : 220;
-      const islandHeight = windowWidth < 640 ? 50 : 56;
-      
-      // 初始位置（屏幕顶部中央）
+      const { width: islandWidth, height: islandHeight } = getIslandSize();
       const initialX = (windowWidth - islandWidth) / 2;
-      const initialY = 70;
-      
-      // 允许拖动到屏幕边缘，只留一点边距防止完全看不见
-      const edgePadding = 20; // 边缘留20px，确保还能点击到
-      
-      setConstraints({
+
+      return {
         left: edgePadding - initialX,
         right: windowWidth - islandWidth - edgePadding - initialX,
         top: edgePadding - initialY,
-        bottom: windowHeight - islandHeight - edgePadding - initialY
-      });
-      
-      setPosition({ x: 0, y: 0 });
+        bottom: windowHeight - islandHeight - edgePadding - initialY,
+      };
+    };
+
+    const clampToConstraints = (nextConstraints: { left: number; right: number; top: number; bottom: number }) => {
+      setPosition((prev) => ({
+        x: Math.min(nextConstraints.right, Math.max(nextConstraints.left, prev.x)),
+        y: Math.min(nextConstraints.bottom, Math.max(nextConstraints.top, prev.y)),
+      }));
+    };
+
+    const updateConstraints = () => {
+      const nextConstraints = getComputedConstraints();
+      setConstraints(nextConstraints);
+      clampToConstraints(nextConstraints);
     };
     
-    updateConstraints();
+    const rafId = window.requestAnimationFrame(updateConstraints);
     window.addEventListener('resize', updateConstraints);
-    return () => window.removeEventListener('resize', updateConstraints);
-  }, []);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateConstraints);
+    };
+  }, [isMiniMode, currentStation?.id]);
   
   // 双击展开
   const handleDoubleClick = useCallback(() => {
@@ -863,7 +1082,7 @@ export function FloatingPlayer() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
           >
-            <FullScreenPlayer onClose={() => setMiniMode(true)} />
+            <FullScreenPlayer onClose={() => setMiniMode(true)} remainingSeconds={remainingSeconds} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -872,11 +1091,12 @@ export function FloatingPlayer() {
       <AnimatePresence>
         {isMiniMode && (
           <motion.div
+            ref={miniIslandRef}
             className={cn("fixed pointer-events-auto z-50", isDragging ? "cursor-grabbing" : "cursor-grab")}
             style={{ 
               left: '50%', 
               top: '70px',
-              marginLeft: '-110px',
+              marginLeft: `-${miniIslandWidth / 2}px`,
               x: position.x,
               y: position.y,
             }}
