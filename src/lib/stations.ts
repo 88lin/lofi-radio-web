@@ -18,9 +18,9 @@ export const stations: Station[] = [
     scene: '学习',
     type: 'bilibili',
     url: 'https://live.bilibili.com/27519423',
-    style1: 'Lo-fi',
+    style1: 'Lofi',
     style2: 'Chill',
-    custom: 'B站直播',
+    // custom: 'B站',
     color: '#8B5CF6'
   },
   {
@@ -29,9 +29,9 @@ export const stations: Station[] = [
     scene: '学习',
     type: 'mp3',
     url: 'https://boxradio-edge-00.streamafrica.net/lofi',
-    style1: 'Lo-fi',
+    style1: 'Lofi',
     style2: 'Chill',
-    custom: '高性能',
+    // custom: '高性能',
     color: '#A78BFA'
   },
   {
