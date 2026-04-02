@@ -784,7 +784,7 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
       
       {/* 主体 */}
       <div
-        className="relative flex items-center gap-2 sm:gap-2.5 px-2 py-1.5 sm:px-3 sm:py-2 rounded-full overflow-hidden transition-all duration-300 bg-white/55 dark:bg-[#1a1a2e]/50 border border-white/50 dark:border-white/[0.12] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)]"
+        className="relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-2 rounded-full overflow-hidden transition-all duration-300 bg-white/55 dark:bg-[#1a1a2e]/50 border border-white/50 dark:border-white/[0.12] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)]"
         style={{
           backdropFilter: 'blur(24px) saturate(170%)',
           WebkitBackdropFilter: 'blur(24px) saturate(170%)',

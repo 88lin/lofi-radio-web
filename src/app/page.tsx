@@ -158,7 +158,7 @@ const NavBar = memo(({ isDark, isPlaying, currentStation, stationColor, onThemeT
   >
     <div
       className={cn(
-        "flex items-center gap-1 px-2 py-1 md:py-1.5 rounded-full backdrop-blur-2xl shadow-2xl",
+        "flex items-center gap-1 px-2 py-1.5 rounded-full backdrop-blur-2xl shadow-2xl",
         isDark ? "bg-zinc-900/65 border border-white/[0.09]" : "bg-white/75 border border-black/[0.05]"
       )}
       style={{ boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)' }}
