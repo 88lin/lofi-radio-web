@@ -236,7 +236,6 @@ export const useAudioStore = create<AudioState>()(
         stationIndex: state.stationIndex,
         accumulatedFocusTime: state.accumulatedFocusTime,
         focusDate: state.focusDate,
-        isMiniMode: state.isMiniMode,
         sleepTimerMinutes: state.sleepTimerMinutes,
         sleepTimerEndTime: state.sleepTimerEndTime,
       }),

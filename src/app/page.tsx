@@ -436,7 +436,7 @@ export default function Home() {
               {/* 按钮 */}
               <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-                  <Button size="lg" onClick={() => { togglePlay(); if (!userWantsPlay) setMiniMode(false); }}
+                  <Button size="lg" onClick={() => togglePlay()}
                     className="w-full sm:w-auto rounded-full px-7 h-12 text-base font-semibold shadow-xl"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)', boxShadow: '0 8px 32px rgba(139,92,246,0.35)' }}>
                     {isPlaying ? <><Pause className="w-5 h-5 mr-2" /><span>正在播放</span></> : <><Play className="w-5 h-5 mr-2" /><span>开始播放</span></>}
