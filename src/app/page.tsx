@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, useCallback, memo, useMemo, useState } from 'react';
+import { useEffect, useSyncExternalStore, useCallback, memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Github, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight, Radio, Clock3 } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -55,52 +55,6 @@ const scaleIn = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
 };
-
-// ==================== 浮动粒子 ====================
-const FloatingParticles = memo(({ isDark }: { isDark: boolean }) => {
-  const particles = useMemo(() =>
-    [...Array(10)].map((_, i) => ({
-      id: i,
-      size: 2 + (i % 3),
-      left: (i * 9.8) + (i % 3) * 2.5,
-      top: 8 + (i * 9) + (i % 4) * 2,
-      delay: i * 0.4,
-      duration: 5 + (i % 5),
-    })), []
-  );
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className="absolute rounded-full animate-float"
-          style={{
-            width: p.size, height: p.size,
-            background: isDark ? `rgba(139,92,246,${0.08 + (p.id % 3) * 0.04})` : `rgba(139,92,246,${0.04 + (p.id % 3) * 0.02})`,
-            left: `${p.left}%`, top: `${p.top}%`,
-            animationDelay: `${p.delay}s`, animationDuration: `${p.duration}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-});
-FloatingParticles.displayName = 'FloatingParticles';
-
-// ==================== 渐变光球 ====================
-const GradientOrb = memo(({ color1, color2, size, top, left, delay = 0, duration = 15 }: {
-  color1: string; color2: string; size: number; top: string; left: string; delay?: number; duration?: number;
-}) => (
-  <div
-    className="absolute rounded-full animate-orb blur-[80px] sm:blur-[100px]"
-    style={{
-      width: size, height: size, top, left,
-      background: `radial-gradient(circle, ${color1}, ${color2})`,
-      opacity: 0.1, animationDelay: `${delay}s`, animationDuration: `${duration}s`,
-    }}
-  />
-));
-GradientOrb.displayName = 'GradientOrb';
 
 // ==================== 实时时钟组件 ====================
 const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; stationColor: string; isPlaying: boolean }) => {
@@ -224,7 +178,7 @@ const NavBar = memo(({ isDark, isPlaying, currentStation, stationColor, onThemeT
             className="flex items-center gap-1.5 px-2 py-1 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}>
             <div className="flex items-end gap-0.5 h-3 flex-shrink-0">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="w-0.5 rounded-full animate-equalizer" style={{ background: stationColor, height: `${6 + i * 3}px`, animationDelay: `${i * 0.1}s` }} />
+                <div key={i} className="w-[2px] rounded-full animate-equalizer origin-bottom will-change-transform" style={{ background: stationColor, height: '12px', transform: 'scaleY(0.4)', animationDelay: `${i * 0.1}s` }} />
               ))}
             </div>
             <span className={cn("text-xs font-medium whitespace-nowrap max-w-[100px] truncate", isDark ? "text-white/65" : "text-zinc-600")}>{currentStation.name}</span>
@@ -324,7 +278,7 @@ const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
         {isActive && isPlaying ? (
           <div className="flex items-end gap-0.5 h-4">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="w-0.5 rounded-full animate-equalizer" style={{ background: station.color, height: `${7 + i * 3}px`, animationDelay: `${i * 0.12}s` }} />
+              <div key={i} className="w-[2px] rounded-full animate-equalizer origin-bottom will-change-transform" style={{ background: station.color, height: '14px', transform: 'scaleY(0.4)', animationDelay: `${i * 0.12}s` }} />
             ))}
           </div>
         ) : (
@@ -403,16 +357,32 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-x-hidden">
       {/* 背景 */}
-      <div className="fixed inset-0">
-        <div className={cn("absolute inset-0 transition-colors duration-700", isDark ? "bg-zinc-950" : "bg-slate-50")} />
-        <GradientOrb color1="#8B5CF6" color2="#D946EF" size={500} top="-10%" left="0%" delay={0} duration={22} />
-        <GradientOrb color1="#06B6D4" color2="#8B5CF6" size={400} top="45%" left="55%" delay={4} duration={20} />
-        <GradientOrb color1="#EC4899" color2="#F59E0B" size={320} top="75%" left="8%" delay={8} duration={25} />
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        {/* 基础底色 */}
+        <div className={cn("absolute inset-0 transition-colors duration-700", isDark ? "bg-[#0a0a0c]" : "bg-slate-50")} />
+        
+        {/* 静态柔和渐变 */}
+        <div 
+          className="absolute inset-0 opacity-40 sm:opacity-50"
+          style={{
+            background: isDark 
+              ? 'radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.15) 0%, transparent 40%), radial-gradient(circle at 75% 60%, rgba(6, 182, 212, 0.12) 0%, transparent 45%), radial-gradient(circle at 30% 85%, rgba(236, 72, 153, 0.12) 0%, transparent 40%)'
+              : 'radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.08) 0%, transparent 40%), radial-gradient(circle at 75% 60%, rgba(6, 182, 212, 0.06) 0%, transparent 45%), radial-gradient(circle at 30% 85%, rgba(236, 72, 153, 0.06) 0%, transparent 40%)'
+          }}
+        />
+
+        {/* 高级噪点质感 */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] sm:opacity-[0.04]"
+          style={{ 
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+            mixBlendMode: isDark ? 'overlay' : 'multiply'
+          }} 
+        />
         <div className="absolute inset-0" style={{
           backgroundImage: `linear-gradient(${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px)`,
           backgroundSize: '64px 64px', opacity: 0.4,
         }} />
-        <FloatingParticles isDark={isDark} />
       </div>
 
       {/* 内容 */}

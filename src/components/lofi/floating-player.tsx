@@ -84,7 +84,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
 });
 VinylRecord.displayName = 'VinylRecord';
 
-// ==================== 音量滑块组件 - 优化版 ====================
+// ==================== 音量滑块组件 - 原生极速版 ====================
 const VolumeSlider = memo(({ 
   volume, 
   isMuted, 
@@ -98,73 +98,13 @@ const VolumeSlider = memo(({
   onMuteToggle: () => void;
   stationColor: string;
 }) => {
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-
-  const calculateVolume = useCallback((clientX: number) => {
-    if (!sliderRef.current) return;
-    const rect = sliderRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    onVolumeChange(percentage);
-  }, [onVolumeChange]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging.current = true;
-    calculateVolume(e.clientX);
-  }, [calculateVolume]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
-    isDragging.current = true;
-    calculateVolume(e.touches[0].clientX);
-  }, [calculateVolume]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging.current) {
-        e.preventDefault();
-        calculateVolume(e.clientX);
-      }
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDragging.current) {
-        calculateVolume(e.touches[0].clientX);
-      }
-    };
-    const handleEnd = () => {
-      isDragging.current = false;
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleTouchMove);
-    document.addEventListener('touchend', handleEnd);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleEnd);
-    };
-  }, [calculateVolume]);
-
   const displayVolume = isMuted ? 0 : volume;
 
   return (
-    <div 
-      className="flex items-center gap-3 w-full"
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-    >
+    <div className="flex items-center gap-3 w-full">
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onMuteToggle();
-        }}
+        onClick={onMuteToggle}
+        aria-label={isMuted || volume === 0 ? '取消静音' : '静音'}
         className="flex-shrink-0 p-2 rounded-xl hover:bg-white/5 transition-colors"
       >
         {isMuted || volume === 0 ? (
@@ -174,14 +114,9 @@ const VolumeSlider = memo(({
         )}
       </button>
       
-      <div 
-        ref={sliderRef}
-        className="flex-1 relative h-8 flex items-center cursor-pointer"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-      >
+      <div className="flex-1 relative h-8 flex items-center group">
         {/* 背景轨道 */}
-        <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/10" />
+        <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/10 pointer-events-none" />
         
         {/* 已填充轨道 */}
         <div
@@ -192,13 +127,26 @@ const VolumeSlider = memo(({
           }}
         />
         
-        {/* 滑块 */}
+        {/* 原生 range input */}
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={displayVolume}
+          onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+          aria-label="音量"
+          className="absolute inset-x-0 w-full h-full opacity-0 cursor-pointer appearance-none touch-pan-x z-10"
+        />
+        
+        {/* 自定义滑块圆点 */}
         <div
           className="absolute w-4 h-4 rounded-full pointer-events-none transition-all duration-75"
           style={{
             background: 'linear-gradient(135deg, #fff, #e0e0e0)',
             left: `calc(${displayVolume * 100}% - 8px)`,
-            boxShadow: `0 2px 6px rgba(0,0,0,0.25), 0 0 0 2px ${stationColor}25`
+            boxShadow: `0 2px 6px rgba(0,0,0,0.25), 0 0 0 2px ${stationColor}25`,
+            transform: 'translateZ(0)' // 硬件加速
           }}
         />
       </div>
@@ -388,11 +336,11 @@ const StationList = memo(({
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="w-0.5 rounded-full animate-equalizer"
+                        className="w-[2px] rounded-full animate-equalizer will-change-transform"
                         style={{ 
                           background: station.color,
                           animationDelay: `${i * 0.1}s`,
-                          height: `${12 + i * 4}px`,
+                          height: '16px', transform: 'scaleY(0.3)',
                         }}
                       />
                     ))}
