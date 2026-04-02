@@ -45,16 +45,6 @@ export const stations: Station[] = [
     color: '#10B981'
   },
   {
-    id: 'chill-sky',
-    name: 'Chill Sky',
-    scene: '阅读',
-    type: 'mp3',
-    url: 'http://chill.radioca.st/stream',
-    style1: 'Chill',
-    style2: 'Electro',
-    color: '#06B6D4'
-  },
-  {
     id: 'jazz-box',
     name: 'Jazz Box',
     scene: '阅读',
@@ -63,6 +53,16 @@ export const stations: Station[] = [
     style1: 'Jazz',
     style2: 'Smooth',
     color: '#D946EF'
+  },
+  {
+    id: 'chill-sky',
+    name: 'Chill Sky',
+    scene: '阅读',
+    type: 'mp3',
+    url: 'https://chill.radioca.st/stream',
+    style1: 'Chill',
+    style2: 'Electro',
+    color: '#06B6D4'
   },
   {
     id: 'chill-wave',
@@ -95,16 +95,6 @@ export const stations: Station[] = [
     color: '#0EA5E9'
   },
   {
-    id: 'asp',
-    name: 'ASP',
-    scene: '助眠',
-    type: 'mp3',
-    url: 'http://radio.stereoscenic.com/asp-s',
-    style1: 'Ambient',
-    style2: 'Sleep',
-    color: '#6366F1'
-  },
-  {
     id: 'drone-zone',
     name: 'Drone Zone',
     scene: '助眠',
@@ -113,6 +103,16 @@ export const stations: Station[] = [
     style1: 'Ambient',
     style2: 'Deep',
     color: '#64748B'
+  },
+  {
+    id: 'asp',
+    name: 'ASP',
+    scene: '助眠',
+    type: 'mp3',
+    url: 'https://radio.stereoscenic.com/asp-s',
+    style1: 'Ambient',
+    style2: 'Sleep',
+    color: '#6366F1'
   },
   {
     id: 'swiss-classic',
@@ -139,7 +139,6 @@ export const stations: Station[] = [
     name: 'Jazz Smooth',
     scene: '办公',
     type: 'mp3',
-    // 该电台有 HTTPS 版本
     url: 'https://smoothjazz.cdnstream1.com/2585_128.mp3',
     style1: 'Jazz',
     style2: 'Mellow',

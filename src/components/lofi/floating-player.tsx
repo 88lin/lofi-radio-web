@@ -858,7 +858,7 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
           <button
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             aria-label={isPlaying ? '暂停' : '播放'}
-            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
             style={{ 
               background: `linear-gradient(135deg, ${stationColor}, ${stationColor}dd)`,
             }}
