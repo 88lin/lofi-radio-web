@@ -435,19 +435,8 @@ html:not(.dark) {
   transition: none !important;
 }
 
-/* 移动端触摸区域增大 */
+/* 移动端字体适配 */
 @media (max-width: 640px) {
-  button, 
-  [role="button"],
-  a,
-  input,
-  select,
-  textarea {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* 移动端字体增大 */
   .text-xs { font-size: 0.8125rem; }
   .text-sm { font-size: 0.9375rem; }
   .text-base { font-size: 1.0625rem; }

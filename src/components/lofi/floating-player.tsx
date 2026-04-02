@@ -9,14 +9,14 @@ import { useSleepTimer } from '@/hooks/useSleepTimer';
 import { stations, categories, getFilteredStations, Station } from '@/lib/stations';
 import { cn } from '@/lib/utils';
 
-// ==================== 黑胶唱片组件 - 优化版 ====================
+// ==================== 黑胶唱片组件 ====================
 const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlaying: boolean; size?: number; color?: string }) => {
   return (
     <div
       className="relative flex-shrink-0 cursor-pointer select-none"
       style={{ width: size, height: size }}
     >
-      {/* 外部光晕 - 使用 CSS 动画 */}
+      {/* 外部光晕 */}
       <div
         className={cn(
           "absolute -inset-4 rounded-full transition-opacity duration-500",
@@ -27,7 +27,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
         }}
       />
       
-      {/* 唱片主体 - 使用 CSS 旋转动画 */}
+      {/* 唱片主体 */}
       <div
         className={cn("absolute inset-0 rounded-full", isPlaying && "animate-spin-slow")}
         style={{
@@ -45,7 +45,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        {/* 纹路 - 减少数量 */}
+        {/* 纹路 */}
         {[...Array(8)].map((_, i) => (
           <div
             key={i}
@@ -58,7 +58,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
         ))}
       </div>
       
-      {/* 中心标签 - 带音乐符号 */}
+      {/* 中心标签 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
@@ -84,7 +84,7 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
 });
 VinylRecord.displayName = 'VinylRecord';
 
-// ==================== 音量滑块组件 - 原生极速版 ====================
+// ==================== 音量滑块组件 ====================
 const VolumeSlider = memo(({ 
   volume, 
   isMuted, 
@@ -159,7 +159,7 @@ const VolumeSlider = memo(({
 });
 VolumeSlider.displayName = 'VolumeSlider';
 
-// ==================== 电台列表组件 - 桌面端优化版 ====================
+// ==================== 电台列表组件 ====================
 const StationList = memo(({ 
   onClose, 
   onSelect, 
@@ -191,7 +191,7 @@ const StationList = memo(({
       className="h-full flex flex-col"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* 头部 - 桌面端不显示关闭按钮 */}
+      {/* 头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <div 
@@ -219,7 +219,7 @@ const StationList = memo(({
         )}
       </div>
       
-      {/* 分类标签 - 横向滚动 */}
+      {/* 分类标签 */}
       <div className="px-3 py-2.5 border-b border-white/[0.04]">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {categories.map((cat) => (
@@ -237,7 +237,7 @@ const StationList = memo(({
               )}
               style={{
                 background: selectedCategory === cat.id
-                  ? `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`
+                  ? `linear-gradient(135deg, ${stationColor}, ${stationColor}dd)`
                   : undefined,
               }}
             >
@@ -247,7 +247,7 @@ const StationList = memo(({
         </div>
       </div>
       
-      {/* 电台列表 - 桌面端优化布局 */}
+      {/* 电台列表 */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className={cn(
           "grid gap-2",
@@ -319,7 +319,7 @@ const StationList = memo(({
                       </span>
                     )}
                   </div>
-                  {/* 标签 - 完整显示 */}
+                  {/* 标签 */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/50 whitespace-nowrap">
                       {station.style1}
@@ -356,7 +356,7 @@ const StationList = memo(({
 });
 StationList.displayName = 'StationList';
 
-// ==================== 全屏播放器 - 灵感来自HeoMusic ====================
+// ==================== 全屏播放器 ====================
 const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => void; remainingSeconds: number | null }) => {
   const {
     isPlaying, isLoading, currentStation, volume, isMuted, userWantsPlay,
@@ -413,7 +413,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
   
   return (
     <div className="relative w-full h-full flex overflow-hidden">
-      {/* 背景层 - 更透明更亮 */}
+      {/* 背景层 */}
       <div 
         className="absolute inset-0 z-0"
         style={{
@@ -434,11 +434,11 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
         }}
       />
       
-      {/* 主内容区 - 桌面端左右布局 */}
+      {/* 主内容区 */}
       <div className="relative z-10 flex-1 h-full flex flex-col lg:flex-row overflow-y-auto overscroll-contain">
-        {/* 左侧：播放器主体 */}
+        {/* 播放器主体 */}
         <div className="flex-1 flex flex-col min-w-0 flex items-center justify-start lg:justify-center py-14 sm:py-16 lg:py-0">
-          {/* 唱片容器 - 添加缩放动画 */}
+          {/* 唱片容器 */}
           <motion.div 
             onClick={togglePlay}
             className="cursor-pointer mb-6"
@@ -685,7 +685,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
           </button>
         </div>
         
-        {/* 右侧：电台列表 - 桌面端固定显示 */}
+        {/* 右侧电台列表 */}
         <div 
           className="hidden lg:flex w-80 flex-col border-l border-white/[0.08]"
           style={{ 
@@ -698,7 +698,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
         </div>
       </div>
       
-      {/* 关闭按钮 - 固定在左上角 */}
+      {/* 关闭按钮 */}
       <button
         onClick={onClose}
         className="absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] transition-all duration-200"
@@ -757,116 +757,155 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
 });
 FullScreenPlayer.displayName = 'FullScreenPlayer';
 
-// ==================== 迷你灵动岛 - 精致玻璃版 ====================
+// ==================== 迷你灵动岛 ====================
 const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
-  const { isPlaying, currentStation, isLoading, userWantsPlay, hasError, requestPlay, requestPause } = useAudioStore();
+  const { isPlaying, currentStation, isLoading, userWantsPlay, hasError, requestPlay, requestPause, nextStation, prevStation } = useAudioStore();
   const { focusTime } = useFocusTimer();
   const stationColor = hasError ? '#EF4444' : (currentStation?.color || '#8B5CF6');
   
-  // 切换播放状态
   const togglePlay = useCallback(() => {
-    if (userWantsPlay) {
-      requestPause();
-    } else {
-      requestPlay();
-    }
+    if (userWantsPlay) requestPause();
+    else requestPlay();
   }, [userWantsPlay, requestPlay, requestPause]);
   
   return (
-    <div className="relative cursor-grab active:cursor-grabbing select-none">
-      {/* 外部光晕 - 精致柔和 */}
+    <div className="relative cursor-grab active:cursor-grabbing select-none group/island">
+      {/* 外部光晕 */}
       <div
         className={cn(
-          "absolute -inset-3 sm:-inset-4 rounded-full transition-opacity duration-500",
-          isPlaying ? "opacity-50" : "opacity-30"
+          "absolute -inset-3 sm:-inset-4 rounded-full transition-all duration-700 ease-in-out",
+          isPlaying ? "opacity-100 animate-breathe" : "opacity-30"
         )}
         style={{ 
-          background: `radial-gradient(ellipse, ${stationColor}30 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse, ${stationColor}40 0%, ${stationColor}15 45%, transparent 70%)`,
+          filter: 'blur(12px)',
         }}
       />
       
-      {/* 主体 - 玻璃质感灵动岛，更透明更亮 */}
+      {/* 主体 */}
       <div
-        className="relative flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full"
+        className="relative flex items-center gap-2 sm:gap-2.5 px-2 py-1.5 sm:px-3 sm:py-2 rounded-full overflow-hidden transition-all duration-300 bg-white/55 dark:bg-[#1a1a2e]/50 border border-white/50 dark:border-white/[0.12] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)]"
         style={{
-          background: `linear-gradient(145deg, rgba(60, 60, 80, 0.65) 0%, rgba(40, 40, 60, 0.7) 100%)`,
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-          boxShadow: `
-            0 8px 32px rgba(0, 0, 0, 0.3),
-            0 0 0 0.5px rgba(255, 255, 255, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.12),
-            0 0 30px ${stationColor}15
-          `
+          backdropFilter: 'blur(24px) saturate(170%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(170%)',
         }}
       >
-        {/* 迷你唱片 */}
-        <div
+        {/* 动态主题色内发光 */}
+        <div 
           className={cn(
-            "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0 relative overflow-hidden",
-            isPlaying && "animate-spin-slow"
+            "absolute inset-0 pointer-events-none rounded-full transition-opacity duration-500",
+            isPlaying ? "opacity-100" : "opacity-50"
           )}
-          style={{ 
-            background: `linear-gradient(145deg, rgba(50, 50, 70, 0.8), rgba(30, 30, 50, 0.9))`,
-            boxShadow: `inset 0 1px 3px rgba(255,255,255,0.1), 0 2px 10px rgba(0,0,0,0.3)`
-          }}
-        >
+          style={{ boxShadow: `inset 0 0 24px ${stationColor}18` }}
+        />
+        {/* 亮色模式边缘反射 */}
+        <div className="absolute inset-0 pointer-events-none rounded-full dark:hidden" style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.6), inset 0 -1px 1px rgba(0,0,0,0.04)' }} />
+        {/* 暗色模式边缘反射 */}
+        <div className="absolute inset-0 pointer-events-none rounded-full hidden dark:block" style={{ boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.2)' }} />
+        {/* 顶部流光 */}
+        <div className="absolute top-0 inset-x-0 h-[45%] pointer-events-none rounded-t-full bg-gradient-to-b from-white/40 dark:from-white/[0.08] to-transparent" />
+
+        {/* 唱片 */}
+        <div className="relative z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex-shrink-0">
           <div
-            className="absolute rounded-full"
-            style={{
-              inset: '20%',
-              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
-              boxShadow: `0 0 12px ${stationColor}60`
+            className={cn(
+              "absolute inset-0 rounded-full overflow-hidden",
+              isPlaying && "animate-spin-slow"
+            )}
+            style={{ 
+              background: 'conic-gradient(from 45deg, #3a3a52, #2c2c44, #3a3a52, #2c2c44)',
             }}
-          />
-          <div
-            className="absolute rounded-full"
-            style={{ inset: '42%', background: 'rgba(0,0,0,0.5)' }}
-          />
+          >
+            <div
+              className="absolute rounded-full"
+              style={{
+                inset: '22%',
+                background: `linear-gradient(135deg, ${stationColor}, ${stationColor}bb)`,
+              }}
+            />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-1.5 h-1.5 rounded-full bg-black/25 dark:bg-black/35" />
+          </div>
         </div>
         
-        {/* 信息 */}
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-white text-xs sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-[100px]">
+        {/* 站点信息 */}
+        <div className="flex flex-col min-w-0 flex-1 relative z-10">
+          <span className="text-slate-700 dark:text-white/95 text-xs sm:text-sm font-bold truncate max-w-[80px] sm:max-w-[100px]">
             {currentStation?.name || 'Lofi Radio'}
           </span>
-          <div className="flex items-center gap-1 text-white/60 text-[10px] sm:text-xs">
+          <div className="flex items-center gap-1 text-slate-500 dark:text-white/55 text-[10px] sm:text-xs font-medium">
             {hasError ? (
-              <span className="text-red-400">播放失败</span>
+              <span className="text-red-500 dark:text-red-400">播放失败</span>
             ) : (
               <>
                 <Clock className="w-2.5 h-2.5" />
-                <span className="tabular-nums font-medium">{focusTime} min</span>
+                <span className="tabular-nums">{focusTime} min</span>
               </>
             )}
           </div>
         </div>
-        
-        {/* 播放按钮 */}
-        <button
-          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ 
-            background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
-            boxShadow: `0 2px 12px ${stationColor}40`
-          }}
-        >
-          {isLoading ? (
-            <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />
-          ) : isPlaying ? (
-            <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-          ) : (
-            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white ml-0.5" />
-          )}
-        </button>
-        
-        {/* 展开按钮 */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onExpand(); }}
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.08] hover:bg-white/[0.15] transition-colors"
-        >
-          <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/60" />
-        </button>
+
+        {/* 移动端：⏮ ▶ ⏭ */}
+        <div className="flex items-center gap-0.5 sm:hidden relative z-10">
+          <button
+            onClick={(e) => { e.stopPropagation(); prevStation(); }}
+            aria-label="上一首"
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <SkipBack className="w-2.5 h-2.5 text-slate-400 dark:text-white/50 fill-current" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+            aria-label={isPlaying ? '暂停' : '播放'}
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ 
+              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}dd)`,
+            }}
+          >
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 text-white animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="w-3 h-3 text-white" />
+            ) : (
+              <Play className="w-3 h-3 text-white ml-[1px]" />
+            )}
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); nextStation(); }}
+            aria-label="下一首"
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <SkipForward className="w-2.5 h-2.5 text-slate-400 dark:text-white/50 fill-current" />
+          </button>
+        </div>
+
+        {/* 桌面端：播放 + 展开 */}
+        <div className="hidden sm:flex items-center gap-2.5 relative z-10">
+          <button
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+            aria-label={isPlaying ? '暂停' : '播放'}
+            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 hover:scale-105 transition-transform"
+            style={{ 
+              background: `linear-gradient(135deg, ${stationColor}, ${stationColor}dd)`,
+            }}
+          >
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Play className="w-3.5 h-3.5 text-white ml-0.5" />
+            )}
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onExpand(); }}
+            aria-label="展开播放器"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/[0.08] hover:bg-black/[0.12] dark:bg-white/[0.1] dark:hover:bg-white/[0.18] transition-all duration-200"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-slate-500 dark:text-white/70" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1020,7 +1059,7 @@ export function FloatingPlayer() {
   
   return (
     <>
-      {/* 全屏播放器 - 减少闪屏 */}
+      {/* 全屏播放器 */}
       <AnimatePresence>
         {!isMiniMode && (
           <motion.div

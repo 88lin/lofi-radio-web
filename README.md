@@ -312,11 +312,11 @@ lofi-radio-web/
 
 ---
 
-## 🔄 同步原项目更新
+## 🔄 同步电台更新
 
-本项目基于 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) 开发，你可以同步原项目的电台更新：
+本项目电台资源来自 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) ，你可以同步该项目的电台更新：
 
-1. 查看原项目的 [stations.json](https://github.com/labilio/lofi-radio/blob/main/stations.json)
+1. 查看该项目的 [stations.json](https://github.com/labilio/lofi-radio/blob/main/stations.json)
 2. 更新 `src/lib/stations.ts` 中的 `stations` 数组
 3. 提交更改
 
@@ -334,17 +334,18 @@ lofi-radio-web/
 
 ---
 
-## 📄 开源协议
+## 📄 开源协议 (License)
 
-本项目基于 [MIT](LICENSE) 协议开源。
+本项目采用 [MIT License](LICENSE) 开源协议。
 
-原项目 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) 同样采用 MIT 协议。
+- ✅ 你可以自由地使用、复制、修改和分发本项目。
+- 📝 请在衍生作品中保留原作者的版权声明。
 
 ---
 
 ## 🙏 致谢
 
-- [labilio/lofi-radio](https://github.com/labilio/lofi-radio) - 原项目作者，提供了优秀的电台资源和桌面版实现
+- [labilio/lofi-radio](https://github.com/labilio/lofi-radio) - 提供了丰富的电台资源和创作灵感
 - [Lofi Girl](https://www.youtube.com/c/LofiGirl) - 提供优质的 Lofi 音乐直播
 - 所有电台提供商
 
