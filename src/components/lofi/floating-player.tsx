@@ -357,7 +357,7 @@ const StationList = memo(({
 StationList.displayName = 'StationList';
 
 // ==================== 全屏播放器 ====================
-const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => void; remainingSeconds: number | null }) => {
+const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUntil }: { onClose: () => void; remainingSeconds: number | null; suppressVinylTapUntil: number }) => {
   const {
     isPlaying, isLoading, currentStation, volume, isMuted, userWantsPlay,
     hasError, errorMessage,
@@ -385,6 +385,11 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
   const toggleSleepTimerPanel = useCallback(() => {
     setShowSleepTimerPanel(prev => !prev);
   }, []);
+
+  const handleVinylClick = useCallback(() => {
+    if (Date.now() < suppressVinylTapUntil) return;
+    togglePlay();
+  }, [suppressVinylTapUntil, togglePlay]);
 
   const handleSleepPreset = useCallback((minutes: number | null) => {
     setSleepTimer(minutes);
@@ -440,7 +445,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds }: { onClose: () => v
         <div className="flex-1 flex flex-col min-w-0 flex items-center justify-start lg:justify-center py-14 sm:py-16 lg:py-0">
           {/* 唱片容器 */}
           <motion.div 
-            onClick={togglePlay}
+            onClick={handleVinylClick}
             className="cursor-pointer mb-6"
             animate={{ 
               scale: isPlaying ? 1 : 0.95,
@@ -922,8 +927,14 @@ export function FloatingPlayer() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const [miniIslandWidth, setMiniIslandWidth] = useState(220);
+  const [suppressVinylTapUntil, setSuppressVinylTapUntil] = useState(0);
   const lastTapRef = useRef<number>(0);
   const scrollYRef = useRef(0);
+
+  const openFullPlayer = useCallback(() => {
+    setSuppressVinylTapUntil(Date.now() + 360);
+    setMiniMode(false);
+  }, [setMiniMode]);
 
   // 全屏模式锁定页面滚动，避免移动端滚动穿透到底层页面
   useEffect(() => {
@@ -1028,8 +1039,8 @@ export function FloatingPlayer() {
   // 双击展开
   const handleDoubleClick = useCallback(() => {
     if (!isMiniMode) return;
-    setMiniMode(false);
-  }, [isMiniMode, setMiniMode]);
+    openFullPlayer();
+  }, [isMiniMode, openFullPlayer]);
   
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!isMiniMode) return;
@@ -1069,7 +1080,7 @@ export function FloatingPlayer() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
           >
-            <FullScreenPlayer onClose={() => setMiniMode(true)} remainingSeconds={remainingSeconds} />
+            <FullScreenPlayer onClose={() => setMiniMode(true)} remainingSeconds={remainingSeconds} suppressVinylTapUntil={suppressVinylTapUntil} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -1100,7 +1111,7 @@ export function FloatingPlayer() {
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
           >
-            <MiniPlayer onExpand={() => setMiniMode(false)} />
+            <MiniPlayer onExpand={openFullPlayer} />
           </motion.div>
         )}
       </AnimatePresence>
