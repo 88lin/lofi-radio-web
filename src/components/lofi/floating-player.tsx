@@ -654,7 +654,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
                       }
                     }}
                     placeholder="自定义分钟（1-480）"
-                    className="flex-1 h-10 px-3 rounded-xl text-sm text-white placeholder:text-white/35 outline-none"
+                    className="flex-1 py-1.5 px-3 rounded-xl text-sm text-white placeholder:text-white/35 outline-none"
                     style={{
                       background: 'rgba(0, 0, 0, 0.18)',
                       border: '1px solid rgba(255, 255, 255, 0.12)'
