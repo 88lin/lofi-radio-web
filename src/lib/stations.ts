@@ -35,6 +35,16 @@ export const stations: Station[] = [
     color: '#A78BFA'
   },
   {
+    id: 'lofi-cafe-studying',
+    name: 'Lofi Studying',
+    scene: '学习',
+    type: 'mp3',
+    url: 'https://radio.loficafe.net/listen/studying/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Study',
+    color: '#3B82F6'
+  },
+  {
     id: 'chill-sky',
     name: 'Chill Sky',
     scene: '阅读',
@@ -43,6 +53,16 @@ export const stations: Station[] = [
     style1: 'Chill',
     style2: 'Electro',
     color: '#06B6D4'
+  },
+  {
+    id: 'lofi-cafe-japanese',
+    name: 'Lofi Japanese',
+    scene: '阅读',
+    type: 'mp3',
+    url: 'https://radio.loficafe.net/listen/japanese-lofi/radio.mp3',
+    style1: 'Japanese',
+    style2: 'Lofi',
+    color: '#F472B6'
   },
   {
     id: 'jazz-box',
@@ -55,6 +75,16 @@ export const stations: Station[] = [
     color: '#D946EF'
   },
   {
+    id: 'b3cks-radio',
+    name: 'B3cks Radio',
+    scene: '阅读',
+    type: 'mp3',
+    url: 'https://radio.b3ck.com/listen/b3cks-radio/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Relax',
+    color: '#ff7096'
+  },
+  {
     id: 'chill-wave',
     name: 'Chill Wave',
     scene: '放松',
@@ -63,6 +93,16 @@ export const stations: Station[] = [
     style1: 'Chill',
     style2: 'Electro',
     color: '#EC4899'
+  },
+   {
+    id: 'lofi-cafe-chilling',
+    name: 'Lofi Chilling',
+    scene: '放松',
+    type: 'mp3',
+    url: 'https://radio.loficafe.net/listen/chilling/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Chill',
+    color: '#f65c71'
   },
   {
     id: 'paradise',
@@ -85,6 +125,16 @@ export const stations: Station[] = [
     color: '#10B981'
   },
   {
+    id: 'freecodecamp-coderadio',
+    name: 'Code Radio',
+    scene: '编程',
+    type: 'mp3',
+    url: 'https://coderadio-admin-v2.freecodecamp.org/listen/coderadio/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Coding',
+    color: '#9050b3'
+  },
+  {
     id: 'rain-sounds',
     name: 'Rain Sounds',
     scene: '助眠',
@@ -95,6 +145,16 @@ export const stations: Station[] = [
     color: '#0EA5E9'
   },
   {
+    id: 'lofi-cafe-sleeping',
+    name: 'Lofi Sleeping',
+    scene: '助眠',
+    type: 'mp3',
+    url: 'https://radio.loficafe.net/listen/sleeping/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Sleep',
+    color: '#498eef'
+  },
+  {
     id: 'drone-zone',
     name: 'Drone Zone',
     scene: '助眠',
@@ -102,7 +162,7 @@ export const stations: Station[] = [
     url: 'https://ice1.somafm.com/dronezone-128-mp3',
     style1: 'Ambient',
     style2: 'Deep',
-    color: '#64748B'
+    color: '#743bed'
   },
   {
     id: 'asp',
@@ -155,13 +215,13 @@ export const stations: Station[] = [
     color: '#F43F5E'
   },
   {
-    id: 'kexp',
-    name: 'KEXP',
+    id: 'lofi-cafe-gaming',
+    name: 'Lofi Gaming',
     scene: '娱乐',
     type: 'mp3',
-    url: 'https://kexp-mp3-128.streamguys1.com/kexp128.mp3',
-    style1: 'Indie',
-    style2: 'Alt',
+    url: 'https://radio.loficafe.net/listen/gaming/radio.mp3',
+    style1: 'Lofi',
+    style2: 'Gaming',
     color: '#22C55E'
   }
 ];

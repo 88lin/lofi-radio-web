@@ -10,6 +10,7 @@ import { useFocusTimer } from '@/hooks/useFocusTimer';
 
 import { useAudioStore } from '@/store/audioStore';
 import { stations } from '@/lib/stations';
+import { MOBILE_ISLAND_EXPAND_LEARNED_EVENT, MOBILE_ISLAND_HINT_DISMISSED_KEY } from '@/lib/mobile-island-events';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -127,8 +128,8 @@ LiveClock.displayName = 'LiveClock';
 const features = [
   { icon: Radio, title: `${stations.length} 精选电台`, description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)' },
   { icon: Sparkles, title: '专注计时', description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光', color: '#EC4899', bg: 'rgba(236,72,153,0.08)' },
-  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐，灵动岛设计可拖动、支持快捷键，支持 PWA 离线使用', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
-  { icon: Moon, title: '睡眠定时', description: '设定 15~120 分钟定时，音乐自动停止，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
+  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐；灵动岛支持拖动，移动端双击可快速展开，支持快捷键、 PWA 离线使用', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
+  { icon: Moon, title: '睡眠定时', description: '支持 15~120 分钟快速设置定时、1~480 分钟自定义定时，定时结束后自动自动暂停播放，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
 ];
 
 const scenes = [
@@ -311,6 +312,7 @@ StationCard.displayName = 'StationCard';
 export default function Home() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
+  const [showMobileHint, setShowMobileHint] = useState(false);
 
   const requestPlay = useAudioStore((s) => s.requestPlay);
   const requestPause = useAudioStore((s) => s.requestPause);
@@ -350,6 +352,47 @@ export default function Home() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let showRafId: number | null = null;
+    let hideTimer: number | null = null;
+
+    try {
+      const dismissed = window.localStorage.getItem(MOBILE_ISLAND_HINT_DISMISSED_KEY) === '1';
+      if (dismissed) {
+        return;
+      }
+    } catch {
+      // ignore localStorage access errors
+    }
+
+    showRafId = window.requestAnimationFrame(() => {
+      setShowMobileHint(true);
+    });
+
+    hideTimer = window.setTimeout(() => {
+      setShowMobileHint(false);
+    }, 30000);
+
+    const handleIslandExpanded = () => {
+      setShowMobileHint(false);
+      try {
+        window.localStorage.setItem(MOBILE_ISLAND_HINT_DISMISSED_KEY, '1');
+      } catch {
+        // ignore localStorage access errors
+      }
+    };
+
+    window.addEventListener(MOBILE_ISLAND_EXPAND_LEARNED_EVENT, handleIslandExpanded);
+
+    return () => {
+      if (showRafId !== null) window.cancelAnimationFrame(showRafId);
+      if (hideTimer !== null) window.clearTimeout(hideTimer);
+      window.removeEventListener(MOBILE_ISLAND_EXPAND_LEARNED_EVENT, handleIslandExpanded);
+    };
+  }, []);
 
   const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
@@ -434,7 +477,7 @@ export default function Home() {
               </motion.p>
 
               {/* 按钮 */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 sm:mb-10">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                   <Button size="lg" onClick={() => togglePlay()}
                     className="w-full sm:w-auto rounded-full px-7 h-12 text-base font-semibold shadow-xl"
@@ -464,6 +507,41 @@ export default function Home() {
                   ))}
                 </div>
               </motion.div>
+
+              <AnimatePresence>
+                {showMobileHint && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ delay: 0.7, duration: 0.4 }}
+                    className="sm:hidden flex justify-center mt-1"
+                  >
+                    <div
+                      className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full backdrop-blur-xl"
+                      style={{
+                        background: isDark
+                          ? 'linear-gradient(135deg, rgba(147,51,234,0.18), rgba(236,72,153,0.14))'
+                          : 'linear-gradient(135deg, rgba(233,213,255,0.68), rgba(252,231,243,0.74))',
+                        border: isDark
+                          ? '1px solid rgba(255,255,255,0.14)'
+                          : '1px solid rgba(168,85,247,0.24)',
+                        boxShadow: isDark
+                          ? '0 4px 12px rgba(88,28,135,0.16)'
+                          : '0 4px 12px rgba(168,85,247,0.10)'
+                      }}
+                    >
+                      <span className="text-xs" style={{ color: isDark ? '#F5E8FF' : '#6B21A8' }}>
+                        双击灵动岛展开播放器
+                      </span>
+                      <span className="text-xs" style={{ color: isDark ? 'rgba(245,232,255,0.45)' : 'rgba(107,33,168,0.35)' }}>·</span>
+                      <span className="text-xs" style={{ color: isDark ? 'rgba(245,232,255,0.82)' : 'rgba(107,33,168,0.72)' }}>
+                        拖动可移动位置
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* 正在播放 */}
               <AnimatePresence>

@@ -7,7 +7,11 @@ import { useAudioStore } from '@/store/audioStore';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
 import { useSleepTimer } from '@/hooks/useSleepTimer';
 import { stations, categories, getFilteredStations, Station } from '@/lib/stations';
+import { MOBILE_ISLAND_EXPAND_LEARNED_EVENT } from '@/lib/mobile-island-events';
 import { cn } from '@/lib/utils';
+
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_EXPAND_GUARD_MS = 420;
 
 // ==================== 黑胶唱片组件 ====================
 const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlaying: boolean; size?: number; color?: string }) => {
@@ -929,6 +933,7 @@ export function FloatingPlayer() {
   const [miniIslandWidth, setMiniIslandWidth] = useState(220);
   const [suppressVinylTapUntil, setSuppressVinylTapUntil] = useState(0);
   const lastTapRef = useRef<number>(0);
+  const lastExpandTriggerRef = useRef<number>(0);
   const scrollYRef = useRef(0);
 
   const openFullPlayer = useCallback(() => {
@@ -1039,6 +1044,14 @@ export function FloatingPlayer() {
   // 双击展开
   const handleDoubleClick = useCallback(() => {
     if (!isMiniMode) return;
+
+    const now = Date.now();
+    if (now - lastExpandTriggerRef.current < DOUBLE_EXPAND_GUARD_MS) return;
+    lastExpandTriggerRef.current = now;
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(MOBILE_ISLAND_EXPAND_LEARNED_EVENT));
+    }
     openFullPlayer();
   }, [isMiniMode, openFullPlayer]);
   
@@ -1047,9 +1060,11 @@ export function FloatingPlayer() {
     
     const target = e.target as HTMLElement;
     if (target.closest('button')) return;
+
+    if (e.pointerType !== 'touch') return;
     
     const now = Date.now();
-    if (now - lastTapRef.current < 300) {
+    if (now - lastTapRef.current < DOUBLE_TAP_MS) {
       handleDoubleClick();
       lastTapRef.current = 0;
       return;
@@ -1091,6 +1106,7 @@ export function FloatingPlayer() {
           <motion.div
             ref={miniIslandRef}
             className={cn("fixed pointer-events-auto z-50", isDragging ? "cursor-grabbing" : "cursor-grab")}
+            title="双击展开播放器，拖动可移动位置"
             style={{ 
               left: '50%', 
               top: '78px',
@@ -1104,6 +1120,7 @@ export function FloatingPlayer() {
             dragMomentum={false}
             dragElastic={0}
             onPointerDown={handlePointerDown}
+            onDoubleClick={handleDoubleClick}
             onDragEnd={handleDragEnd}
             whileDrag={{ scale: 1.02 }}
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
