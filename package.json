@@ -1,7 +1,7 @@
 {
   "name": "lofi-radio-web",
   "version": "1.0.0",
-  "description": "🎵 Lofi Radio 网页版 - macOS 风格灵动岛设计，16 个精选电台，专注音乐触手可及",
+  "description": "🎵 Lofi Radio 网页版 - 在线收听 Lofi、Chill、Jazz 与白噪音，21个精选电台，适合学习、工作、编程与助眠",
   "author": "茉灵智库",
   "license": "MIT",
   "repository": {
@@ -27,7 +27,7 @@
   },
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "build": "next build && node scripts/postbuild-standalone.mjs",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push",

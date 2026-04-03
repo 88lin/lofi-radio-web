@@ -35,8 +35,8 @@ const loadFlvJs = async (): Promise<FlvJs | null> => {
   if (flvjs) return flvjs;
   if (typeof window === 'undefined') return null;
   try {
-    const module = await import('flv.js');
-    flvjs = (module.default || module) as unknown as FlvJs;
+    const flvModule = await import('flv.js');
+    flvjs = (flvModule.default || flvModule) as unknown as FlvJs;
     return flvjs;
   } catch (e) {
     console.error('[Player] Failed to load flv.js:', e);

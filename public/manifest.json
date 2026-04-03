@@ -1,7 +1,7 @@
 {
-  "name": "Lofi Radio Web - 专注音乐电台",
+  "name": "Lofi Radio 电台在线收听",
   "short_name": "Lofi Radio",
-  "description": "macOS 风格灵动岛音乐播放器，16个精选电台，专注音乐触手可及",
+  "description": "Lofi、Chill、Jazz 与白噪音在线收听，21个精选电台，覆盖学习、工作、编程、阅读与助眠等多种场景",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

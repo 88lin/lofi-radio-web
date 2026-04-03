@@ -335,6 +335,8 @@ lofi-radio-web/
 │   │   ├── page.tsx             # 首页
 │   │   ├── layout.tsx           # 根布局
 │   │   ├── globals.css          # 全局样式
+│   │   ├── robots.ts            # robots.txt 路由
+│   │   ├── sitemap.ts           # sitemap.xml 路由
 │   │   └── api/                 # API 路由
 │   │       ├── bilibili-stream/ # B站直播流解析
 │   │       └── stations/        # 电台同步 API
@@ -350,13 +352,16 @@ lofi-radio-web/
 │   │   └── use-toast.ts         # Toast 提示
 │   ├── lib/                     # 工具库
 │   │   ├── stations.ts          # 电台配置
+│   │   ├── seo.ts               # SEO 配置与 metadata/schema 构建
+│   │   ├── seo-content.ts       # FAQ 等 SEO 文案内容
 │   │   └── utils.ts             # 工具函数
 │   └── store/                   # 状态管理
 │       └── audioStore.ts        # 音频状态
 ├── public/                      # 静态资源
 │   ├── logo.svg                 # Logo
-│   ├── manifest.json            # PWA 配置
-│   └── robots.txt               # 爬虫配置
+│   └── manifest.json            # PWA 配置
+├── scripts/                     # 构建辅助脚本
+│   └── postbuild-standalone.mjs # 构建后复制 standalone 静态资源
 ├── package.json
 ├── tailwind.config.ts
 ├── next.config.ts
@@ -378,6 +383,13 @@ lofi-radio-web/
 2. 更新 `src/lib/stations.ts` 中的 `stations` 数组
 3. 同步更新 README 的电台列表与总数
 4. 提交更改
+
+### SEO 相关文件
+
+- `src/lib/seo.ts`：集中管理 metadata、Open Graph、Twitter、Schema、robots 和 sitemap 配置
+- `src/lib/seo-content.ts`：管理首页 FAQ 等 SEO 可见文案内容
+- `src/app/robots.ts`：生成 `/robots.txt`
+- `src/app/sitemap.ts`：生成 `/sitemap.xml`
 
 ---
 

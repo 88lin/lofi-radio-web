@@ -13,7 +13,9 @@ import { useAudioStore } from '@/store/audioStore';
 import { stations } from '@/lib/stations';
 import { MOBILE_ISLAND_EXPAND_LEARNED_EVENT, MOBILE_ISLAND_HINT_DISMISSED_KEY } from '@/lib/mobile-island-events';
 import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import { homepageFaqs } from '@/lib/seo-content';
 
 function useMounted() {
   return useSyncExternalStore(() => () => {}, () => true, () => false);
@@ -665,6 +667,77 @@ export default function Home() {
               </motion.div>
             </div>
           </motion.div>
+        </section>
+
+        <section className="py-6 sm:py-10 px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-8 sm:mb-10">
+              <div className="mb-3 flex justify-center">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-3 py-1 text-[11px] sm:text-xs font-semibold tracking-[0.18em] uppercase",
+                    isDark ? "bg-white/[0.05] text-white/45 border border-white/[0.07]" : "bg-black/[0.03] text-zinc-500 border border-black/[0.05]"
+                  )}
+                >
+                  FAQ
+                </span>
+              </div>
+              <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>Lofi Radio 常见问题</h2>
+              <p className={cn("text-sm sm:text-base max-w-3xl mx-auto leading-relaxed", isDark ? "text-white/38" : "text-zinc-500")}>把使用时最容易遇到的几个问题整理在这里，既方便第一次打开网站时快速了解，也能帮你更快找到适合自己的收听方式和使用场景。</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45 }}
+              className={cn(
+                "rounded-[28px] p-3 sm:p-4 border overflow-hidden relative",
+                isDark
+                  ? "bg-white/[0.03] border-white/[0.06] shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+                  : "bg-white/90 border-black/[0.05] shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+              )}
+            >
+              <div
+                className="pointer-events-none absolute -top-10 right-6 h-24 w-24 rounded-full blur-3xl"
+                style={{ background: isDark ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.08)' }}
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                style={{
+                  background: isDark
+                    ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)'
+                    : 'linear-gradient(90deg, transparent, rgba(15,23,42,0.12), transparent)',
+                }}
+              />
+              <Accordion type="single" collapsible className="w-full">
+                {homepageFaqs.map((faq, index) => (
+                  <AccordionItem
+                    key={faq.question}
+                    value={`faq-${index}`}
+                    className={cn(
+                      "rounded-[22px] border mb-2 last:mb-0 px-4 sm:px-6 transition-colors",
+                      isDark
+                        ? "border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.035] data-[state=open]:bg-white/[0.04]"
+                        : "border-black/[0.04] bg-black/[0.02] hover:bg-black/[0.03] data-[state=open]:bg-black/[0.03]"
+                    )}
+                  >
+                    <AccordionTrigger
+                      className={cn(
+                        "min-h-12 py-4 sm:py-5 text-sm sm:text-base font-semibold no-underline hover:no-underline",
+                        isDark ? "text-white/88" : "text-zinc-900"
+                      )}
+                    >
+                      <span className="pr-3 leading-6 text-left">{faq.question}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className={cn("pb-4 sm:pb-6 text-sm sm:text-[15px] leading-7 sm:leading-8 pr-2 sm:pr-10 max-w-none", isDark ? "text-white/52" : "text-zinc-600")}>
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </motion.div>
+          </div>
         </section>
 
         {/* 底部 */}
