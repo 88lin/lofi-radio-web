@@ -35,14 +35,14 @@ export const stations: Station[] = [
     color: '#A78BFA'
   },
   {
-    id: 'groove-salad',
-    name: 'Groove Salad',
-    scene: '编程',
+    id: 'chill-sky',
+    name: 'Chill Sky',
+    scene: '阅读',
     type: 'mp3',
-    url: 'https://ice1.somafm.com/groovesalad-128-mp3',
+    url: 'https://chill.radioca.st/stream',
     style1: 'Chill',
-    style2: 'Ambient',
-    color: '#10B981'
+    style2: 'Electro',
+    color: '#06B6D4'
   },
   {
     id: 'jazz-box',
@@ -53,16 +53,6 @@ export const stations: Station[] = [
     style1: 'Jazz',
     style2: 'Smooth',
     color: '#D946EF'
-  },
-  {
-    id: 'chill-sky',
-    name: 'Chill Sky',
-    scene: '阅读',
-    type: 'mp3',
-    url: 'https://chill.radioca.st/stream',
-    style1: 'Chill',
-    style2: 'Electro',
-    color: '#06B6D4'
   },
   {
     id: 'chill-wave',
@@ -83,6 +73,16 @@ export const stations: Station[] = [
     style1: 'Chill',
     style2: 'Alt',
     color: '#F59E0B'
+  },
+  {
+    id: 'groove-salad',
+    name: 'Groove Salad',
+    scene: '编程',
+    type: 'mp3',
+    url: 'https://ice1.somafm.com/groovesalad-128-mp3',
+    style1: 'Chill',
+    style2: 'Ambient',
+    color: '#10B981'
   },
   {
     id: 'rain-sounds',

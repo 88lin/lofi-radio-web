@@ -981,8 +981,8 @@ export function FloatingPlayer() {
   
   // 灵动岛边界约束 - 允许拖到屏幕边缘
   useEffect(() => {
-    const edgePadding = 20;
-    const initialY = 70;
+    const edgePadding = 13;
+    const initialY = 78;
 
     const getIslandSize = () => {
       const width = miniIslandRef.current?.offsetWidth;
@@ -1093,7 +1093,7 @@ export function FloatingPlayer() {
             className={cn("fixed pointer-events-auto z-50", isDragging ? "cursor-grabbing" : "cursor-grab")}
             style={{ 
               left: '50%', 
-              top: '70px',
+              top: '78px',
               marginLeft: `-${miniIslandWidth / 2}px`,
               x: position.x,
               y: position.y,

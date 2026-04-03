@@ -390,7 +390,7 @@ export default function Home() {
         <NavBar isDark={isDark} isPlaying={isPlaying} currentStation={currentStation} stationColor={stationColor} onThemeToggle={handleThemeToggle} />
 
         {/* Hero Section */}
-        <section className="pt-24 sm:pt-28 pb-10 sm:pb-14 px-4 sm:px-6">
+        <section className="pt-22 pb-10 sm:pb-14 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div initial="hidden" animate="visible" variants={stagger}>
 
