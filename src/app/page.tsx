@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { FloatingPlayer } from '@/components/lofi/floating-player';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
+import { useSleepTimer } from '@/hooks/useSleepTimer';
 
 import { useAudioStore } from '@/store/audioStore';
 import { stations } from '@/lib/stations';
@@ -327,6 +328,7 @@ export default function Home() {
   const selectStationById = useAudioStore((s) => s.selectStationById);
   const setSelectedCategory = useAudioStore((s) => s.setSelectedCategory);
   const { focusTime } = useFocusTimer();
+  const { remainingSeconds } = useSleepTimer();
 
   useAudioPlayer();
 
@@ -566,16 +568,26 @@ export default function Home() {
                 )}
               </AnimatePresence>
 
-              {/* 专注统计 */}
+              {/* 状态统计 */}
               <AnimatePresence>
-                {focusTime > 0 && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="mt-4 flex justify-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: isDark ? `${stationColor}12` : `${stationColor}08`, border: `1px solid ${stationColor}20` }}>
-                      <Clock3 className="w-3 h-3" style={{ color: stationColor }} />
-                      <span className="text-xs font-medium" style={{ color: stationColor }}>
-                        今日专注 {focusTime < 60 ? `${focusTime} 分钟` : `${Math.floor(focusTime / 60)} 小时 ${focusTime % 60} 分钟`}
-                      </span>
-                    </div>
+                {(focusTime > 0 || remainingSeconds !== null) && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="mt-4 flex flex-wrap justify-center gap-3">
+                    {focusTime > 0 && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: isDark ? `${stationColor}12` : `${stationColor}08`, border: `1px solid ${stationColor}20` }}>
+                        <Clock3 className="w-3 h-3" style={{ color: stationColor }} />
+                        <span className="text-xs font-medium" style={{ color: stationColor }}>
+                          今日专注 {focusTime < 60 ? `${focusTime} 分钟` : `${Math.floor(focusTime / 60)} 小时 ${focusTime % 60} 分钟`}
+                        </span>
+                      </div>
+                    )}
+                    {remainingSeconds !== null && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: isDark ? `${stationColor}12` : `${stationColor}08`, border: `1px solid ${stationColor}20` }}>
+                        <Moon className="w-3 h-3" style={{ color: stationColor }} />
+                        <span className="text-xs font-medium tabular-nums" style={{ color: stationColor }}>
+                          即将睡眠 {Math.floor(remainingSeconds / 60).toString().padStart(2, '0')}:{(remainingSeconds % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
