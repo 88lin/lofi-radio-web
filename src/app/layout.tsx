@@ -37,6 +37,7 @@ export default function RootLayout({
             __html: JSON.stringify(homepageSchema),
           }}
         />
+        <script async src="https://019d56e0-f4e7-79ad-97dc-fb4c5da46550.spst2.com/ustat.js" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
