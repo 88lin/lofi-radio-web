@@ -150,7 +150,7 @@ export function PWAInstallPrompt() {
               </div>
               <p className="text-zinc-600 dark:text-white/70 text-[13px] leading-relaxed mb-3 pr-2">
                 {deviceType === 'ios' 
-                  ? '将应用留存在主屏幕。轻点下方分享图标，然后选择「添加到主屏幕」。' 
+                  ? '将应用留存在主屏幕。轻点浏览器下方的分享图标，然后选择「添加到主屏幕」。' 
                   : '添加到主屏幕，获取独立窗口、沉浸式播放与离线支持，体验更佳。'
                 }
               </p>
