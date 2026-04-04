@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Share, Plus, MonitorSmartphone } from 'lucide-react';
+import { X, Share, Plus, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 // 扩展 Window 接口
 declare global {
@@ -21,10 +20,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+type DeviceType = 'ios' | 'android' | 'desktop' | null;
+
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [deviceType, setDeviceType] = useState<DeviceType>(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
@@ -36,21 +37,18 @@ export function PWAInstallPrompt() {
       return standalone;
     };
 
-    // 检查是否是 iOS 设备（更可靠的检测方式）
-    const checkIOS = () => {
-      // 方法1: 检查 User Agent
-      const isAppleDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      // 方法2: 检查 iPadOS 桌面模式（iPadOS 13+ 在桌面模式下 UA 不包含 iPad）
-      const isIPadDesktop = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-      
-      const isIOS = isAppleDevice || isIPadDesktop;
-      setIsIOS(isIOS);
-      return isIOS;
-    };
-
-    // 如果已经安装，不显示提示
     if (checkStandalone()) return;
+
+    // 识别设备类型
+    const ua = navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroidDevice = /android/i.test(ua);
+    
+    let currentDevice: DeviceType = 'desktop';
+    if (isIOSDevice) currentDevice = 'ios';
+    else if (isAndroidDevice) currentDevice = 'android';
+    
+    setDeviceType(currentDevice);
 
     // 检查是否之前已关闭过提示
     const dismissed = localStorage.getItem('pwa-install-dismissed');
@@ -62,9 +60,8 @@ export function PWAInstallPrompt() {
       }
     }
 
-    // iOS 设备特殊处理
-    if (checkIOS()) {
-      // 延迟显示，让用户先体验应用
+    // iOS 设备特殊处理（没有原生事件，直接延迟显示）
+    if (currentDevice === 'ios') {
       const timer = setTimeout(() => {
         setShowPrompt(true);
       }, 10000);
@@ -73,10 +70,16 @@ export function PWAInstallPrompt() {
 
     // 监听 beforeinstallprompt 事件（Android/桌面端）
     const handleBeforeInstallPrompt = (e: Event) => {
+      if (currentDevice === 'desktop') {
+        // 桌面端我们直接放行，让浏览器在地址栏显示原生安装图标即可，不弹出自定义卡片
+        return;
+      }
+
+      // Android 端很多浏览器原生提示不明显，我们拦截并使用精美的自定义卡片
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // 延迟显示提示
+      // 延迟显示提示，先让用户体验一下
       setTimeout(() => {
         setShowPrompt(true);
       }, 8000);
@@ -111,104 +114,77 @@ export function PWAInstallPrompt() {
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
   }, []);
 
-  // 如果是 PWA 模式或未显示，返回空
-  if (isStandalone || !showPrompt) return null;
+  // 如果是 PWA 模式，或者是桌面端（走原生），直接返回空
+  if (isStandalone || deviceType === 'desktop' || !showPrompt) return null;
 
-  // iOS 安装提示
-  if (isIOS) {
-    return (
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-4 left-4 right-4 z-50"
-        >
-          <div className="max-w-md mx-auto bg-zinc-900/95 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-2xl">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0">
-                <MonitorSmartphone className="w-5 h-5 text-white" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-sm mb-1">添加到主屏幕</h3>
-                <p className="text-white/50 text-xs leading-relaxed">
-                  点击下方分享按钮，然后选择"添加到主屏幕"，即可像 App 一样使用
-                </p>
-                
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5">
-                    <Share className="w-3.5 h-3.5 text-white/60" />
-                    <span className="text-white/60 text-xs">分享</span>
-                  </div>
-                  <span className="text-white/30">→</span>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5">
-                    <Plus className="w-3.5 h-3.5 text-white/60" />
-                    <span className="text-white/60 text-xs">添加到主屏幕</span>
-                  </div>
-                </div>
-              </div>
-              
-              <button
-                onClick={handleDismiss}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0"
-              >
-                <X className="w-4 h-4 text-white/50" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-
-  // Android/桌面端安装提示
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 50 }}
-        className="fixed bottom-4 left-4 right-4 z-50"
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95, filter: "blur(10px)" }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300, mass: 1 }}
+        className="fixed z-[100] bottom-6 left-4 right-4 sm:w-[380px] sm:left-1/2 sm:-translate-x-1/2"
       >
-        <div className="max-w-sm mx-auto bg-zinc-900/95 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-2xl">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0">
-              <Download className="w-5 h-5 text-white" />
+        <div className="relative overflow-hidden bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl saturate-150 rounded-[28px] p-5 border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+          {/* Apple style top highlight */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent dark:from-white/10 pointer-events-none rounded-[28px]" />
+          
+          <div className="relative flex items-start gap-4">
+            <div className="w-14 h-14 rounded-[16px] bg-gradient-to-b from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-600 flex items-center justify-center flex-shrink-0 shadow-[0_2px_10px_rgba(99,102,241,0.4)] dark:shadow-[0_2px_10px_rgba(99,102,241,0.2)] border border-white/20 dark:border-white/10">
+              <Smartphone className="w-7 h-7 text-white drop-shadow-md" />
             </div>
             
-            <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold text-sm mb-1">安装 Lofi Radio</h3>
-              <p className="text-white/50 text-xs leading-relaxed">
-                安装到设备，享受更好的体验：离线使用、桌面快捷方式、沉浸式播放
+            <div className="flex-1 min-w-0 pt-0.5">
+              <div className="flex justify-between items-start">
+                <h3 className="text-zinc-900 dark:text-white font-semibold text-[16px] tracking-tight mb-1">
+                  {deviceType === 'ios' ? '获取完整体验' : '安装 Lofi Radio'}
+                </h3>
+                <button
+                  onClick={handleDismiss}
+                  className="w-7 h-7 -mt-1 -mr-1 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex-shrink-0 cursor-pointer"
+                  aria-label="关闭"
+                >
+                  <X className="w-4 h-4 text-zinc-500 dark:text-white/70" />
+                </button>
+              </div>
+              <p className="text-zinc-600 dark:text-white/70 text-[13px] leading-relaxed mb-3 pr-2">
+                {deviceType === 'ios' 
+                  ? '将应用留存在主屏幕。轻点下方分享图标，然后选择「添加到主屏幕」。' 
+                  : '添加到主屏幕，获取独立窗口、沉浸式播放与离线支持，体验更佳。'
+                }
               </p>
               
-              <div className="flex items-center gap-2 mt-3">
-                <Button
-                  size="sm"
-                  onClick={handleInstall}
-                  className="h-8 px-4 rounded-lg text-xs font-medium"
-                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #D946EF)' }}
-                >
-                  立即安装
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleDismiss}
-                  className="h-8 px-3 rounded-lg text-xs text-white/50 hover:text-white/70 hover:bg-white/5"
-                >
-                  稍后
-                </Button>
-              </div>
+              {deviceType === 'ios' ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 shadow-sm">
+                    <Share className="w-3.5 h-3.5 text-zinc-700 dark:text-white/80" />
+                    <span className="text-zinc-700 dark:text-white/80 text-[12px] font-medium">分享</span>
+                  </div>
+                  <span className="text-zinc-300 dark:text-white/20 text-sm font-light">→</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 shadow-sm">
+                    <Plus className="w-3.5 h-3.5 text-zinc-700 dark:text-white/80" />
+                    <span className="text-zinc-700 dark:text-white/80 text-[12px] font-medium">添加到主屏幕</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5 mt-1">
+                  <Button
+                    onClick={handleInstall}
+                    className="h-8 px-4 rounded-full text-[13px] font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-sm transition-all"
+                  >
+                    立即安装
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleDismiss}
+                    className="h-8 px-4 rounded-full text-[13px] font-medium text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+                  >
+                    稍后
+                  </Button>
+                </div>
+              )}
             </div>
-            
-            <button
-              onClick={handleDismiss}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0"
-            >
-              <X className="w-4 h-4 text-white/50" />
-            </button>
           </div>
         </div>
       </motion.div>
