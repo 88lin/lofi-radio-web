@@ -5,7 +5,11 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
-  "theme_color": "#8B5CF6",
+  "theme_color": "#f8fafc",
+  "theme_color_override": {
+    "light": "#f8fafc",
+    "dark": "#0a0a0c"
+  },
   "orientation": "any",
   "icons": [
     {

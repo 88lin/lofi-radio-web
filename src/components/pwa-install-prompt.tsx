@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share, Plus, Smartphone } from 'lucide-react';
+import { X, Share, Plus, Music4 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // 扩展 Window 接口
@@ -64,25 +64,22 @@ export function PWAInstallPrompt() {
     if (currentDevice === 'ios') {
       const timer = setTimeout(() => {
         setShowPrompt(true);
-      }, 10000);
+      }, 6000);
       return () => clearTimeout(timer);
     }
 
     // 监听 beforeinstallprompt 事件（Android/桌面端）
     const handleBeforeInstallPrompt = (e: Event) => {
       if (currentDevice === 'desktop') {
-        // 桌面端我们直接放行，让浏览器在地址栏显示原生安装图标即可，不弹出自定义卡片
         return;
       }
 
-      // Android 端很多浏览器原生提示不明显，我们拦截并使用精美的自定义卡片
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // 延迟显示提示，先让用户体验一下
       setTimeout(() => {
         setShowPrompt(true);
-      }, 8000);
+      }, 6000);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -91,6 +88,18 @@ export function PWAInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  // 提示弹出 8 秒后自动关闭
+  useEffect(() => {
+    if (!showPrompt) return;
+
+    const timer = setTimeout(() => {
+      setShowPrompt(false);
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [showPrompt]);
 
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return;
@@ -103,9 +112,15 @@ export function PWAInstallPrompt() {
         console.log('PWA installed');
         setShowPrompt(false);
         setDeferredPrompt(null);
+      } else {
+        setShowPrompt(false);
+        setDeferredPrompt(null);
+        localStorage.setItem('pwa-install-dismissed', Date.now().toString());
       }
     } catch (error) {
       console.error('Install failed:', error);
+      setShowPrompt(false);
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
     }
   }, [deferredPrompt]);
 
@@ -126,18 +141,22 @@ export function PWAInstallPrompt() {
         transition={{ type: 'spring', damping: 25, stiffness: 300, mass: 1 }}
         className="fixed z-[100] bottom-6 left-4 right-4 sm:w-[380px] sm:left-1/2 sm:-translate-x-1/2"
       >
-        <div className="relative overflow-hidden bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl saturate-150 rounded-[28px] p-5 border border-black/5 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+        <div className="relative overflow-hidden bg-white/90 dark:bg-[#1c1c1e]/95 backdrop-blur-2xl rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
           {/* Apple style top highlight */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent dark:from-white/10 pointer-events-none rounded-[28px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent dark:from-white/[0.06] pointer-events-none rounded-[24px]" />
           
-          <div className="relative flex items-start gap-4">
-            <div className="w-14 h-14 rounded-[16px] bg-gradient-to-b from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-600 flex items-center justify-center flex-shrink-0 shadow-[0_2px_10px_rgba(99,102,241,0.4)] dark:shadow-[0_2px_10px_rgba(99,102,241,0.2)] border border-white/20 dark:border-white/10">
-              <Smartphone className="w-7 h-7 text-white drop-shadow-md" />
+          <div className="relative flex items-start gap-4 p-5">
+            {/* Brand icon */}
+            <div
+              className="w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(139,92,246,0.1)' }}
+            >
+              <Music4 className="w-6 h-6" style={{ color: '#8B5CF6' }} />
             </div>
             
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex justify-between items-start">
-                <h3 className="text-zinc-900 dark:text-white font-semibold text-[16px] tracking-tight mb-1">
+                <h3 className="text-zinc-900 dark:text-[#f5f5f7] font-semibold text-[16px] tracking-tight mb-1">
                   {deviceType === 'ios' ? '获取完整体验' : '安装 Lofi Radio'}
                 </h3>
                 <button
@@ -145,27 +164,27 @@ export function PWAInstallPrompt() {
                   className="w-7 h-7 -mt-1 -mr-1 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex-shrink-0 cursor-pointer"
                   aria-label="关闭"
                 >
-                  <X className="w-4 h-4 text-zinc-500 dark:text-white/70" />
+                  <X className="w-4 h-4 text-zinc-500 dark:text-white/60" />
                 </button>
               </div>
-              <p className="text-zinc-600 dark:text-white/70 text-[13px] leading-relaxed mb-3 pr-2">
-                {deviceType === 'ios' 
-                  ? '将应用留存在主屏幕。轻点浏览器下方的分享图标，然后选择「添加到主屏幕」。' 
-                  : '添加到主屏幕，获取独立窗口、沉浸式播放与离线支持，体验更佳。'
+              <p className="text-zinc-600 dark:text-white/60 text-[13px] leading-relaxed mb-3 pr-2">
+                {deviceType === 'ios'
+                  ? '将应用添加到主屏幕。轻点浏览器下方的分享图标，选择添加到主屏幕'
+                  : '添加到主屏幕，获取独立窗口、沉浸式播放与离线支持，体验更佳'
                 }
               </p>
               
               {deviceType === 'ios' ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 shadow-sm">
-                    <Share className="w-3.5 h-3.5 text-zinc-700 dark:text-white/80" />
-                    <span className="text-zinc-700 dark:text-white/80 text-[12px] font-medium">分享</span>
-                  </div>
-                  <span className="text-zinc-300 dark:text-white/20 text-sm font-light">→</span>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 shadow-sm">
-                    <Plus className="w-3.5 h-3.5 text-zinc-700 dark:text-white/80" />
-                    <span className="text-zinc-700 dark:text-white/80 text-[12px] font-medium">添加到主屏幕</span>
-                  </div>
+                <div className="flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-white/40">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                    <Share className="w-3 h-3" />
+                    分享
+                  </span>
+                  <span className="text-zinc-300 dark:text-white/15">→</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                    <Plus className="w-3 h-3" />
+                    添加到主屏幕
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2.5 mt-1">
@@ -185,6 +204,17 @@ export function PWAInstallPrompt() {
                 </div>
               )}
             </div>
+          </div>
+          
+          {/* Auto-dismiss progress bar */}
+          <div className="relative h-[2px] bg-black/[0.04] dark:bg-white/[0.06]">
+            <motion.div
+              className="h-full"
+              style={{ background: 'linear-gradient(90deg, #8B5CF6, #D946EF)' }}
+              initial={{ width: '100%' }}
+              animate={{ width: '0%' }}
+              transition={{ duration: 8, ease: 'linear' }}
+            />
           </div>
         </div>
       </motion.div>

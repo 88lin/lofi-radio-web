@@ -401,6 +401,18 @@ export default function Home() {
   const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
 
+  // Update theme-color meta tag for iOS PWA navigation bar
+  useEffect(() => {
+    if (!mounted) return;
+    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+    }
+    meta.content = isDark ? '#0a0a0c' : '#f8fafc';
+  }, [isDark, mounted]);
+
   return (
     <main className="relative min-h-screen overflow-x-hidden">
       {/* 背景 */}
@@ -692,24 +704,12 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.45 }}
               className={cn(
-                "rounded-[28px] p-3 sm:p-4 border overflow-hidden relative",
+                "rounded-[28px] p-3 sm:p-4 border overflow-hidden",
                 isDark
                   ? "bg-white/[0.03] border-white/[0.06] shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
                   : "bg-white/90 border-black/[0.05] shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
               )}
             >
-              <div
-                className="pointer-events-none absolute -top-10 right-6 h-24 w-24 rounded-full blur-3xl"
-                style={{ background: isDark ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.08)' }}
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-px"
-                style={{
-                  background: isDark
-                    ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)'
-                    : 'linear-gradient(90deg, transparent, rgba(15,23,42,0.12), transparent)',
-                }}
-              />
               <Accordion type="single" collapsible className="w-full">
                 {homepageFaqs.map((faq, index) => (
                   <AccordionItem
@@ -724,13 +724,13 @@ export default function Home() {
                   >
                     <AccordionTrigger
                       className={cn(
-                        "min-h-12 py-4 sm:py-5 text-sm sm:text-base font-semibold no-underline hover:no-underline",
+                        "min-h-12 py-4 sm:py-5 text-sm sm:text-base font-semibold no-underline hover:no-underline [&>svg]:size-3 [&>svg]:shrink-0 gap-0.5 sm:gap-4",
                         isDark ? "text-white/88" : "text-zinc-900"
                       )}
                     >
-                      <span className="pr-3 leading-6 text-left">{faq.question}</span>
+                      <span className="leading-6">{faq.question}</span>
                     </AccordionTrigger>
-                    <AccordionContent className={cn("pb-4 sm:pb-6 text-sm sm:text-[15px] leading-7 sm:leading-8 pr-2 sm:pr-10 max-w-none", isDark ? "text-white/52" : "text-zinc-600")}>
+                    <AccordionContent className={cn("pb-4 sm:pb-6 text-sm sm:text-[15px] leading-7 sm:leading-8 pr-2 sm:pr-10 max-w-none text-justify", isDark ? "text-white/52" : "text-zinc-600")}>
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
