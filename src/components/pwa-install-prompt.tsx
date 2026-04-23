@@ -22,33 +22,49 @@ interface BeforeInstallPromptEvent extends Event {
 
 type DeviceType = 'ios' | 'android' | 'desktop' | null;
 
+function getDeviceType(): DeviceType {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const ua = navigator.userAgent;
+  const isIOSDevice =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroidDevice = /android/i.test(ua);
+
+  if (isIOSDevice) {
+    return 'ios';
+  }
+
+  if (isAndroidDevice) {
+    return 'android';
+  }
+
+  return 'desktop';
+}
+
+function getIsStandalone() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+  );
+}
+
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [deviceType, setDeviceType] = useState<DeviceType>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const deviceType = getDeviceType();
+  const isStandalone = getIsStandalone();
 
   useEffect(() => {
-    // 检查是否已经安装为 PWA
-    const checkStandalone = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-      setIsStandalone(standalone);
-      return standalone;
-    };
+    if (isStandalone) return;
 
-    if (checkStandalone()) return;
-
-    // 识别设备类型
-    const ua = navigator.userAgent;
-    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isAndroidDevice = /android/i.test(ua);
-    
-    let currentDevice: DeviceType = 'desktop';
-    if (isIOSDevice) currentDevice = 'ios';
-    else if (isAndroidDevice) currentDevice = 'android';
-    
-    setDeviceType(currentDevice);
+    const currentDevice = deviceType ?? 'desktop';
 
     // 检查是否之前已关闭过提示
     const dismissed = localStorage.getItem('pwa-install-dismissed');
@@ -87,7 +103,7 @@ export function PWAInstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [deviceType, isStandalone]);
 
   // 提示弹出 8 秒后自动关闭
   useEffect(() => {

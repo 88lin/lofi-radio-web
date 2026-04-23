@@ -832,7 +832,7 @@ export function useAudioPlayer() {
             message = '解码错误';
             break;
           case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            message = '不支持的格式';
+            message = '该音源在当前网络环境下不可用';
             break;
         }
         setError(true, message);

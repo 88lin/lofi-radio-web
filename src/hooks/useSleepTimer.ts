@@ -5,8 +5,8 @@ import { useAudioStore } from '@/store/audioStore';
 
 export function useSleepTimer() {
   const sleepTimerEndTime = useAudioStore((state) => state.sleepTimerEndTime);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [, setRefreshTick] = useState(0);
 
   useEffect(() => {
     if (intervalRef.current) {
@@ -15,10 +15,17 @@ export function useSleepTimer() {
     }
 
     if (sleepTimerEndTime) {
+      if (Date.now() >= sleepTimerEndTime) {
+        const { isPlaying, requestPause, setSleepTimer } = useAudioStore.getState();
+        if (isPlaying) {
+          requestPause();
+        }
+        setSleepTimer(null);
+        return;
+      }
+
       const tick = () => {
         const now = Date.now();
-        const remaining = Math.max(0, Math.ceil((sleepTimerEndTime - now) / 1000));
-        setRemainingSeconds(remaining);
 
         if (now >= sleepTimerEndTime) {
           const { isPlaying, requestPause, setSleepTimer } = useAudioStore.getState();
@@ -26,14 +33,13 @@ export function useSleepTimer() {
             requestPause();
           }
           setSleepTimer(null);
-          setRemainingSeconds(null);
+          return;
         }
+
+        setRefreshTick((tickCount) => tickCount + 1);
       };
 
-      tick();
       intervalRef.current = setInterval(tick, 1000);
-    } else {
-      setRemainingSeconds(null);
     }
 
     return () => {
@@ -42,6 +48,10 @@ export function useSleepTimer() {
       }
     };
   }, [sleepTimerEndTime]);
+
+  const remainingSeconds = sleepTimerEndTime
+    ? Math.max(0, Math.ceil((sleepTimerEndTime - Date.now()) / 1000))
+    : null;
 
   return { remainingSeconds };
 }

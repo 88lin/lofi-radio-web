@@ -9,8 +9,10 @@ export function getFocusRefreshInterval(isPlaying: boolean) {
 
 export function useFocusTimer() {
   const isPlaying = useAudioStore((state) => state.isPlaying);
+  const focusStartTime = useAudioStore((state) => state.focusStartTime);
+  const accumulatedFocusTime = useAudioStore((state) => state.accumulatedFocusTime);
   const checkAndResetDailyFocus = useAudioStore((state) => state.checkAndResetDailyFocus);
-  const [focusTime, setFocusTime] = useState(0);
+  const [, setRefreshTick] = useState(0);
   
   // 初始化时检查日期并重置专注时间
   useEffect(() => {
@@ -22,14 +24,18 @@ export function useFocusTimer() {
       return;
     }
 
-    setFocusTime(Math.floor(useAudioStore.getState().getFocusTime() / 60));
-
     const interval = window.setInterval(() => {
-      setFocusTime(Math.floor(useAudioStore.getState().getFocusTime() / 60));
+      setRefreshTick((tick) => tick + 1);
     }, getFocusRefreshInterval(isPlaying));
 
     return () => window.clearInterval(interval);
   }, [isPlaying]);
+
+  const focusTimeInSeconds = focusStartTime
+    ? accumulatedFocusTime + Math.floor((Date.now() - focusStartTime) / 1000)
+    : accumulatedFocusTime;
+
+  const focusTime = Math.floor(focusTimeInSeconds / 60);
   
   return { focusTime };
 }
