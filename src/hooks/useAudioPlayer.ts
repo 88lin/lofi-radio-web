@@ -307,12 +307,35 @@ export function useAudioPlayer() {
         return false;
       }
 
-      if (!data.success || !data.flv_url) {
+      if (!data.success || (!data.hls_url && !data.flv_url)) {
         console.error('[Player] No stream URL in response');
         return false;
       }
 
-      console.log('[Player] Got FLV URL');
+      if (data.hls_url) {
+        console.log('[Player] Trying HLS stream first');
+        const hlsLoaded = await loadBilibiliHls(data.hls_url);
+
+        if (requestId !== loadRequestIdRef.current) {
+          console.log('[Player] Request expired after loading HLS');
+          return false;
+        }
+
+        if (hlsLoaded) {
+          console.log('[Player] Bilibili stream loaded via HLS');
+          return true;
+        }
+
+        console.warn('[Player] HLS load failed, falling back to FLV');
+      }
+
+      if (!data.flv_url) {
+        console.error('[Player] No FLV URL available after HLS fallback');
+        setError(true, transientErrorMessage);
+        return false;
+      }
+
+      console.log('[Player] Falling back to FLV URL');
 
       // 加载 flv.js
       const flv = await loadFlvJs();

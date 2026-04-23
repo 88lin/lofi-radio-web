@@ -39,11 +39,40 @@ type BilibiliPlayInfoResponse = {
   };
 };
 
+type BilibiliPageBootstrap = {
+  roomInitRes?: {
+    code?: number;
+    data?: {
+      room_id?: number;
+      live_status?: number;
+      playurl_info?: BilibiliPlayInfoResponse['data']['playurl_info'];
+    };
+  };
+  roomInfoRes?: {
+    code?: number;
+    data?: {
+      room_info?: {
+        title?: string;
+      };
+    };
+  };
+};
+
 type StreamCandidate = {
   url: string;
   qn: number;
   codecName: string;
 };
+
+class UpstreamStatusError extends Error {
+  status: number;
+
+  constructor(status: number) {
+    super(`Upstream request failed: ${status}`);
+    this.name = 'UpstreamStatusError';
+    this.status = status;
+  }
+}
 
 const BILIBILI_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -62,12 +91,55 @@ async function fetchJson<T>(url: string, timeoutMs = 12000): Promise<T> {
     });
 
     if (!response.ok) {
-      throw new Error(`Upstream request failed: ${response.status}`);
+      throw new UpstreamStatusError(response.status);
     }
 
     return (await response.json()) as T;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+async function fetchText(url: string, timeoutMs = 12000): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      headers: BILIBILI_HEADERS,
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new UpstreamStatusError(response.status);
+    }
+
+    return await response.text();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function extractBootstrapData(html: string): BilibiliPageBootstrap | null {
+  const marker = 'window.__NEPTUNE_IS_MY_WAIFU__=';
+  const startIndex = html.indexOf(marker);
+
+  if (startIndex === -1) {
+    return null;
+  }
+
+  const jsonStart = startIndex + marker.length;
+  const jsonEnd = html.indexOf('</script>', jsonStart);
+
+  if (jsonEnd === -1) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(html.slice(jsonStart, jsonEnd).trim()) as BilibiliPageBootstrap;
+  } catch {
+    return null;
   }
 }
 
@@ -179,6 +251,21 @@ function extractHlsUrl(playInfo: BilibiliPlayInfoResponse['data']): string | nul
   return null;
 }
 
+async function loadFromLivePage(roomId: string) {
+  const html = await fetchText(`https://live.bilibili.com/${roomId}`);
+  const bootstrap = extractBootstrapData(html);
+
+  if (!bootstrap?.roomInitRes?.data?.playurl_info?.playurl) {
+    throw new Error('No playable stream data found in live page');
+  }
+
+  return {
+    title: bootstrap.roomInfoRes?.data?.room_info?.title || 'Bilibili Live',
+    live_status: bootstrap.roomInitRes.data.live_status || 0,
+    playurl_info: bootstrap.roomInitRes.data.playurl_info,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const roomId = request.nextUrl.searchParams.get('room_id');
 
@@ -192,10 +279,38 @@ export async function GET(request: NextRequest) {
       `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo` +
       `?room_id=${roomId}&protocol=0,1&format=0,1,2&codec=0,1&qn=10000&platform=web&ptype=8`;
 
-    const [infoData, playInfoData] = await Promise.all([
-      fetchJson<BilibiliRoomInfoResponse>(roomInfoUrl),
-      fetchJson<BilibiliPlayInfoResponse>(playInfoUrl),
-    ]);
+    let infoData: BilibiliRoomInfoResponse;
+    let playInfoData: BilibiliPlayInfoResponse;
+
+    try {
+      [infoData, playInfoData] = await Promise.all([
+        fetchJson<BilibiliRoomInfoResponse>(roomInfoUrl),
+        fetchJson<BilibiliPlayInfoResponse>(playInfoUrl),
+      ]);
+    } catch (error) {
+      if (error instanceof UpstreamStatusError && error.status === 412) {
+        const livePageData = await loadFromLivePage(roomId);
+
+        infoData = {
+          code: 0,
+          message: 'ok',
+          data: {
+            title: livePageData.title,
+            live_status: livePageData.live_status,
+          },
+        };
+
+        playInfoData = {
+          code: 0,
+          message: 'ok',
+          data: {
+            playurl_info: livePageData.playurl_info,
+          },
+        };
+      } else {
+        throw error;
+      }
+    }
 
     if (infoData.code !== 0) {
       return NextResponse.json(
@@ -231,11 +346,11 @@ export async function GET(request: NextRequest) {
     const flvCandidates = extractStreamCandidates(playInfoData.data, 'http_stream', 'flv');
     const hlsUrl = extractHlsUrl(playInfoData.data);
 
-    if (!flvCandidates[0]?.url) {
+    if (!flvCandidates[0]?.url && !hlsUrl) {
       return NextResponse.json(
         {
           error: '获取直播流地址失败',
-          message: 'No FLV stream found in upstream response',
+          message: 'No playable stream found in upstream response',
         },
         { status: 500 }
       );
@@ -246,7 +361,7 @@ export async function GET(request: NextRequest) {
       room_id: roomId,
       title: infoData.data?.title || 'Bilibili Live',
       live_status: 1,
-      flv_url: flvCandidates[0].url,
+      flv_url: flvCandidates[0]?.url || '',
       hls_url: hlsUrl,
       backup_urls: flvCandidates.slice(1).map((candidate) => candidate.url),
       quality: playInfoData.data?.playurl_info?.playurl?.g_qn_desc ?? [],
