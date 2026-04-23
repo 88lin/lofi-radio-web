@@ -75,7 +75,7 @@ const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<R
 };
 
 export function useAudioPlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLMediaElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const flvPlayerRef = useRef<FlvPlayer | null>(null);
   
@@ -85,7 +85,13 @@ export function useAudioPlayer() {
   // 标记当前是否正在加载 Bilibili 流（flv.js 会处理错误）
   const isLoadingBilibiliRef = useRef(false);
   // Bilibili 403 自动恢复状态（每次请求只尝试一次）
-  const bilibiliRecoveryRef = useRef({ requestId: -1, attempted: false, inProgress: false, proxyHits: 0 });
+  const bilibiliRecoveryRef = useRef({
+    requestId: -1,
+    attempted: false,
+    inProgress: false,
+    proxyHits: 0,
+    hlsRefreshCount: 0,
+  });
 
   const {
     currentStation,
@@ -149,6 +155,8 @@ export function useAudioPlayer() {
           console.log('[Player] Autoplay blocked, user interaction required');
           setPlaying(false);
           setLoading(false);
+        } else if (err.name === 'AbortError') {
+          console.log('[Player] Play request interrupted by media reload');
         } else {
           console.error('[Player] Play error:', err);
           setLoading(false);
@@ -188,7 +196,6 @@ export function useAudioPlayer() {
         hls.on(Hls.Events.ERROR, (_, data) => {
           if (requestId !== loadRequestIdRef.current) return;
           if (data.fatal) {
-            setError(true, transientErrorMessage);
             setLoading(false);
           }
         });
@@ -326,6 +333,26 @@ export function useAudioPlayer() {
           return true;
         }
 
+        const recoveryState = bilibiliRecoveryRef.current;
+        const nextHlsRefreshCount =
+          recoveryState.requestId === requestId ? recoveryState.hlsRefreshCount + 1 : 1;
+
+        if (nextHlsRefreshCount <= 2) {
+          bilibiliRecoveryRef.current = {
+            ...recoveryState,
+            requestId,
+            hlsRefreshCount: nextHlsRefreshCount,
+          };
+          console.warn(`[Player] HLS load failed, refreshing stream info and retrying (${nextHlsRefreshCount}/2)`);
+          await new Promise(resolve => setTimeout(resolve, 800));
+
+          if (requestId !== loadRequestIdRef.current) {
+            return false;
+          }
+
+          return await loadBilibiliStream(station, requestId);
+        }
+
         console.warn('[Player] HLS load failed, falling back to FLV');
       }
 
@@ -415,6 +442,7 @@ export function useAudioPlayer() {
               attempted: true,
               inProgress: false,
               proxyHits: nextProxyHits,
+              hlsRefreshCount: bilibiliRecoveryRef.current.hlsRefreshCount,
             };
             setError(true, proxyErrorMessage);
             setLoading(false);
@@ -430,8 +458,9 @@ export function useAudioPlayer() {
             attempted: true,
             inProgress: true,
             proxyHits: nextProxyHits,
+            hlsRefreshCount: bilibiliRecoveryRef.current.hlsRefreshCount,
           };
-          setError(true, transientErrorMessage);
+          setError(false, null);
 
           void (async () => {
             try {
@@ -539,7 +568,13 @@ export function useAudioPlayer() {
     // 标记是否正在加载 Bilibili 流
     isLoadingBilibiliRef.current = station.type === 'bilibili';
     if (station.type === 'bilibili') {
-      bilibiliRecoveryRef.current = { requestId, attempted: false, inProgress: false, proxyHits: 0 };
+      bilibiliRecoveryRef.current = {
+        requestId,
+        attempted: false,
+        inProgress: false,
+        proxyHits: 0,
+        hlsRefreshCount: 0,
+      };
     }
 
     let success = false;
@@ -722,9 +757,12 @@ export function useAudioPlayer() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const audio = new Audio();
+    const audio = document.createElement('video');
+    audio.style.display = 'none';
+    audio.playsInline = true;
     audio.preload = 'metadata';
     audio.volume = 0.5;
+    document.body.appendChild(audio);
     audioRef.current = audio;
     
     // playing 事件 - 只有音频真正在播放时才触发
@@ -750,7 +788,7 @@ export function useAudioPlayer() {
     
     // error 事件
     const handleError = (e: Event) => {
-      const audioEl = e.target as HTMLAudioElement;
+      const audioEl = e.target as HTMLMediaElement;
       const error = audioEl?.error;
       
       // 如果是 Bilibili 流，忽略 audio 元素的错误（flv.js 会处理）
@@ -796,6 +834,7 @@ export function useAudioPlayer() {
       audio.removeEventListener('error', handleError);
       cleanup();
       audio.pause();
+      audio.remove();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
