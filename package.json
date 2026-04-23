@@ -27,8 +27,8 @@
   },
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && node scripts/postbuild-standalone.mjs && npx tsx scripts/submit-indexnow.ts",
-    "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint .",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
@@ -109,9 +109,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/node": "25.6.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",

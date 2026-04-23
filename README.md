@@ -240,47 +240,13 @@ npm run start
 3. Vercel 会自动检测 Next.js 并配置构建设置
 4. 点击 "Deploy" 即可完成部署
 
-### 部署到 Cloudflare Pages
+### 部署到 Cloudflare Pages（不推荐）
 
-[Cloudflare Pages](https://pages.cloudflare.com) 提供全球 CDN 加速，国内访问速度更快：
+[Cloudflare Pages](https://pages.cloudflare.com) 在本项目的 Bilibili 直播解析场景下稳定性较差，当前更建议直接部署到 Vercel。
 
-> ⚠️ **重要**: Next.js 16 要求 Node.js >= 20.9.0，需要在 Cloudflare 中指定 Node.js 版本。
-
-#### 方式一：使用 Cloudflare Dashboard
-
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. 进入 "Workers 和 Pages" → "创建" → "Pages" → "连接到 Git"
-3. 授权 GitHub 并选择你 Fork 的 `lofi-radio-web` 仓库
-4. 配置构建设置：
-   - **框架预设**: `Next.js`
-   - **构建命令**: `npx @cloudflare/next-on-pages@1`
-   - **构建输出目录**: `.vercel/output/static`
-5. 点击 "保存并部署"
-6. **部署后配置（重要！）**：
-   - 进入项目 → **设置** → **运行时**
-   - 找到 **定义 Pages 函数的运行时配置** 部分
-   - 在 **兼容性标志**搜索：`nodejs_compat`添加即可
-   - 点击保存，然后重新部署
-
-#### 方式二：使用 Wrangler CLI
-
-```bash
-# 安装 Wrangler
-npm install -g wrangler
-
-# 登录 Cloudflare
-wrangler login
-
-# 构建项目（需要 Node.js 20+）
-npm run build
-
-# 部署到 Cloudflare Pages
-wrangler pages deploy .vercel/output/static --project-name=lofi-radio-web
-```
-
-> 💡 **提示**: 项目根目录已包含 `.node-version` 文件指定 Node.js 20，Cloudflare 会自动识别。
-
-> ⚠️ **注意**: 如果部署后页面显示 "hasn't been properly configured" 错误，请确保已在 Compatibility flags 中添加 `nodejs_compat`。
+> ⚠️ **说明**: 这一方案当前没有继续维护。尤其是 `src/app/api/bilibili-stream` 这类依赖 Node.js 服务端请求上游的接口，在 Cloudflare Pages 上容易出现不稳定或上游拦截。
+>
+> 如果你一定要继续使用 Cloudflare，更建议把前端静态页面和 Bilibili 解析 API 拆开部署，而不是整站直接沿用当前配置。
 
 ### 部署到 Netlify
 
@@ -309,11 +275,14 @@ RUN npm run build
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 EXPOSE 3000
-CMD ["node", "server.js"]
+COPY --from=builder /app/next.config.ts ./next.config.ts
+CMD ["npm", "run", "start"]
 ```
 
 ```bash
@@ -361,7 +330,7 @@ lofi-radio-web/
 │   ├── logo.svg                 # Logo
 │   └── manifest.json            # PWA 配置
 ├── scripts/                     # 构建辅助脚本
-│   └── postbuild-standalone.mjs # 构建后复制 standalone 静态资源
+│   └── submit-indexnow.ts       # 手动提交 IndexNow
 ├── package.json
 ├── tailwind.config.ts
 ├── next.config.ts

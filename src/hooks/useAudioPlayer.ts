@@ -56,6 +56,13 @@ interface BilibiliStreamInfo {
   timestamp: number;
 }
 
+interface BilibiliStreamError {
+  error?: string;
+  message?: string;
+  live_status?: number;
+  title?: string;
+}
+
 // 手动实现带超时的 fetch（兼容性更好）
 const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<Response> => {
   const controller = new AbortController();
@@ -301,7 +308,19 @@ export function useAudioPlayer() {
       }
       
       if (!res.ok) {
-        console.error('[Player] API request failed:', res.status);
+        const payload = (await res.json().catch(() => null)) as BilibiliStreamError | null;
+        console.error('[Player] API request failed:', res.status, payload);
+
+        if (requestId !== loadRequestIdRef.current) {
+          return false;
+        }
+
+        if (res.status === 404 || payload?.live_status === 0) {
+          setError(true, '直播未开始');
+        } else {
+          setError(true, transientErrorMessage);
+        }
+
         return false;
       }
 
@@ -836,7 +855,6 @@ export function useAudioPlayer() {
       audio.pause();
       audio.remove();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 监听电台变化
