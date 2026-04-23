@@ -77,7 +77,28 @@ class UpstreamStatusError extends Error {
 const BILIBILI_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
   Referer: 'https://live.bilibili.com/',
+  Origin: 'https://live.bilibili.com',
+  'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
 };
+
+const BILIBILI_API_HEADERS = {
+  ...BILIBILI_HEADERS,
+  Accept: 'application/json, text/plain, */*',
+};
+
+const BILIBILI_HTML_HEADERS = {
+  ...BILIBILI_HEADERS,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+};
+
+function isUpstreamStatusError(error: unknown, status: number): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const maybeError = error as { status?: unknown; message?: unknown };
+  return maybeError.status === status || maybeError.message === `Upstream request failed: ${status}`;
+}
 
 async function fetchJson<T>(url: string, timeoutMs = 12000): Promise<T> {
   const controller = new AbortController();
@@ -85,7 +106,7 @@ async function fetchJson<T>(url: string, timeoutMs = 12000): Promise<T> {
 
   try {
     const response = await fetch(url, {
-      headers: BILIBILI_HEADERS,
+      headers: BILIBILI_API_HEADERS,
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -106,7 +127,7 @@ async function fetchText(url: string, timeoutMs = 12000): Promise<string> {
 
   try {
     const response = await fetch(url, {
-      headers: BILIBILI_HEADERS,
+      headers: BILIBILI_HTML_HEADERS,
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -288,7 +309,7 @@ export async function GET(request: NextRequest) {
         fetchJson<BilibiliPlayInfoResponse>(playInfoUrl),
       ]);
     } catch (error) {
-      if (error instanceof UpstreamStatusError && error.status === 412) {
+      if (isUpstreamStatusError(error, 412)) {
         const livePageData = await loadFromLivePage(roomId);
 
         infoData = {
