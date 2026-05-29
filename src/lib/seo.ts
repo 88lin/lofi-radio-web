@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, MetadataRoute } from "next";
 
 import { homepageFaqs } from "./seo-content";
+import { stations } from "./stations";
 
 export const siteConfig = {
   name: "Lofi Radio",
@@ -13,6 +14,20 @@ export const siteConfig = {
   description:
     "Lofi Radio 是一个可在线收听的专注音乐电台网站，提供 Lofi、Chill、Jazz、Ambient 和白噪音音乐，适合学习、工作、编程、阅读与助眠场景。",
 } as const;
+
+const aiCrawlerUserAgents = [
+  "GPTBot",
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "PerplexityBot",
+  "Perplexity-User",
+  "ClaudeBot",
+  "Claude-SearchBot",
+  "Claude-User",
+  "anthropic-ai",
+  "Google-Extended",
+  "Bingbot",
+];
 
 export function buildSiteMetadata(): Metadata {
   const title = "Lofi Radio - 专注音乐电台";
@@ -75,6 +90,33 @@ export function buildSiteMetadata(): Metadata {
 }
 
 export function buildHomepageSchema() {
+  const softwareApplication = {
+    "@type": "SoftwareApplication",
+    "@id": `${siteConfig.url}#app`,
+    name: siteConfig.name,
+    url: siteConfig.url,
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Web browser",
+    description: siteConfig.description,
+    inLanguage: "zh-CN",
+    isAccessibleForFree: true,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "CNY",
+      availability: "https://schema.org/InStock",
+    },
+    featureList: [
+      "在线收听 Lofi、Chill、Jazz、Ambient 和白噪音电台",
+      "支持学习、工作、编程、阅读、放松和助眠场景",
+      "支持移动端播放器、睡眠定时和专注时间记录",
+      "免注册、免下载，浏览器打开即可使用",
+    ],
+    publisher: {
+      "@id": `${siteConfig.url}#organization`,
+    },
+  };
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -112,6 +154,46 @@ export function buildHomepageSchema() {
         primaryImageOfPage: siteConfig.ogImage,
         inLanguage: "zh-CN",
       },
+      softwareApplication,
+      {
+        "@type": "ItemList",
+        "@id": `${siteConfig.url}#stations`,
+        name: "Lofi Radio 精选电台列表",
+        description: `Lofi Radio 当前整理了 ${stations.length} 个适合学习、工作、编程、阅读、放松和助眠的在线音乐电台。`,
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        numberOfItems: stations.length,
+        itemListElement: stations.map((station, index) => {
+          const radioStation = {
+            "@type": "RadioStation",
+            "@id": `${siteConfig.url}#station-${station.id}`,
+            name: station.name,
+            url: station.url,
+            genre: [station.style1, station.style2],
+            description:
+              station.description ||
+              `${station.name} 是适合${station.scene}场景的 ${station.style1} / ${station.style2} 在线音乐电台。`,
+            ...(station.type === "bilibili" ? { inLanguage: "zh-CN" } : {}),
+          };
+
+          return {
+            "@type": "ListItem",
+            position: index + 1,
+            item: radioStation,
+          };
+        }),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${siteConfig.url}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: siteConfig.name,
+            item: siteConfig.url,
+          },
+        ],
+      },
       {
         "@type": "FAQPage",
         "@id": `${siteConfig.url}#faq`,
@@ -128,24 +210,36 @@ export function buildHomepageSchema() {
   };
 }
 
-export function buildRobotsConfig() {
+export function buildRobotsConfig(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+      },
+      ...aiCrawlerUserAgents.map((userAgent) => ({
+        userAgent,
+        allow: "/",
+      })),
+    ],
     sitemap: `${siteConfig.url}/sitemap.xml`,
     host: siteConfig.url,
-  } as const;
+  };
 }
 
-export function buildSitemapEntries() {
+export function buildSitemapEntries(): MetadataRoute.Sitemap {
   return [
     {
       url: siteConfig.url,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 1,
+    },
+    {
+      url: `${siteConfig.url}/llms.txt`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
     },
   ];
 }

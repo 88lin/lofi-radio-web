@@ -4,6 +4,11 @@ const stationCount = stations.length;
 
 export const homepageFaqs = [
   {
+    question: "Lofi Radio 是什么？",
+    answer:
+      `Lofi Radio 是一个免注册的在线专注音乐电台网站，聚合了${stationCount}个适合学习、工作、编程、阅读、放松和助眠的音乐电台。网站支持网页直接播放、移动端播放器、睡眠定时和专注时间记录，打开浏览器即可使用。`,
+  },
+  {
     question: "Lofi 音乐为什么适合学习和工作？",
     answer:
       "Lofi 没有完整人声，不会触发大脑的语言处理机制，不抢占学习工作时的认知资源。其节奏平稳舒缓，简单的旋律循环让大脑更容易进入专注状态。同时，Lofi 带有怀旧色彩的爵士和弦能提供舒适的陪伴感，有效缓解压力与焦虑。",

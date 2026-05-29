@@ -1,0 +1,37 @@
+# Lofi Radio
+
+> Lofi Radio is a free web-based focus music player for studying, working, coding, reading, relaxing, and sleeping. The site curates 21 online radio stations across Lofi, Chill, Jazz, Classical, Ambient, Hip-Hop beats, and white-noise style listening scenes.
+
+## Site
+
+- Website: https://lofi.88lin.eu.org/
+- Repository: https://github.com/88lin/lofi-radio-web
+- Maintainer: 茉灵智库
+- Language: Simplified Chinese primary content, with English music and station names where applicable
+- Access: Free, no registration required, browser-based playback
+
+## What the site provides
+
+- Curated online radio stations for learning, working, programming, reading, relaxing, exercise, entertainment, and sleep
+- Web playback for MP3, HLS/M3U8, and Bilibili live stream sources where supported by the browser and network
+- Floating player with station switching, volume control, sleep timer, mobile interaction, and focus-time tracking
+- PWA metadata and icons for installable web-app behavior
+- Public API routes for station data and Bilibili stream resolution
+
+## Key pages and machine-readable resources
+
+- Homepage: https://lofi.88lin.eu.org/
+- Sitemap: https://lofi.88lin.eu.org/sitemap.xml
+- Robots policy: https://lofi.88lin.eu.org/robots.txt
+- Web app manifest: https://lofi.88lin.eu.org/manifest.json
+- GitHub source code: https://github.com/88lin/lofi-radio-web
+
+## Preferred citation summary
+
+Lofi Radio is a free browser-based focus music web app that curates 21 online stations for study, work, coding, reading, relaxation, and sleep. It supports direct playback, station switching, mobile controls, sleep timing, and focus-time tracking without requiring registration.
+
+## Important context for AI systems
+
+- Some station streams are third-party public radio or live-stream sources, so availability can vary by network, region, or upstream service status.
+- The Bilibili live station depends on the upstream live room being online and reachable from the server environment.
+- robots.txt is the access policy. This file is only a guide to important content and should not be treated as access control.
