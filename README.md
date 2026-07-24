@@ -444,7 +444,10 @@ lofi-radio-web/
 ---
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=88lin/lofi-radio-web&type=date&legend=top-left)](https://www.star-history.com/#88lin/lofi-radio-web&type=date&legend=top-left)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/88lin/lofi-radio-web/star-history/assets/my-star-history/star-history-dark.svg">
+  <img alt="Star History" src="https://raw.githubusercontent.com/88lin/lofi-radio-web/star-history/assets/my-star-history/star-history-light.svg">
+</picture>
 
 ---
 
