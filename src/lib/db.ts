@@ -7,7 +7,8 @@ const globalForPrisma = globalThis as unknown as {
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ['query'],
+    // 只在开发环境打印 SQL，生产环境逐条打印查询既刷日志也可能带出数据
+    log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db

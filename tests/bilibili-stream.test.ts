@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { extractHlsUrls } from '../src/app/api/bilibili-stream/route';
+import { extractHlsUrls, isValidRoomId } from '../src/app/api/bilibili-stream/route';
+
+test('isValidRoomId only accepts plain positive integers', () => {
+  assert.equal(isValidRoomId('27519423'), true);
+  assert.equal(isValidRoomId('1'), true);
+
+  // 会被拼进上游 URL 的输入必须全部拒绝
+  assert.equal(isValidRoomId('27519423&qn=0'), false);
+  assert.equal(isValidRoomId('27519423#'), false);
+  assert.equal(isValidRoomId('../foo'), false);
+  assert.equal(isValidRoomId(' 27519423'), false);
+  assert.equal(isValidRoomId('27519423\n'), false);
+  assert.equal(isValidRoomId('0'), false);
+  assert.equal(isValidRoomId('-1'), false);
+  assert.equal(isValidRoomId('1e3'), false);
+  assert.equal(isValidRoomId(''), false);
+  assert.equal(isValidRoomId('9'.repeat(21)), false);
+});
 
 test('extractHlsUrls keeps compatible HLS fallbacks in priority order', () => {
   const playInfo = {

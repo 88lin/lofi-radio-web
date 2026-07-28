@@ -63,6 +63,13 @@ const getCurrentDate = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 };
 
+// 本地时区「今天零点」的时间戳，用于跨天重置时把午夜之后的时间补回来
+const getStartOfToday = () => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return start.getTime();
+};
+
 export const useAudioStore = create<AudioState>()(
   persist(
     (set, get) => ({
@@ -89,13 +96,22 @@ export const useAudioStore = create<AudioState>()(
       }),
 
       checkAndResetDailyFocus: () => {
-        const { focusDate } = get();
+        const { focusDate, isPlaying, focusStartTime } = get();
         const currentDate = getCurrentDate();
         if (focusDate !== currentDate) {
           set({ 
             accumulatedFocusTime: 0, 
             focusDate: currentDate,
-            focusStartTime: null 
+            // 跨天时如果还在播放，要立刻按新的一天重新起算，
+            // 否则 focusStartTime 被清空后计时会一直停在 0。
+            // 起算点取「今天零点」和原起算点里更晚的那个：
+            //   - 后台标签页的定时器会被节流，这次检测可能比午夜晚几十秒甚至更久，
+            //     用零点兜底才不会漏掉午夜到首次检测之间的时间；
+            //   - 若本次播放本身就是午夜之后才开始的，则沿用原起算点，
+            //     避免把零点到开播之间没在听的时间算进来。
+            focusStartTime: isPlaying
+              ? Math.max(focusStartTime ?? Date.now(), getStartOfToday())
+              : null
           });
         }
       },
@@ -114,6 +130,9 @@ export const useAudioStore = create<AudioState>()(
       
       // 由音频事件设置真实播放状态
       setPlaying: (playing) => {
+        // 播放状态可能在被节流的跨日检查之前发生变化（例如暂停或切台）。
+        // 先按旧的播放状态完成跨日归档，再基于更新后的计时状态处理本次事件。
+        get().checkAndResetDailyFocus();
         const state = get();
         if (playing) {
           set({ 

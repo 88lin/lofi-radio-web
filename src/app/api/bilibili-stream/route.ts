@@ -177,11 +177,21 @@ export function extractHlsUrls(playInfo: BilibiliPlayInfoData | undefined): stri
   return [...new Set(urls)];
 }
 
+// room_id 会被拼进上游 URL，必须先确认它只是一串数字，
+// 否则调用方可以塞进 & / # 之类的字符去改写上游查询参数
+export function isValidRoomId(value: string): boolean {
+  return /^[1-9]\d{0,19}$/.test(value);
+}
+
 export async function GET(request: NextRequest) {
   const roomId = request.nextUrl.searchParams.get('room_id');
 
   if (!roomId) {
     return NextResponse.json({ error: 'room_id is required' }, { status: 400 });
+  }
+
+  if (!isValidRoomId(roomId)) {
+    return NextResponse.json({ error: 'room_id must be a positive integer' }, { status: 400 });
   }
 
   const roomInfoUrl = `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${roomId}`;
@@ -239,18 +249,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      room_id: roomId,
-      title: infoData.data?.title || 'Bilibili Live',
-      live_status: 1,
-      flv_url: flvCandidates[0]?.url || '',
-      hls_url: hlsUrls[0] ?? null,
-      hls_backup_urls: hlsUrls.slice(1),
-      backup_urls: flvCandidates.slice(1).map((candidate) => candidate.url),
-      quality: playInfoData.data?.playurl_info?.playurl?.g_qn_desc ?? [],
-      timestamp: Date.now(),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        room_id: roomId,
+        title: infoData.data?.title || 'Bilibili Live',
+        live_status: 1,
+        flv_url: flvCandidates[0]?.url || '',
+        hls_url: hlsUrls[0] ?? null,
+        hls_backup_urls: hlsUrls.slice(1),
+        backup_urls: flvCandidates.slice(1).map((candidate) => candidate.url),
+        quality: playInfoData.data?.playurl_info?.playurl?.g_qn_desc ?? [],
+        timestamp: Date.now(),
+      },
+      // 返回体里是带时效 token 的取流地址，不能被任何中间层缓存
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
   } catch (error) {
     console.error('Bilibili stream API error:', error);
 

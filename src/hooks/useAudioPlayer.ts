@@ -65,6 +65,8 @@ interface BilibiliStreamError {
 }
 
 // 手动实现带超时的 fetch（兼容性更好）
+type LoadBilibiliStream = (station: Station, requestId: number) => Promise<boolean>;
+
 const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -100,6 +102,8 @@ export function useAudioPlayer() {
     proxyHits: 0,
     hlsRefreshCount: 0,
   });
+  // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
+  const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
 
   const {
     currentStation,
@@ -126,7 +130,10 @@ export function useAudioPlayer() {
     }
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
+      // 注意：不能用 src = ''。空字符串会被解析成当前页面地址，浏览器会去把
+      // HTML 当媒体加载，随后异步抛出 MEDIA_ERR_SRC_NOT_SUPPORTED，把
+      // loadStation() 刚刚清空的错误状态重新写成"该音源在当前网络环境下不可用"。
+      audioRef.current.removeAttribute('src');
       audioRef.current.load();
     }
   }, []);
@@ -174,9 +181,13 @@ export function useAudioPlayer() {
   }, [setPlaying, setLoading]);
 
   // 加载 Bilibili 直播流
-  const loadBilibiliStream = useCallback(async (station: Station, requestId: number): Promise<boolean> => {
+  const loadBilibiliStream = useCallback<LoadBilibiliStream>(async (station, requestId) => {
     const audio = audioRef.current;
     if (!audio) return false;
+
+    // 重新拉取流地址并重试（通过 ref 自我调用）
+    const retryLoadStream = async (): Promise<boolean> =>
+      (await loadBilibiliStreamRef.current?.(station, requestId)) ?? false;
 
     const repeatedNetworkErrorMessage = '直播源连接失败，请稍后重试';
     const transientErrorMessage = '加载失败，请刷新';
@@ -294,9 +305,15 @@ export function useAudioPlayer() {
     console.log('[Player] Loading Bilibili stream for:', station.name);
 
     try {
-      // 从 URL 提取房间号
+      // 从 URL 提取房间号。提取不到就直接报错，
+      // 不再静默回落到某个固定房间号（会导致播放的其实是另一个电台）
       const urlMatch = station.url.match(/live\.bilibili\.com\/(\d+)/);
-      const roomId = urlMatch ? urlMatch[1] : '27519423';
+      if (!urlMatch) {
+        console.error('[Player] Cannot parse Bilibili room id from url:', station.url);
+        setError(true, '直播间地址无效');
+        return false;
+      }
+      const roomId = urlMatch[1];
 
       console.log('[Player] Fetching stream for room:', roomId);
 
@@ -383,7 +400,7 @@ export function useAudioPlayer() {
             return false;
           }
 
-          return await loadBilibiliStream(station, requestId);
+          return await retryLoadStream();
         }
 
         console.warn('[Player] HLS load failed, falling back to FLV');
@@ -527,7 +544,7 @@ export function useAudioPlayer() {
               await new Promise(resolve => setTimeout(resolve, 800));
               if (requestId !== loadRequestIdRef.current) return;
 
-              const retryLoaded = await loadBilibiliStream(station, requestId);
+              const retryLoaded = await retryLoadStream();
               if (requestId !== loadRequestIdRef.current) return;
 
               if (retryLoaded) {
@@ -577,6 +594,10 @@ export function useAudioPlayer() {
       return false;
     }
   }, [setError]);
+
+  useEffect(() => {
+    loadBilibiliStreamRef.current = loadBilibiliStream;
+  }, [loadBilibiliStream]);
 
   // 加载电台 - 带版本控制，从 store 读取最新播放意图
   const loadStation = useCallback(async (station: Station) => {

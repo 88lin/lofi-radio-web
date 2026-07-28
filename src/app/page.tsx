@@ -345,6 +345,8 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // 不要抢浏览器/系统快捷键，例如 Cmd+← 返回上一页、Ctrl+T 新标签页、Shift+Space 向上滚动
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       switch (e.code) {
         case 'Space': e.preventDefault(); togglePlay(); break;
         case 'ArrowLeft': e.preventDefault(); prevStation(); break;
