@@ -130,6 +130,9 @@ export const useAudioStore = create<AudioState>()(
       
       // 由音频事件设置真实播放状态
       setPlaying: (playing) => {
+        // 播放状态可能在被节流的跨日检查之前发生变化（例如暂停或切台）。
+        // 先按旧的播放状态完成跨日归档，再基于更新后的计时状态处理本次事件。
+        get().checkAndResetDailyFocus();
         const state = get();
         if (playing) {
           set({ 

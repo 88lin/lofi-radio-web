@@ -72,6 +72,29 @@ test('跨天且仍在播放时清零但继续计时（不能停表在 0）', (t)
   assert.equal(state.getFocusTime(), 45);
 });
 
+test('跨天后在日期检查前暂停，仍保留午夜后的时长', (t) => {
+  const startedYesterday = localTime(2026, 3, 14, 22, 0, 0);
+  t.mock.timers.enable({ apis: ['Date'], now: localTime(2026, 3, 15, 0, 0, 45) });
+
+  useAudioStore.setState({
+    focusDate: '2026-03-14',
+    accumulatedFocusTime: 5678,
+    focusStartTime: startedYesterday,
+    isPlaying: true,
+  });
+
+  // pause 事件可能抢在被节流的跨日 interval 前到达。
+  useAudioStore.getState().setPlaying(false);
+  useAudioStore.getState().checkAndResetDailyFocus();
+
+  const state = useAudioStore.getState();
+  assert.equal(state.focusDate, '2026-03-15');
+  assert.equal(state.isPlaying, false);
+  assert.equal(state.focusStartTime, null);
+  assert.equal(state.accumulatedFocusTime, 45);
+  assert.equal(state.getFocusTime(), 45);
+});
+
 test('跨天检测发生在开播之后时，沿用原起算点而不是回退到零点', (t) => {
   const startedAfterMidnight = localTime(2026, 3, 15, 0, 0, 30);
   t.mock.timers.enable({ apis: ['Date'], now: localTime(2026, 3, 15, 0, 0, 45) });
