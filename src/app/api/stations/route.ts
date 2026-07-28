@@ -1,52 +1,36 @@
 import { NextResponse } from 'next/server';
+import { categories, stations } from '@/lib/stations';
+import { getStationMeta } from '@/lib/station-meta';
 
-const GITHUB_REPO = 'labilio/lofi-radio';
-const STATIONS_FILE = 'stations.json';
-const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STATIONS_FILE}`;
+/**
+ * Public read-only catalogue of the built-in stations.
+ *
+ * Previously this route fetched `stations.json` from an unrelated GitHub
+ * repository (`labilio/lofi-radio`) that this project does not control, so the
+ * response had nothing to do with what the app actually plays. It now serves
+ * this app's own catalogue plus the measured capability metadata, which is what
+ * the station health checker and third-party clients need.
+ */
+export const revalidate = 3600;
 
-interface GitHubContent {
-  name: string;
-  path: string;
-  sha: string;
-  content: string;
-  encoding: string;
-  download_url: string;
-}
-
-function decodeBase64(base64: string): string {
-  const cleanBase64 = base64.replace(/\n/g, '');
-  return Buffer.from(cleanBase64, 'base64').toString('utf-8');
-}
-
-export async function GET() {
-  try {
-    const response = await fetch(GITHUB_API_URL, {
+export function GET() {
+  return NextResponse.json(
+    {
+      count: stations.length,
+      categories,
+      stations: stations.map((station) => {
+        const meta = getStationMeta(station.id);
+        return {
+          ...station,
+          cors: meta.cors,
+          nowPlaying: meta.nowPlaying.kind,
+        };
+      }),
+    },
+    {
       headers: {
-        Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'Lofi-Radio-Web',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
       },
-      next: { revalidate: 3600 },
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const data: GitHubContent = await response.json();
-    const content = decodeBase64(data.content);
-    const stations = JSON.parse(content);
-
-    return NextResponse.json({
-      stations,
-      sha: data.sha,
-      lastUpdated: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Failed to fetch from GitHub:', error);
-
-    return NextResponse.json(
-      { error: 'Failed to fetch stations data' },
-      { status: 500 }
-    );
-  }
+    },
+  );
 }

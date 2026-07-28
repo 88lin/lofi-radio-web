@@ -89,6 +89,13 @@ export function useAudioPlayer() {
   
   // 请求版本控制 - 解决竞态条件
   const loadRequestIdRef = useRef(0);
+  // Indirection for `loadBilibiliStream`'s single self-recursive call (the HLS
+  // "refresh stream info and retry" path). Calling the callback identifier from
+  // inside its own initialiser is a TDZ hazard that `react-hooks/immutability`
+  // correctly rejects, so the retry goes through this ref instead.
+  const loadBilibiliStreamRef = useRef<
+    ((station: Station, requestId: number) => Promise<boolean>) | null
+  >(null);
   const currentLoadingIdRef = useRef<string | null>(null);
   // 标记当前是否正在加载 Bilibili 流（flv.js 会处理错误）
   const isLoadingBilibiliRef = useRef(false);
@@ -383,7 +390,8 @@ export function useAudioPlayer() {
             return false;
           }
 
-          return await loadBilibiliStream(station, requestId);
+          const retry = loadBilibiliStreamRef.current;
+          return retry ? await retry(station, requestId) : false;
         }
 
         console.warn('[Player] HLS load failed, falling back to FLV');
@@ -527,7 +535,8 @@ export function useAudioPlayer() {
               await new Promise(resolve => setTimeout(resolve, 800));
               if (requestId !== loadRequestIdRef.current) return;
 
-              const retryLoaded = await loadBilibiliStream(station, requestId);
+              const reload = loadBilibiliStreamRef.current;
+              const retryLoaded = reload ? await reload(station, requestId) : false;
               if (requestId !== loadRequestIdRef.current) return;
 
               if (retryLoaded) {
@@ -577,6 +586,10 @@ export function useAudioPlayer() {
       return false;
     }
   }, [setError]);
+
+  useEffect(() => {
+    loadBilibiliStreamRef.current = loadBilibiliStream;
+  }, [loadBilibiliStream]);
 
   // 加载电台 - 带版本控制，从 store 读取最新播放意图
   const loadStation = useCallback(async (station: Station) => {

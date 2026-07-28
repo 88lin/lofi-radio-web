@@ -45,11 +45,15 @@ export const stations: Station[] = [
     color: '#3B82F6'
   },
   {
-    id: 'chill-sky',
-    name: 'Chill Sky',
+    // Replaces the former "Chill Sky" (https://chill.radioca.st/stream), which
+    // has been returning 502 Bad Gateway + text/html for some time. SomaFM's
+    // Beat Blender fills the same downtempo/electronic slot, sends
+    // `Access-Control-Allow-Origin: *`, and exposes a now-playing feed.
+    id: 'beat-blender',
+    name: 'Beat Blender',
     scene: '阅读',
     type: 'mp3',
-    url: 'https://chill.radioca.st/stream',
+    url: 'https://ice1.somafm.com/beatblender-128-mp3',
     style1: 'Chill',
     style2: 'Electro',
     color: '#06B6D4'

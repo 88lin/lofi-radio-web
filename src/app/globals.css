@@ -3,6 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Design tokens -> Tailwind utilities
+   Everything below is exposed as a Tailwind color/spacing utility so that
+   components can use `bg-surface`, `text-fg-muted`, `border-hairline`,
+   `text-station`, `bg-station/12` instead of `isDark ? 'a' : 'b'` ternaries.
+   ========================================================================== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -24,83 +30,216 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Semantic surfaces (elevation ladder) */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-overlay: var(--surface-overlay);
+
+  /* Semantic foreground ladder. fg / fg-muted / fg-subtle all clear
+     WCAG AA (>=4.5:1) on `surface`; fg-faint is decorative only. */
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-faint: var(--fg-faint);
+
+  /* Hairlines */
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  /* Per-station accent. Set at runtime via `style={{ '--station-accent': color }}`,
+     so `text-station`, `bg-station/12`, `border-station/30` all follow the
+     currently selected radio station. */
+  --color-station: var(--station-accent);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
+
+  /* Motion tokens */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* Light Mode - 柔和明亮 */
+/* --------------------------------------------------------------------------
+   Light theme - warm violet-tinted paper, not flat grey
+   -------------------------------------------------------------------------- */
 :root {
   --radius: 0.75rem;
-  --background: #fafafa;
-  --foreground: #0a0a0a;
+
+  --background: #f6f6fb;
+  --foreground: #18181b;
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #18181b;
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
+  --popover-foreground: #18181b;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #ef4444;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
+  --secondary: #f1f1f6;
+  --secondary-foreground: #27272a;
+  --muted: #f1f1f6;
+  --muted-foreground: #52525b;
+  --accent: #f1f1f6;
+  --accent-foreground: #27272a;
+  --destructive: #dc2626;
+  --border: #e3e3ea;
+  --input: #e3e3ea;
   --ring: #7c3aed;
+
+  --surface: #ffffff;
+  --surface-2: #f2f2f7;
+  --surface-3: #e8e8f0;
+  --surface-overlay: rgba(255, 255, 255, 0.86);
+
+  --fg: #18181b;          /* 15.3:1 on white */
+  --fg-muted: #4b4b55;    /*  8.9:1 on white */
+  --fg-subtle: #63636f;   /*  6.0:1 on white */
+  --fg-faint: #9a9aa6;    /* decorative only */
+
+  --hairline: rgba(24, 24, 27, 0.09);
+  --hairline-strong: rgba(24, 24, 27, 0.16);
+
+  /* Elevation - light mode gets soft violet-tinted shadows so white cards
+     read as raised instead of disappearing into the page. */
+  --shadow-sm: 0 1px 2px rgba(24, 24, 40, 0.05), 0 1px 3px rgba(24, 24, 40, 0.04);
+  --shadow-md: 0 2px 4px rgba(24, 24, 40, 0.04), 0 6px 16px rgba(24, 24, 40, 0.07);
+  --shadow-lg: 0 4px 8px rgba(24, 24, 40, 0.05), 0 16px 40px rgba(24, 24, 40, 0.09);
+  --shadow-xl: 0 8px 16px rgba(24, 24, 40, 0.06), 0 28px 64px rgba(24, 24, 40, 0.12);
+
+  --station-accent: #8b5cf6;
+
+  /* Motion durations - overridden to 0.01ms under prefers-reduced-motion */
+  --dur-fast: 150ms;
+  --dur-base: 260ms;
+  --dur-slow: 420ms;
 }
 
-/* Dark Mode - 精致的深色主题 */
+/* --------------------------------------------------------------------------
+   Dark theme
+   -------------------------------------------------------------------------- */
 .dark {
   --background: #0a0a0c;
   --foreground: #fafafa;
-  --card: #141416;
+  --card: #16161b;
   --card-foreground: #fafafa;
-  --popover: #141416;
+  --popover: #16161b;
   --popover-foreground: #fafafa;
   --primary: #a78bfa;
   --primary-foreground: #0a0a0c;
-  --secondary: #1f1f23;
+  --secondary: #1f1f26;
   --secondary-foreground: #fafafa;
-  --muted: #1f1f23;
-  --muted-foreground: #a1a1aa;
-  --accent: #1f1f23;
+  --muted: #1f1f26;
+  --muted-foreground: #b4b4be;
+  --accent: #1f1f26;
   --accent-foreground: #fafafa;
   --destructive: #f87171;
-  --border: #27272a;
-  --input: #27272a;
+  --border: #27272e;
+  --input: #27272e;
   --ring: #a78bfa;
+
+  --surface: #14141a;
+  --surface-2: #1c1c23;
+  --surface-3: #26262f;
+  --surface-overlay: rgba(16, 16, 21, 0.88);
+
+  --fg: #fafafa;
+  --fg-muted: #b8b8c4;    /* 8.6:1 on surface */
+  --fg-subtle: #94949f;   /* 5.4:1 on surface */
+  --fg-faint: #6c6c78;
+
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.15);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-fg antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
-  /* 主题切换过渡 - 更平滑 */
+
   html {
-    transition: background-color 0.4s ease, color 0.4s ease;
+    scroll-behavior: smooth;
+    color-scheme: light dark;
+    transition: background-color var(--dur-slow) var(--ease-out-soft),
+                color var(--dur-slow) var(--ease-out-soft);
   }
-  
+
   html.dark {
     color-scheme: dark;
   }
-  
+
   html:not(.dark) {
     color-scheme: light;
   }
+
+  .dark body {
+    background-color: #0a0a0c;
+  }
+
+  /* Visible keyboard focus everywhere, never on mouse click. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button,
+  [role="button"] {
+    user-select: none;
+  }
 }
 
-/* Custom Scrollbar - 暗色模式下更精致 */
+/* --------------------------------------------------------------------------
+   Reduced motion - one global switch instead of per-component checks
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.01ms;
+    --dur-base: 0.01ms;
+    --dur-slow: 0.01ms;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Purely decorative loops are removed outright rather than snapped. */
+  .animate-spin-slow,
+  .animate-breathe,
+  .animate-pulse-subtle,
+  .animate-equalizer,
+  .animate-orbit {
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars & selection
+   -------------------------------------------------------------------------- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -111,388 +250,153 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.2);
+  background: color-mix(in oklab, var(--station-accent) 30%, transparent);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.35);
+  background: color-mix(in oklab, var(--station-accent) 55%, transparent);
 }
 
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(167, 139, 250, 0.25);
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--station-accent) 30%, transparent) transparent;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(167, 139, 250, 0.4);
-}
-
-/* Selection */
 ::selection {
-  background: rgba(139, 92, 246, 0.3);
+  background: color-mix(in oklab, var(--station-accent) 30%, transparent);
 }
 
-.dark ::selection {
-  background: rgba(167, 139, 250, 0.35);
-}
-
-/* Hide scrollbar utility */
-.no-scrollbar {
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+@utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Elevation utilities driven by the theme-aware shadow tokens. */
+@utility elev-sm {
+  box-shadow: var(--shadow-sm);
+}
+@utility elev-md {
+  box-shadow: var(--shadow-md);
+}
+@utility elev-lg {
+  box-shadow: var(--shadow-lg);
+}
+@utility elev-xl {
+  box-shadow: var(--shadow-xl);
 }
 
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, #7c3aed 0%, #c026d3 50%, #f43f5e 100%);
+/* Frosted panel: one class replaces ~40 duplicated bg/border/blur ternaries. */
+@utility panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-md);
+}
+
+@utility panel-glass {
+  background: var(--surface-overlay);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Station-tinted text gradient used for headings. */
+@utility gradient-text {
+  background-image: linear-gradient(
+    120deg,
+    var(--station-accent) 0%,
+    color-mix(in oklab, var(--station-accent) 45%, #d946ef) 50%,
+    color-mix(in oklab, var(--station-accent) 25%, #f43f5e) 100%
+  );
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
 }
 
-.dark .gradient-text {
-  background: linear-gradient(135deg, #a78bfa 0%, #e879f9 50%, #fb7185 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Minimum comfortable touch target (WCAG 2.5.5 / Apple HIG 44pt).
+   Expands the hit area without changing visual size. */
+@utility tap-target {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 }
 
-/* Glow Effects - 更精致的光效 */
-.glow-primary {
-  box-shadow: 0 0 40px rgba(139, 92, 246, 0.25);
-}
-
-.dark .glow-primary {
-  box-shadow: 0 0 50px rgba(167, 139, 250, 0.2);
-}
-
-.glow-sm {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
-}
-
-.dark .glow-sm {
-  box-shadow: 0 0 25px rgba(167, 139, 250, 0.12);
-}
-
-/* Glass Effect - 更精致的玻璃效果 */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.dark .glass {
-  background: rgba(10, 10, 12, 0.7);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-}
-
-/* Animation Classes */
+/* --------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(1.02); }
+  50%      { opacity: 0.35; transform: scale(1.02); }
 }
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 3s ease-in-out infinite;
-}
+.animate-pulse-subtle { animation: pulse-subtle 3s var(--ease-in-out-soft) infinite; }
 
 @keyframes equalizer {
-  0% { transform: scaleY(0.3); }
-  50% { transform: scaleY(1); }
+  0%   { transform: scaleY(0.3); }
+  50%  { transform: scaleY(1); }
   100% { transform: scaleY(0.3); }
 }
-
-.animate-equalizer {
-  animation: equalizer 0.5s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-    opacity: 0.8;
-  }
-  50% { 
-    box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
-    opacity: 1;
-  }
-}
+.animate-equalizer { animation: equalizer 0.5s var(--ease-in-out-soft) infinite; }
 
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
 
 @keyframes breathe {
-  0%, 100% { 
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% { 
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
+  0%, 100% { transform: scale(1);    opacity: 0.5; }
+  50%      { transform: scale(1.05); opacity: 0.8; }
 }
+.animate-breathe { animation: breathe 4s var(--ease-in-out-soft) infinite; }
 
-@keyframes gradient-shift {
-  0%, 100% { 
-    background-position: 0% 50%;
-  }
-  50% { 
-    background-position: 100% 50%;
-  }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
-}
-
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--fg) 8%, transparent),
+    transparent
+  );
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 1.6s linear infinite;
 }
 
-.dark .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-  background-size: 200% 100%;
-}
-
-.animate-breathe {
-  animation: breathe 4s ease-in-out infinite;
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 4s ease infinite;
-}
-
-/* Grid Pattern Background */
-.grid-pattern {
-  background-image: 
-    linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
-.dark .grid-pattern {
-  background-image: 
-    linear-gradient(rgba(167, 139, 250, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(167, 139, 250, 0.02) 1px, transparent 1px);
-}
-
-/* Dot Pattern Background */
-.dot-pattern {
-  background-image: radial-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.dark .dot-pattern {
-  background-image: radial-gradient(rgba(167, 139, 250, 0.1) 1px, transparent 1px);
-}
-
-/* Noise Texture Overlay - 增加质感 */
-.noise-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
-}
-
-.dark .noise-overlay::before {
-  opacity: 0.02;
-}
-
-/* Custom Focus Ring */
-.focus-ring:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
-}
-
-.dark .focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.5);
-}
-
-/* Button Press Effect */
-.btn-press {
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.btn-press:active {
-  transform: scale(0.97);
-}
-
-/* Gradient Border */
-.gradient-border {
-  position: relative;
-}
-
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  background: linear-gradient(135deg, #8B5CF6, #D946EF, #EC4899);
-  border-radius: inherit;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask-composite: xor;
-}
-
-.dark .gradient-border::before {
-  background: linear-gradient(135deg, #a78bfa, #e879f9, #fb7185);
-}
-
-/* Text Glow */
-.text-glow {
-  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-}
-
-.dark .text-glow {
-  text-shadow: 0 0 25px rgba(167, 139, 250, 0.4);
-}
-
-/* Card Hover Effect */
-.card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
-
-.dark .card-hover:hover {
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-}
-
-/* Smooth Scroll */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Better Font Rendering */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Disable text selection on interactive elements */
-button, [role="button"] {
-  user-select: none;
-}
-
-/* Responsive font sizing - 增大移动端字体 */
+/* --------------------------------------------------------------------------
+   Responsive type scale
+   -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
-  html {
-    font-size: 16px;
-  }
-}
+  html { font-size: 16px; }
 
-@media (min-width: 641px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-/* Dark mode background - 深邃的黑色 */
-.dark body {
-  background-color: #0a0a0c;
-}
-
-/* 主题切换优化 - 减少闪屏 */
-html {
-  color-scheme: light dark;
-}
-
-html.dark {
-  color-scheme: dark;
-}
-
-html:not(.dark) {
-  color-scheme: light;
-}
-
-/* 禁用主题切换时的过渡闪烁 */
-.no-transition {
-  transition: none !important;
-}
-
-/* 移动端字体适配 */
-@media (max-width: 640px) {
-  .text-xs { font-size: 0.8125rem; }
-  .text-sm { font-size: 0.9375rem; }
-  .text-base { font-size: 1.0625rem; }
-  .text-lg { font-size: 1.1875rem; }
-  .text-xl { font-size: 1.375rem; }
+  .text-xs  { font-size: 0.8125rem; }
+  .text-sm  { font-size: 0.9375rem; }
+  .text-base{ font-size: 1.0625rem; }
+  .text-lg  { font-size: 1.1875rem; }
+  .text-xl  { font-size: 1.375rem; }
   .text-2xl { font-size: 1.625rem; }
   .text-3xl { font-size: 2rem; }
   .text-4xl { font-size: 2.5rem; }
   .text-5xl { font-size: 3rem; }
 }
 
-/* Primary button gradient - 暗色模式下更柔和 */
-.dark .btn-primary-gradient {
-  background: linear-gradient(135deg, #8B5CF6, #a855f7);
-}
-
-/* Subtle borders in dark mode */
-.dark .subtle-border {
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-/* Interactive element hover in dark mode */
-.dark .interactive-hover:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-}
-
-/* Dark mode specific enhancements */
-@layer utilities {
-  .dark-enhanced-shadow {
-    box-shadow: 
-      0 0 0 1px rgba(255, 255, 255, 0.03),
-      0 2px 4px rgba(0, 0, 0, 0.2),
-      0 8px 24px rgba(0, 0, 0, 0.3);
-  }
-  
-  .dark-glow-border {
-    box-shadow: 
-      0 0 0 1px rgba(139, 92, 246, 0.2),
-      0 0 20px rgba(139, 92, 246, 0.1);
-  }
-  
-  .dark-card {
-    background: linear-gradient(145deg, rgba(20, 20, 22, 0.95), rgba(10, 10, 12, 0.98));
-    border: 1px solid rgba(255, 255, 255, 0.04);
-  }
-  
-  .dark-glass-card {
-    background: rgba(20, 20, 24, 0.7);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-  }
+  .no-print { display: none !important; }
 }
