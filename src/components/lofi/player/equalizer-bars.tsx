@@ -50,7 +50,9 @@ export const EqualizerBars = memo(function EqualizerBars({
           key={index}
           className={cn(
             'w-[3px] origin-bottom rounded-full bg-station transition-opacity',
-            isPlaying ? 'animate-equalizer opacity-90' : 'opacity-30',
+            // 30% of the accent on a white surface read as dust in the light
+            // theme, so the idle state keeps half opacity.
+            isPlaying ? 'animate-equalizer opacity-90' : 'opacity-50',
             barClassName,
           )}
           style={{
