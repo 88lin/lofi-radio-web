@@ -31,6 +31,7 @@
     "start": "next start",
     "test": "tsx --test tests/*.test.ts",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
