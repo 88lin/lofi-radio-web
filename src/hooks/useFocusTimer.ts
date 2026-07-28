@@ -25,11 +25,13 @@ export function useFocusTimer() {
     }
 
     const interval = window.setInterval(() => {
+      // 页面一直开着跨过零点时也要重置，否则今天的专注时长会累加到昨天的数字上
+      checkAndResetDailyFocus();
       setRefreshTick((tick) => tick + 1);
     }, getFocusRefreshInterval(isPlaying));
 
     return () => window.clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, checkAndResetDailyFocus]);
 
   const focusTimeInSeconds = focusStartTime
     ? accumulatedFocusTime + Math.floor((Date.now() - focusStartTime) / 1000)

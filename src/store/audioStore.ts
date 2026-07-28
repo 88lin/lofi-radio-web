@@ -89,13 +89,15 @@ export const useAudioStore = create<AudioState>()(
       }),
 
       checkAndResetDailyFocus: () => {
-        const { focusDate } = get();
+        const { focusDate, isPlaying } = get();
         const currentDate = getCurrentDate();
         if (focusDate !== currentDate) {
           set({ 
             accumulatedFocusTime: 0, 
             focusDate: currentDate,
-            focusStartTime: null 
+            // 跨天时如果还在播放，要立刻按新的一天重新起算，
+            // 否则 focusStartTime 被清空后计时会一直停在 0
+            focusStartTime: isPlaying ? Date.now() : null
           });
         }
       },

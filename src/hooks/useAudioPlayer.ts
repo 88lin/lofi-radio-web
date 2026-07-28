@@ -130,7 +130,10 @@ export function useAudioPlayer() {
     }
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
+      // 注意：不能用 src = ''。空字符串会被解析成当前页面地址，浏览器会去把
+      // HTML 当媒体加载，随后异步抛出 MEDIA_ERR_SRC_NOT_SUPPORTED，把
+      // loadStation() 刚刚清空的错误状态重新写成"该音源在当前网络环境下不可用"。
+      audioRef.current.removeAttribute('src');
       audioRef.current.load();
     }
   }, []);
@@ -302,9 +305,15 @@ export function useAudioPlayer() {
     console.log('[Player] Loading Bilibili stream for:', station.name);
 
     try {
-      // 从 URL 提取房间号
+      // 从 URL 提取房间号。提取不到就直接报错，
+      // 不再静默回落到某个固定房间号（会导致播放的其实是另一个电台）
       const urlMatch = station.url.match(/live\.bilibili\.com\/(\d+)/);
-      const roomId = urlMatch ? urlMatch[1] : '27519423';
+      if (!urlMatch) {
+        console.error('[Player] Cannot parse Bilibili room id from url:', station.url);
+        setError(true, '直播间地址无效');
+        return false;
+      }
+      const roomId = urlMatch[1];
 
       console.log('[Player] Fetching stream for room:', roomId);
 
