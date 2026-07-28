@@ -65,6 +65,8 @@ interface BilibiliStreamError {
 }
 
 // 手动实现带超时的 fetch（兼容性更好）
+type LoadBilibiliStream = (station: Station, requestId: number) => Promise<boolean>;
+
 const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -100,6 +102,8 @@ export function useAudioPlayer() {
     proxyHits: 0,
     hlsRefreshCount: 0,
   });
+  // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
+  const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
 
   const {
     currentStation,
@@ -174,9 +178,13 @@ export function useAudioPlayer() {
   }, [setPlaying, setLoading]);
 
   // 加载 Bilibili 直播流
-  const loadBilibiliStream = useCallback(async (station: Station, requestId: number): Promise<boolean> => {
+  const loadBilibiliStream = useCallback<LoadBilibiliStream>(async (station, requestId) => {
     const audio = audioRef.current;
     if (!audio) return false;
+
+    // 重新拉取流地址并重试（通过 ref 自我调用）
+    const retryLoadStream = async (): Promise<boolean> =>
+      (await loadBilibiliStreamRef.current?.(station, requestId)) ?? false;
 
     const repeatedNetworkErrorMessage = '直播源连接失败，请稍后重试';
     const transientErrorMessage = '加载失败，请刷新';
@@ -383,7 +391,7 @@ export function useAudioPlayer() {
             return false;
           }
 
-          return await loadBilibiliStream(station, requestId);
+          return await retryLoadStream();
         }
 
         console.warn('[Player] HLS load failed, falling back to FLV');
@@ -527,7 +535,7 @@ export function useAudioPlayer() {
               await new Promise(resolve => setTimeout(resolve, 800));
               if (requestId !== loadRequestIdRef.current) return;
 
-              const retryLoaded = await loadBilibiliStream(station, requestId);
+              const retryLoaded = await retryLoadStream();
               if (requestId !== loadRequestIdRef.current) return;
 
               if (retryLoaded) {
@@ -577,6 +585,10 @@ export function useAudioPlayer() {
       return false;
     }
   }, [setError]);
+
+  useEffect(() => {
+    loadBilibiliStreamRef.current = loadBilibiliStream;
+  }, [loadBilibiliStream]);
 
   // 加载电台 - 带版本控制，从 store 读取最新播放意图
   const loadStation = useCallback(async (station: Station) => {
