@@ -387,6 +387,79 @@
 }
 .animate-spin-slow { animation: spin-slow 8s linear infinite; }
 
+/* Player enter/exit. Keyframes rather than transitions so they run on mount
+   without a state flip in an effect (`react-hooks/set-state-in-effect`). */
+@keyframes player-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-player-in { animation: player-in var(--dur-base) var(--ease-out-soft) both; }
+
+@keyframes player-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: scale(0.985); }
+}
+.animate-player-out { animation: player-out var(--dur-fast) var(--ease-in-out-soft) both; }
+
+/* The island animates opacity only: its `transform` carries the drag offset, and
+   a keyframe touching `transform` would override that inline value mid-animation. */
+@keyframes island-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-island-in { animation: island-in var(--dur-base) var(--ease-out-soft) both; }
+
+/* Entrance animations that replace framer-motion's `initial`/`animate` props.
+   `--enter-delay` is the stagger knob: a parent sets it inline per child instead
+   of pulling in an animation runtime for `staggerChildren`. `both` keeps the
+   `from` state applied before the delay elapses, which is what stops the
+   pre-animation flash that a plain transition would give. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-rise-in {
+  animation: rise-in var(--dur-slow) var(--ease-out-soft) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in var(--dur-slow) var(--ease-out-soft) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-pop-in {
+  animation: pop-in var(--dur-base) var(--ease-out-soft) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Bottom-sheet entrance for the PWA install prompt. */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(50px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-sheet-up { animation: sheet-up var(--dur-base) var(--ease-out-soft) both; }
+
+/* Auto-dismiss countdown bar. The 8s is deliberately literal, not a motion
+   token: it has to match the `setTimeout` that hides the prompt. scaleX beats
+   animating `width` because it stays on the compositor. */
+@keyframes drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.animate-drain {
+  transform-origin: left center;
+  animation: drain 8s linear both;
+}
+
 @keyframes breathe {
   0%, 100% { transform: scale(1);    opacity: 0.5; }
   50%      { transform: scale(1.05); opacity: 0.8; }

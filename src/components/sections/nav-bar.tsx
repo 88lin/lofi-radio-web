@@ -3,9 +3,6 @@
 import { Github, Moon, Music4, Search, Sun } from 'lucide-react';
 import { useMounted } from '@/hooks/use-mounted';
 import { useThemeToggle } from '@/hooks/use-theme-toggle';
-import { useNowPlaying } from '@/hooks/useNowPlaying';
-import { formatTrack } from '@/lib/now-playing';
-import { useAudioStore } from '@/store/audioStore';
 import { useUiStore } from '@/store/uiStore';
 
 function Divider() {
@@ -13,28 +10,24 @@ function Divider() {
 }
 
 /**
- * Floating navigation pill.
+ * Floating navigation pill: brand, ⌘K, theme, source link. Nothing else.
  *
  * Changes vs. the previous inline-styled version:
  * - all colours come from tokens (`panel-glass`, `text-fg*`, `bg-station/…`),
  *   so the light theme is no longer a washed-out afterthought (S6/S7);
- * - the "now playing" slot shows the real track title when the station exposes
- *   metadata, and falls back to the station name — never a fake placeholder;
  * - adds the ⌘K search entry point;
- * - every icon control has an `aria-label` and a >=44px hit area (`tap-target`).
+ * - every icon control has an `aria-label` and a >=44px hit area (`tap-target`);
+ * - the now-playing chip is **gone**. The pill sat 62px above the dynamic island,
+ *   so on mobile the two stacked and read as two competing playback surfaces —
+ *   with the pill's "未播放" being the loudest thing on an idle first screen. The
+ *   island is now the single source of truth for playback state, and the hero
+ *   carries the expanded now-playing chip when something is actually playing.
  */
 export function NavBar() {
   const mounted = useMounted();
   const { isDark, toggleTheme } = useThemeToggle();
 
-  const isPlaying = useAudioStore((s) => s.isPlaying);
-  const currentStation = useAudioStore((s) => s.currentStation);
   const setPaletteOpen = useUiStore((s) => s.setPaletteOpen);
-
-  const { nowPlaying } = useNowPlaying(currentStation?.id, isPlaying);
-  const track = formatTrack(nowPlaying);
-
-  const label = !mounted || !isPlaying || !currentStation ? null : (track ?? currentStation.name);
 
   return (
     <nav className="fixed top-4 left-1/2 z-40 -translate-x-1/2" aria-label="主导航">
@@ -43,7 +36,7 @@ export function NavBar() {
           href="https://lofi.88lin.eu.org/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-full px-2 py-1 transition-opacity hover:opacity-80"
+          className="tap-target flex items-center gap-2 rounded-full px-2 py-1 transition-opacity hover:opacity-80"
         >
           <span
             className="flex h-7 w-7 items-center justify-center rounded-lg"
@@ -58,29 +51,6 @@ export function NavBar() {
             Lofi Radio
           </span>
         </a>
-
-        <Divider />
-
-        <div className="flex min-w-0 items-center px-1" aria-live="polite">
-          {label ? (
-            <span className="flex items-center gap-1.5 rounded-full bg-station/10 px-2 py-1">
-              <span className="flex h-3 shrink-0 items-end gap-0.5" aria-hidden="true">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="animate-equalizer w-[2px] origin-bottom rounded-full bg-station will-change-transform"
-                    style={{ height: '12px', transform: 'scaleY(0.4)', animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </span>
-              <span className="max-w-[120px] truncate text-xs font-medium text-fg-muted sm:max-w-[180px]">
-                {label}
-              </span>
-            </span>
-          ) : (
-            <span className="px-2 py-1 text-xs whitespace-nowrap text-fg-subtle">未播放</span>
-          )}
-        </div>
 
         <Divider />
 

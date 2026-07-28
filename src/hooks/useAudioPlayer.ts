@@ -3,7 +3,34 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { Station } from '@/lib/stations';
-import Hls, { type ErrorData } from 'hls.js';
+import { AUDIO_FADE_MS, cancelFade, fadeTo } from '@/lib/audio-fade';
+import { positionToGain } from '@/lib/volume';
+import type { ErrorData } from 'hls.js';
+
+/**
+ * hls.js is 516 KB minified — by far the largest dependency — and exactly one of
+ * the 21 bundled stations needs it (the Bilibili live room, as an FLV fallback).
+ * A static import put all of it in the first-load bundle for every visitor, so it
+ * is now loaded on demand. Both call sites are already `async`.
+ *
+ * `import type` above is erased at build time and adds no runtime dependency.
+ */
+type HlsConstructor = typeof import('hls.js').default;
+type HlsInstance = InstanceType<HlsConstructor>;
+
+let hlsCtor: HlsConstructor | null = null;
+const loadHlsJs = async (): Promise<HlsConstructor | null> => {
+  if (hlsCtor) return hlsCtor;
+  if (typeof window === 'undefined') return null;
+  try {
+    const mod = await import('hls.js');
+    hlsCtor = mod.default;
+    return hlsCtor;
+  } catch (e) {
+    console.error('[Player] Failed to load hls.js:', e);
+    return null;
+  }
+};
 
 // flv.js 类型定义
 type FlvPlayer = {
@@ -84,7 +111,7 @@ const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<R
 
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLMediaElement | null>(null);
-  const hlsRef = useRef<Hls | null>(null);
+  const hlsRef = useRef<HlsInstance | null>(null);
   const flvPlayerRef = useRef<FlvPlayer | null>(null);
   
   // 请求版本控制 - 解决竞态条件
@@ -117,6 +144,43 @@ export function useAudioPlayer() {
     setLoading,
     setError,
   } = useAudioStore();
+
+  /**
+   * Element gain for the current store state.
+   *
+   * `volume` in the store is a *slider position* (0-1, linear, persisted). Human
+   * loudness perception is roughly logarithmic, so a linear mapping makes the
+   * bottom half of the slider nearly useless and the top half barely change.
+   * `positionToGain` applies the perceptual curve; the store keeps the raw
+   * position so persisted values stay compatible.
+   */
+  const targetGain = useCallback(() => {
+    const { volume: position, isMuted: muted } = useAudioStore.getState();
+    return muted ? 0 : positionToGain(position);
+  }, []);
+
+  /**
+   * Ramp to silence, then pause — but only if the user still wants it paused.
+   *
+   * The pause decision is re-read from the store instead of trusting the ramp's
+   * return value: an unrelated volume change cancels the ramp yet must not leave
+   * a "paused" player audibly running.
+   */
+  const fadeOutThenPause = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      audio.volume = targetGain();
+      return;
+    }
+
+    await fadeTo(audio, 0, AUDIO_FADE_MS);
+    if (useAudioStore.getState().userWantsPlay) return;
+
+    audio.pause();
+    audio.volume = targetGain();
+  }, [targetGain]);
 
   // 清理函数
   const cleanup = useCallback(() => {
@@ -157,12 +221,30 @@ export function useAudioPlayer() {
       return;
     }
 
+    // Joining a live stream starts mid-waveform, which clicks on most hardware.
+    // Start silent and ramp in — but only when actually resuming from a pause, so
+    // re-issuing `tryPlay` on an already-playing element never dips the volume.
+    const wasPaused = audio.paused;
+    if (wasPaused) {
+      cancelFade(audio);
+      audio.volume = 0;
+    }
+
     audio.play()
       .then(() => {
         // play() resolve 不代表音频正在播放
         // 真正的播放状态由 playing 事件处理
+        if (requestId !== loadRequestIdRef.current) return;
+        if (wasPaused) void fadeTo(audio, targetGain(), AUDIO_FADE_MS);
       })
       .catch((err) => {
+        // Restore audibility first: a rejected play() must never leave the
+        // element stuck at volume 0.
+        if (wasPaused) {
+          cancelFade(audio);
+          audio.volume = targetGain();
+        }
+
         // 再次检查是否是最新请求
         if (requestId !== loadRequestIdRef.current) return;
         
@@ -178,7 +260,7 @@ export function useAudioPlayer() {
           setPlaying(false);
         }
       });
-  }, [setPlaying, setLoading]);
+  }, [setPlaying, setLoading, targetGain]);
 
   // 加载 Bilibili 直播流
   const loadBilibiliStream = useCallback(async (station: Station, requestId: number): Promise<boolean> => {
@@ -190,7 +272,10 @@ export function useAudioPlayer() {
 
     // 统一的 Bilibili HLS 加载逻辑
     const loadBilibiliHls = async (hlsUrl: string): Promise<boolean> => {
-      if (Hls.isSupported()) {
+      const Hls = await loadHlsJs();
+      if (requestId !== loadRequestIdRef.current) return false;
+
+      if (Hls?.isSupported()) {
         if (flvPlayerRef.current) {
           try {
             flvPlayerRef.current.destroy();
@@ -601,15 +686,39 @@ export function useAudioPlayer() {
     
     console.log('[Player] Loading station:', station.name, 'requestId:', requestId);
 
+    // Fade out of the previous station before tearing its stream down, so
+    // switching no longer ends in an abrupt cut. `tryPlay` ramps the new one in.
+    const audio = audioRef.current;
+    if (!audio.paused) {
+      await fadeTo(audio, 0, AUDIO_FADE_MS);
+      if (requestId !== loadRequestIdRef.current) return;
+    }
+
     // 清理之前的资源
     cleanup();
     
-    const audio = audioRef.current;
-    audio.volume = isMuted ? 0 : volume;
+    // Silent until playback actually begins; the audible level is restored
+    // wherever we settle on "loaded but not playing".
+    cancelFade(audio);
+    audio.volume = 0;
     
     // 设置加载状态
     setLoading(true);
     setError(false, null);
+
+    // Single exit point for "the stream is ready".
+    // Restoring the gain in the not-playing branch matters: `loadStation` zeroed
+    // the element for the fade-in, and without this a station that finished
+    // loading while paused would resume silently.
+    const settle = (wantsPlay: boolean) => {
+      if (wantsPlay) {
+        tryPlay(requestId);
+        return;
+      }
+      cancelFade(audio);
+      audio.volume = targetGain();
+      setLoading(false);
+    };
     
     // 标记是否正在加载 Bilibili 流
     isLoadingBilibiliRef.current = station.type === 'bilibili';
@@ -645,18 +754,17 @@ export function useAudioPlayer() {
           
           // 从 store 读取最新的用户播放意图
           const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
-          if (latestUserWantsPlay) {
-            tryPlay(requestId);
-          } else {
-            setLoading(false);
-          }
+          settle(latestUserWantsPlay);
         } else {
           setLoading(false);
         }
       }
       // HLS 流
       else if (station.type === 'm3u8') {
-        if (Hls.isSupported()) {
+        const Hls = await loadHlsJs();
+        if (requestId !== loadRequestIdRef.current) return;
+
+        if (Hls?.isSupported()) {
           const hls = new Hls({
             enableWorker: true,
             lowLatencyMode: false,
@@ -675,11 +783,7 @@ export function useAudioPlayer() {
             
             // 从 store 读取最新的用户播放意图
             const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
-            if (latestUserWantsPlay) {
-              tryPlay(requestId);
-            } else {
-              setLoading(false);
-            }
+            settle(latestUserWantsPlay);
           });
           
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -726,11 +830,7 @@ export function useAudioPlayer() {
           
           // 从 store 读取最新的用户播放意图
           const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
-          if (latestUserWantsPlay) {
-            tryPlay(requestId);
-          } else {
-            setLoading(false);
-          }
+          settle(latestUserWantsPlay);
         }
       }
       // MP3 流
@@ -778,11 +878,7 @@ export function useAudioPlayer() {
         
         // 从 store 读取最新的用户播放意图
         const latestUserWantsPlay = useAudioStore.getState().userWantsPlay;
-        if (latestUserWantsPlay) {
-          tryPlay(requestId);
-        } else {
-          setLoading(false);
-        }
+        settle(latestUserWantsPlay);
       }
 
     } catch (error) {
@@ -797,7 +893,7 @@ export function useAudioPlayer() {
       isLoadingBilibiliRef.current = false;
       setLoading(false);
     }
-  }, [cleanup, loadBilibiliStream, volume, isMuted, setLoading, setError, tryPlay]);
+  }, [cleanup, loadBilibiliStream, setLoading, setError, tryPlay, targetGain]);
 
   // 初始化音频元素
   useEffect(() => {
@@ -906,17 +1002,19 @@ export function useAudioPlayer() {
         tryPlay(requestId);
       }
     } else {
-      // 用户想要暂停 - 立即暂停
-      audio.pause();
+      // Ramp down before pausing so stopping never clicks.
+      void fadeOutThenPause();
       setLoading(false);
     }
-  }, [userWantsPlay, currentStation, tryPlay, setLoading]);
+  }, [userWantsPlay, currentStation, tryPlay, setLoading, fadeOutThenPause]);
 
   // 监听音量变化
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+    // An explicit volume change outranks any ramp still in flight.
+    cancelFade(audio);
+    audio.volume = isMuted ? 0 : positionToGain(volume);
   }, [volume, isMuted]);
 
   return null;

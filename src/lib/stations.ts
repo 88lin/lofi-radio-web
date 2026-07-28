@@ -231,23 +231,48 @@ export const stations: Station[] = [
 ];
 
 // 按场景分类
-export const categories = [
-  { id: 'all', name: '全部', count: stations.length },
-  { id: '学习', name: '学习', count: stations.filter(s => s.scene === '学习').length },
-  { id: '编程', name: '编程', count: stations.filter(s => s.scene === '编程').length },
-  { id: '阅读', name: '阅读', count: stations.filter(s => s.scene === '阅读').length },
-  { id: '放松', name: '放松', count: stations.filter(s => s.scene === '放松').length },
-  { id: '助眠', name: '助眠', count: stations.filter(s => s.scene === '助眠').length },
-  { id: '专注', name: '专注', count: stations.filter(s => s.scene === '专注').length },
-  { id: '其他', name: '其他', count: stations.filter(s => !['学习', '编程', '阅读', '放松', '助眠', '专注'].includes(s.scene)).length },
-];
+/**
+ * Scenes that get their own filter chip. Anything else lands in 其他, so adding
+ * a station with a new scene never makes it unreachable in the UI.
+ */
+export const MAIN_SCENES = ['学习', '编程', '阅读', '放松', '助眠', '专注'] as const;
+
+export interface Category {
+  id: string;
+  name: string;
+  count: number;
+}
+
+/**
+ * Scene filter over an arbitrary catalogue, so user-added stations participate
+ * in exactly the same filtering as the built-in ones.
+ */
+export function filterByScene(list: Station[], scene: string): Station[] {
+  if (scene === 'all') return list;
+  if (scene === '其他') {
+    return list.filter(s => !(MAIN_SCENES as readonly string[]).includes(s.scene));
+  }
+  return list.filter(s => s.scene === scene);
+}
+
+/** Chip list with live counts for the given catalogue. */
+export function buildCategories(list: Station[]): Category[] {
+  return [
+    { id: 'all', name: '全部', count: list.length },
+    ...MAIN_SCENES.map(scene => ({
+      id: scene,
+      name: scene,
+      count: list.filter(s => s.scene === scene).length,
+    })),
+    { id: '其他', name: '其他', count: filterByScene(list, '其他').length },
+  ];
+}
+
+/** Built-in catalogue only; kept for callers that render before hydration. */
+export const categories: Category[] = buildCategories(stations);
 
 export function getFilteredStations(scene: string): Station[] {
-  if (scene === 'all') return stations;
-  if (scene === '其他') {
-    return stations.filter(s => !['学习', '编程', '阅读', '放松', '助眠', '专注'].includes(s.scene));
-  }
-  return stations.filter(s => s.scene === scene);
+  return filterByScene(stations, scene);
 }
 
 export function getStationsByScene(scene: string): Station[] {
@@ -256,4 +281,14 @@ export function getStationsByScene(scene: string): Station[] {
 
 export function getStationById(id: string): Station | undefined {
   return stations.find(s => s.id === id);
+}
+
+/** Distinct style tags across a catalogue, for the style filter row. */
+export function collectStyles(list: Station[]): string[] {
+  const seen = new Set<string>();
+  for (const s of list) {
+    if (s.style1) seen.add(s.style1);
+    if (s.style2) seen.add(s.style2);
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }

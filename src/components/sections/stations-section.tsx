@@ -220,7 +220,7 @@ export function StationsSection() {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 gap-2 rounded-full border-hairline-strong px-5 text-fg-muted hover:bg-surface-3 hover:text-fg"
+            className="tap-target h-9 gap-2 rounded-full border-hairline-strong px-5 text-fg-muted hover:bg-surface-3 hover:text-fg"
             onClick={() => setMiniMode(false)}
           >
             查看全部电台
