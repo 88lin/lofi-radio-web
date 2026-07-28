@@ -337,6 +337,34 @@
   }
 }
 
+/* Scroll-in reveal, driven by `components/ui/reveal.tsx`. Declared as
+   utilities (not a plain class) so `reveal-in` reliably wins on source order.
+   The motion tokens mean `prefers-reduced-motion` collapses this to instant. */
+@utility reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-soft),
+    transform var(--dur-slow) var(--ease-out-soft);
+}
+
+@utility reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Horizontal scroller with a fade at the trailing edge, so a clipped filter row
+   reads as "scrollable" instead of "broken" (fixes the cut-off category rail). */
+@utility scroll-fade-x {
+  mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+}
+
 /* --------------------------------------------------------------------------
    Keyframes
    -------------------------------------------------------------------------- */
