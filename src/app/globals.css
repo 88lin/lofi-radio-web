@@ -6,8 +6,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* 系统字体栈：不依赖构建期下载，国内网络 / 离线构建同样可用，且覆盖中文字形 */
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    "Source Han Sans SC", Roboto, "Helvetica Neue", Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+    "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -279,6 +284,53 @@
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient-shift 4s ease infinite;
+}
+
+/* ------------------------------------------------------------------
+   prefers-reduced-motion
+   本项目有 7 个 infinite 循环动画（pulse-subtle / equalizer / pulse-glow /
+   spin-slow / shimmer / breathe / gradient-shift）外加 Tailwind 自带的
+   animate-pulse、animate-spin，此前没有任何 prefers-reduced-motion 处理，
+   即用户在系统里开了「减少动态效果」也一直在动。
+   WCAG 2.2.2 (Pause, Stop, Hide) 要求超过 5 秒的自动播放动效可被暂停，
+   而无限循环动画对前庭功能障碍用户是直接的不适来源。
+
+   这里只关掉「循环」，不关掉「状态反馈」：
+   - 播放状态仍由播放/暂停按钮图标与状态指示器文字表达，不依赖唱片旋转；
+   - equalizer 的条形自带 inline transform: scaleY(0.4)，animation: none
+     之后会停在 40% 高度而不是塌成 0，静态下仍读作一个均衡器。
+   ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-subtle,
+  .animate-equalizer,
+  .animate-pulse-glow,
+  .animate-spin-slow,
+  .animate-shimmer,
+  .animate-breathe,
+  .animate-gradient,
+  .animate-pulse,
+  .animate-spin {
+    animation: none !important;
+  }
+
+  /* shimmer / gradient 的动画本体是 background-position 位移，
+     关掉动画后把渐变底也去掉，避免留下一条静止的高光带。 */
+  .animate-shimmer,
+  .dark .animate-shimmer {
+    background: none;
+  }
+
+  /* 兜底：任何残留的循环动画收敛为一次、极短；
+     过渡与 scroll-behavior 一并收敛，但不写 0s——
+     0s 会让 :hover / :focus-visible 的状态切换变成硬跳变。 */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.06s !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Grid Pattern Background */

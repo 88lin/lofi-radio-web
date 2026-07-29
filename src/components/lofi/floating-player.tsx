@@ -35,11 +35,10 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
       <div
         className={cn("absolute inset-0 rounded-full", isPlaying && "animate-spin-slow")}
         style={{
-          background: `
-            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 45%),
-            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.35) 0%, transparent 45%),
-            conic-gradient(from 0deg, #1a1a1a, #252525, #1a1a1a, #252525, #1a1a1a)
-          `,
+          // 只有随盘旋转的沟槽反光留在旋转层内。原本压在同一层的两道
+          // radial-gradient 是环境光，跟着盘一起转等于光源绕着唱片公转，
+          // 已移到下方的静态光照层。
+          background: 'conic-gradient(from 0deg, #1a1a1a, #252525, #1a1a1a, #252525, #1a1a1a)',
           boxShadow: `
             inset 0 2px 6px rgba(255, 255, 255, 0.05),
             inset 0 -2px 6px rgba(0, 0, 0, 0.35),
@@ -49,24 +48,44 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        {/* 纹路 */}
-        {[...Array(8)].map((_, i) => (
+        {/* 纹路。原本是 8 圈、inset 从 7% 递增到 56%，而中心标签从 18% 起
+            ⇒ 8 圈里有 6 圈藏在标签下面，只有 2 圈落在可见的黑胶环带上；
+            且 rgba(255,255,255,0.012) 压在 #1a1a1a~#252525 上只有约 1% 的
+            亮度差，低于 1px 细线的可辨阈值 ⇒ 实际看不见任何纹路。
+            改为 14 圈均匀分布在 4%~30%（全部落在标签外的环带内），
+            亮度提到 4.5%，并每 4 圈加亮一次模拟 LP 的曲目分隔带。 */}
+        {[...Array(14)].map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full"
             style={{
-              inset: `${(i + 1) * 7}%`,
-              border: '1px solid rgba(255, 255, 255, 0.012)'
+              inset: `${4 + i * 2}%`,
+              border: `1px solid rgba(255, 255, 255, ${i % 4 === 0 ? 0.075 : 0.045})`
             }}
           />
         ))}
       </div>
       
-      {/* 中心标签 */}
+      {/* 静态光照层：镜面高光 + 对侧暗部 + 一道斜向掠光。
+          不参与旋转，因此光源方向恒定，唱片读作一个有材质的实体。 */}
+      <div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 45%),
+            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.35) 0%, transparent 45%),
+            linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.055) 46%, transparent 58%)
+          `
+        }}
+      />
+
+      {/* 中心标签。原 inset 18% ⇒ 标签直径 = 100% - 2×18% = 64% 唱盘直径，
+          真实 LP 的标签约 100mm / 302mm ≈ 33%，所以原来看起来是「一颗紫球
+          套在黑环里」。改 inset 32.5% ⇒ 标签直径 35%，接近真实比例。 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '18%',
+          inset: '32.5%',
           background: `
             radial-gradient(circle at 35% 35%, ${color}70 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
@@ -74,12 +93,17 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           boxShadow: `
             inset 0 2px 8px rgba(0, 0, 0, 0.25),
             inset 0 -1px 2px rgba(255, 255, 255, 0.08),
-            0 0 30px ${color}40
+            0 0 0 1px rgba(255, 255, 255, 0.16),
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 0 24px ${color}38
           `
         }}
       >
-        <Music 
-          className="w-10 h-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" 
+        {/* 原本是固定 w-10 h-10(40px)，不随 size 缩放。标签缩到 35% 后
+            40px 图标会占满标签 63% 的直径，改为按 size 的 11% 缩放。 */}
+        <Music
+          size={Math.round(size * 0.11)}
+          className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
           style={{ color: 'rgba(255,255,255,0.95)' }}
         />
       </div>
@@ -223,9 +247,13 @@ const StationList = memo(({
         )}
       </div>
       
-      {/* 分类标签 */}
+      {/* 分类标签。原本是 overflow-x-auto + no-scrollbar 的横向滚动条：
+          8 个分类实测 scrollWidth 504px vs clientWidth 295px（溢出 209px），
+          「放松/助眠/专注/其他」4 个完全在可见区外，而 no-scrollbar 又把
+          滚动条藏了 ⇒ 用户没有任何线索知道还有一半分类存在。
+          改为换行，8 个分类一次全部可见。 */}
       <div className="px-3 py-2.5 border-b border-white/[0.04]">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -234,7 +262,7 @@ const StationList = memo(({
                 setSelectedCategory(cat.id);
               }}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0",
                 selectedCategory === cat.id
                   ? "text-white"
                   : "text-white/60 hover:text-white/80 bg-white/[0.06] hover:bg-white/[0.1]"
@@ -536,8 +564,10 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
             </button>
           </div>
           
-          {/* 音量控制 */}
-          <div className="w-full max-w-xs mb-4">
+          {/* 音量控制。上方电台名 h3 用的是 max-w-sm(384px)，这里和下面的
+              专注/睡眠一行却是 max-w-xs(320px)，导致同一列的轮廓在标题下方
+              收窄 64px。统一为 max-w-sm。 */}
+          <div className="w-full max-w-sm mb-4">
             <div 
               className="px-4 py-3 rounded-2xl"
               style={{ background: 'rgba(255, 255, 255, 0.04)' }}
@@ -553,14 +583,14 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
           </div>
           
           {/* 专注时间 + 睡眠定时器 */}
-          <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+          <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
             {/* 专注时间 */}
             <div 
               className="flex items-center justify-center gap-1 px-1 py-2 rounded-full whitespace-nowrap"
               style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
             >
               <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: `${stationColor}80` }} />
-              <span className="text-[11px] text-white/30">今日专注</span>
+              <span className="text-xs text-white/30">今日专注</span>
               <span 
                 className="text-xs font-bold tabular-nums"
                 style={{ color: stationColor }}
@@ -580,7 +610,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
               title="打开睡眠定时设置"
             >
               <Moon className="w-5 h-5 flex-shrink-0" style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }} />
-              <span className="text-[11px] text-white/30">睡眠定时</span>
+              <span className="text-xs text-white/30">睡眠定时</span>
               <span
                 className="text-xs font-bold tabular-nums"
                 style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }}
@@ -715,8 +745,11 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
         <Minimize2 className="w-4 h-4 text-white/60" />
       </button>
       
-      {/* 播放状态指示 */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+      {/* 播放状态指示。原 right-4 在 lg 以上会落在右侧 w-80 电台列表面板
+          之上（实测指示器 x=1345~1424，面板从 x=1120 起，整块 79×20 都压在
+          面板的头部行里），读起来像是列表的标题。它描述的是播放器，
+          所以在 lg 以上移到面板左侧（w-80 = 20rem，21rem 留 16px 间距）。 */}
+      <div className="absolute top-4 right-4 lg:right-[21rem] z-20 flex items-center gap-2">
         <div
           className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
           style={{ 
