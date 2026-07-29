@@ -92,7 +92,7 @@ const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; 
             animation: isPlaying ? 'pulse 2s ease-in-out infinite' : 'none'
           }}
         />
-        <span className={cn("text-xs font-medium tracking-widest uppercase", isDark ? "text-white/38" : "text-zinc-600")}>
+        <span className={cn("text-xs font-medium tracking-widest uppercase", isDark ? "text-white/55" : "text-zinc-600")}>
           {clock.greeting}
         </span>
       </div>
@@ -119,7 +119,7 @@ const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; 
           {clock.s}
         </span>
       </div>
-      <span className={cn("text-xs mt-1.5 tracking-wide", isDark ? "text-white/34" : "text-zinc-600")}>
+      <span className={cn("text-xs mt-1.5 tracking-wide", isDark ? "text-white/50" : "text-zinc-600")}>
         {clock.date}
       </span>
     </motion.div>
@@ -189,7 +189,7 @@ const NavBar = memo(({ isDark, isPlaying, currentStation, stationColor, onThemeT
           </motion.div>
         ) : (
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-2 py-1">
-            <span className={cn("text-xs whitespace-nowrap", isDark ? "text-white/35" : "text-zinc-400")}>未播放</span>
+            <span className={cn("text-xs whitespace-nowrap", isDark ? "text-white/50" : "text-zinc-400")}>未播放</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -234,7 +234,7 @@ const FeatureCard = memo(({ feature, isDark }: { feature: typeof features[0]; is
       <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
     </div>
     <h3 className={cn("relative text-base font-semibold mb-1.5", isDark ? "text-white/90" : "text-zinc-900")}>{feature.title}</h3>
-    <p className={cn("relative text-sm leading-relaxed", isDark ? "text-white/38" : "text-zinc-500")}>{feature.description}</p>
+    <p className={cn("relative text-sm leading-relaxed", isDark ? "text-white/55" : "text-zinc-500")}>{feature.description}</p>
   </motion.div>
 ));
 FeatureCard.displayName = 'FeatureCard';
@@ -255,7 +255,7 @@ const SceneCard = memo(({ scene, isDark, onClick }: { scene: typeof scenes[0]; i
     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 100%, ${scene.color}12 0%, transparent 65%)` }} />
     <div className="text-3xl mb-3 relative">{scene.icon}</div>
     <h4 className={cn("font-semibold text-sm mb-1 relative", isDark ? "text-white/90" : "text-zinc-900")}>{scene.title}</h4>
-    <p className={cn("text-xs leading-relaxed relative", isDark ? "text-white/38" : "text-zinc-500")}>{scene.description}</p>
+    <p className={cn("text-xs leading-relaxed relative", isDark ? "text-white/55" : "text-zinc-500")}>{scene.description}</p>
   </motion.button>
 ));
 SceneCard.displayName = 'SceneCard';
@@ -294,7 +294,7 @@ const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
           {station.name}
         </h4>
         <div className="flex items-center gap-1 mt-0.5">
-          <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{station.style1}</span>
+          <span className={cn("text-xs", isDark ? "text-white/45" : "text-zinc-400")}>{station.style1}</span>
           {station.custom && (
             <>
               <span className={cn("text-xs", isDark ? "text-white/15" : "text-zinc-300")}>·</span>
@@ -476,7 +476,7 @@ export default function Home() {
               </motion.div>
 
               {/* 标题 */}
-              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5 whitespace-nowrap">
+              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.15] mb-5 text-balance">
                 <span className={cn(
                   "bg-clip-text text-transparent",
                   isDark
@@ -489,7 +489,7 @@ export default function Home() {
 
               {/* 描述 */}
               <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
-                Lofi 音乐被科学认证为最适合专注工作学习的音乐。
+                恰到好处的 Lofi 节拍，陪伴你进入深度专注。
                 <br className="hidden sm:block" />
                 macOS 灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
               </motion.p>
@@ -520,7 +520,7 @@ export default function Home() {
                   {shortcuts.map((item, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                       <kbd className={cn("px-2 py-0.5 rounded-md text-xs font-mono font-semibold", isDark ? "bg-white/10 text-white/50 border border-white/10" : "bg-black/5 text-zinc-500 border border-black/8")}>{item.key}</kbd>
-                      <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{item.label}</span>
+                      <span className={cn("text-xs", isDark ? "text-white/45" : "text-zinc-400")}>{item.label}</span>
                     </div>
                   ))}
                 </div>
@@ -617,7 +617,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>为什么选择 Lofi Radio</h2>
-              <p className={cn("text-base sm:text-lg max-w-xl mx-auto", isDark ? "text-white/38" : "text-zinc-500")}>专为专注设计，让音乐成为你工作和学习的最佳伴侣</p>
+              <p className={cn("text-base sm:text-lg max-w-xl mx-auto", isDark ? "text-white/55" : "text-zinc-500")}>专为专注设计，让音乐成为你工作和学习的最佳伴侣</p>
             </motion.div>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {features.map((f) => <FeatureCard key={f.title} feature={f} isDark={isDark} />)}
@@ -630,7 +630,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>适用场景</h2>
-              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>无论学习、工作还是放松，总有一个电台适合你</p>
+              <p className={cn("text-base sm:text-lg", isDark ? "text-white/55" : "text-zinc-500")}>无论学习、工作还是放松，总有一个电台适合你</p>
             </motion.div>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {scenes.map((s) => <SceneCard key={s.title} scene={s} isDark={isDark} onClick={() => handleSceneClick(s.id)} />)}
@@ -643,7 +643,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>精选电台</h2>
-              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>涵盖多种风格，总有适合你的音乐</p>
+              <p className={cn("text-base sm:text-lg", isDark ? "text-white/55" : "text-zinc-500")}>涵盖多种风格，总有适合你的音乐</p>
             </motion.div>
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {stations.slice(0, 8).map((station) => (
@@ -697,7 +697,7 @@ export default function Home() {
                 </span>
               </div>
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>Lofi Radio 常见问题</h2>
-              <p className={cn("text-sm sm:text-base max-w-3xl mx-auto leading-relaxed", isDark ? "text-white/38" : "text-zinc-500")}>把使用时最容易遇到的几个问题整理在这里，既方便第一次打开网站时快速了解，也能帮你更快找到适合自己的收听方式和使用场景。</p>
+              <p className={cn("text-sm sm:text-base max-w-3xl mx-auto leading-relaxed", isDark ? "text-white/55" : "text-zinc-500")}>把使用时最容易遇到的几个问题整理在这里，既方便第一次打开网站时快速了解，也能帮你更快找到适合自己的收听方式和使用场景。</p>
             </motion.div>
 
             <motion.div
