@@ -247,9 +247,13 @@ const StationList = memo(({
         )}
       </div>
       
-      {/* 分类标签 */}
+      {/* 分类标签。原本是 overflow-x-auto + no-scrollbar 的横向滚动条：
+          8 个分类实测 scrollWidth 504px vs clientWidth 295px（溢出 209px），
+          「放松/助眠/专注/其他」4 个完全在可见区外，而 no-scrollbar 又把
+          滚动条藏了 ⇒ 用户没有任何线索知道还有一半分类存在。
+          改为换行，8 个分类一次全部可见。 */}
       <div className="px-3 py-2.5 border-b border-white/[0.04]">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -258,7 +262,7 @@ const StationList = memo(({
                 setSelectedCategory(cat.id);
               }}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0",
                 selectedCategory === cat.id
                   ? "text-white"
                   : "text-white/60 hover:text-white/80 bg-white/[0.06] hover:bg-white/[0.1]"
@@ -560,8 +564,10 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
             </button>
           </div>
           
-          {/* 音量控制 */}
-          <div className="w-full max-w-xs mb-4">
+          {/* 音量控制。上方电台名 h3 用的是 max-w-sm(384px)，这里和下面的
+              专注/睡眠一行却是 max-w-xs(320px)，导致同一列的轮廓在标题下方
+              收窄 64px。统一为 max-w-sm。 */}
+          <div className="w-full max-w-sm mb-4">
             <div 
               className="px-4 py-3 rounded-2xl"
               style={{ background: 'rgba(255, 255, 255, 0.04)' }}
@@ -577,14 +583,14 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
           </div>
           
           {/* 专注时间 + 睡眠定时器 */}
-          <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+          <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
             {/* 专注时间 */}
             <div 
               className="flex items-center justify-center gap-1 px-1 py-2 rounded-full whitespace-nowrap"
               style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.05)' }}
             >
               <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: `${stationColor}80` }} />
-              <span className="text-[11px] text-white/30">今日专注</span>
+              <span className="text-xs text-white/30">今日专注</span>
               <span 
                 className="text-xs font-bold tabular-nums"
                 style={{ color: stationColor }}
@@ -604,7 +610,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
               title="打开睡眠定时设置"
             >
               <Moon className="w-5 h-5 flex-shrink-0" style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }} />
-              <span className="text-[11px] text-white/30">睡眠定时</span>
+              <span className="text-xs text-white/30">睡眠定时</span>
               <span
                 className="text-xs font-bold tabular-nums"
                 style={{ color: sleepTimerEndTime ? stationColor : 'rgba(255,255,255,0.3)' }}
@@ -739,8 +745,11 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
         <Minimize2 className="w-4 h-4 text-white/60" />
       </button>
       
-      {/* 播放状态指示 */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+      {/* 播放状态指示。原 right-4 在 lg 以上会落在右侧 w-80 电台列表面板
+          之上（实测指示器 x=1345~1424，面板从 x=1120 起，整块 79×20 都压在
+          面板的头部行里），读起来像是列表的标题。它描述的是播放器，
+          所以在 lg 以上移到面板左侧（w-80 = 20rem，21rem 留 16px 间距）。 */}
+      <div className="absolute top-4 right-4 lg:right-[21rem] z-20 flex items-center gap-2">
         <div
           className={cn("w-2 h-2 rounded-full", isPlaying && "animate-pulse")}
           style={{ 
