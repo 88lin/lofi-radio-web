@@ -1,17 +1,19 @@
-# 🎵 Lofi Radio Web
+<h1 align="center">🎧 Lofi Radio Web</h1>
 
 <div align="center">
 
-![Lofi Radio](https://img.shields.io/badge/Lofi-Radio-8B5CF6?style=for-the-badge&logo=music&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+[🌐 简体中文](./README.md) · **English**
 
-**Lofi (Low Fidelity) music is widely recognized as the ideal background audio for focus-intensive scenarios like working and studying, and is considered by scientists to be the best music for deep concentration.**
+![Lofi Radio](https://img.shields.io/badge/Lofi-Radio-EC4899?style=for-the-badge&logo=applemusic&logoColor=white&labelColor=BE185D)
+![Next.js](https://img.shields.io/badge/Next.js-16-8B5CF6?style=for-the-badge&logo=next.js&logoColor=white&labelColor=6D28D9)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3B82F6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=1D4ED8)
+![License](https://img.shields.io/badge/License-MIT-14B8A6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0F766E)
 
-Featuring a macOS-style Dynamic Island design and 21 curated radio stations. Ready to use immediately—no downloads required.
+**With steady rhythms, minimal vocals, and a relaxed atmosphere, Lofi (Low Fidelity) music is a natural fit for studying, working, and creating.**
 
-**[🎧 Live Experience](https://lofi.88lin.eu.org/)** · [📖 Features](#-features) · [🚀 Quick Start](#-quick-start) · [📦 Deployment Guide](#-deployment-guide) · [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions)
+Featuring a macOS-style Dynamic Island design and 21 curated stations. Open the site and listen with no account or download required.
+
+**[🎧 Live Experience](https://lofi.88lin.eu.org/)** · [✨ Features](#-features) · [🚀 Quick Start](#-quick-start) · [☁️ Deployment Guide](#-deployment-guide) · [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions)
 
 </div>
 
@@ -21,11 +23,11 @@ Featuring a macOS-style Dynamic Island design and 21 curated radio stations. Rea
 
 <div align="center">
 
-### Light Mode
-![Lofi Radio Hero Light](https://cdn.jsdelivr.net/gh/88lin/picx-images-hosting@master/hero-image.jpg)
+<a href="https://lofi.88lin.eu.org/">
+  <img src="./assets/lofi-radio-preview.png" alt="Lofi Radio Web dark-mode home preview" width="100%">
+</a>
 
-### Dark Mode
-![Lofi Radio Hero Dark](https://cdn.jsdelivr.net/gh/88lin/picx-images-hosting@master/hero-image-dark.jpg)
+<sub>Dark mode · Dynamic Island player, live focus clock, and keyboard controls</sub>
 
 </div>
 
@@ -39,10 +41,10 @@ Lofi Radio Web is a web-based implementation of [labilio/lofi-radio](https://git
 
 ### 🎯 Design Philosophy
 
-- **Focus Experience** - Dynamic Island design: compact and unobtrusive companionship.
-- **Cross-Platform** - Based on Web technology, supporting access across desktop and mobile platforms.
-- **Instant Use** - No registration, no login, and no installation required.
-- **PWA Support** - Can be installed to the desktop and used like a native application.
+- **Focus Experience**: A compact Dynamic Island player that stays present without getting in the way.
+- **Cross-Platform**: A responsive web experience for desktop and mobile devices.
+- **Instant Use**: No registration, login, download, or local music library required.
+- **PWA Support**: Installable as a standalone window for a more app-like experience.
 
 ### 🧠 Why Lofi is Suitable for Focus
 
@@ -54,11 +56,14 @@ Lofi (Low Fidelity) music is often used for high-concentration tasks such as stu
 - **Soft tones**, often accompanied by rain sounds, vinyl crackle, or ambient noise
 - **Restrained emotion**, avoiding artificial climaxes
 
-The core reasons it is widely used for background focus are:
+These characteristics can make Lofi a less distracting choice for background listening:
 
-1. **No competition for attention with language brain regions**: Music with lyrics easily occupies language processing resources; Lofi's weak semantic features are better suited for long-term focus tasks.
-2. **Predictable patterns help enter the "zone"**: The steady rhythm and looping structure provide psychological predictability, making it easier to enter Deep Work / Flow.
-3. **Provides a sense of companionship and reduces anxiety**: Gentle emotional expression alleviates the tension brought by work or exams without interrupting the flow of thought.
+1. **Fewer linguistic interruptions**: Minimal vocals are less likely to interrupt language-heavy work such as reading, writing, or coding.
+2. **A predictable listening pattern**: Steady rhythms and loops avoid abrupt changes during longer sessions.
+3. **A gentle sense of presence**: Soft textures can fill an overly quiet room without forcing an emotional climax.
+
+> [!NOTE]
+> Music affects everyone differently. Choose a sound and volume that suit your task, preferences, and environment.
 
 ---
 
@@ -69,19 +74,19 @@ The core reasons it is widely used for background focus are:
 | Feature | Description |
 |------|------|
 | **21 Curated Stations** | Covers various styles including Lofi, Chillhop, Jazz, Classical, Hip-Hop, Ambient, and more |
-| **Bilibili Live Sources** | Supports Lofi Girl Bilibili live streams with automatic FLV/HLS fallback |
+| **Bilibili Live Sources** | Supports the Lofi Girl Bilibili stream with HLS/FLV candidates and recovery paths |
 | **Global Streaming Sources** | Integrates sources like Lofi Cafe, SomaFM, Code Radio, Swiss Classic, etc. |
-| **Smart Switching** | Switch stations with one click for seamless automatic playback |
+| **Quick Switching** | Switch stations with one click and automatically load the selected stream |
 
 ### 🎨 Interface Design
 
 | Feature | Description |
 |------|------|
 | **Dynamic Island Player** | macOS-style Dynamic Island design, freely draggable to any position on the screen |
-| **Glassmorphism Effect** | Gaussian blur + transparency for a sophisticated look |
+| **Glassmorphism Effect** | Uses blur and layered transparency to keep the interface visually light |
 | **Vinyl Animation** | Beautiful rotating vinyl record animation that triggers during playback |
 | **Dark/Light Themes** | One-click switching or automatic synchronization with system theme |
-| **Responsive Design** | Perfectly adapted for both desktop and mobile devices |
+| **Responsive Design** | Adapts the experience to desktop and mobile screen sizes |
 
 ### ⌨️ Keyboard Shortcuts
 
@@ -93,7 +98,7 @@ The core reasons it is widely used for background focus are:
 | `M` | Mute / Unmute |
 | `T` | Switch Theme (Dark/Light) |
 
-### 📊 Focus Timer
+### ⏱️ Focus Timer
 
 - Tracks daily focus duration (only counts while playing)
 - Helps cultivate efficient work habits
@@ -166,9 +171,12 @@ The core reasons it is widely used for background focus are:
 | **Rap Beats** | Hip-Hop / Beats | Exercise |
 | **Lofi Gaming** | Lofi / Gaming | Entertainment |
 
+> [!NOTE]
+> This repository does not host station audio. Third-party streams may become temporarily unavailable because of upstream maintenance, regional restrictions, or network conditions. Try another station if a stream fails.
+
 ---
 
-## 🛠️ Tech Stack
+## 🧰 Tech Stack
 
 | Tech | Description |
 |------|------|
@@ -188,8 +196,11 @@ The core reasons it is widely used for background focus are:
 
 ### Prerequisites
 
-- Node.js 20.9 or higher (Required by Next.js 16)
+- Node.js `20.9` or higher (required by Next.js 16)
 - npm, yarn, pnpm, or bun
+
+> [!TIP]
+> The repository includes `package-lock.json`. Use `npm ci` for a reproducible first install or in CI, and use `npm install` when intentionally updating dependencies.
 
 ### Local Development
 
@@ -198,14 +209,14 @@ The core reasons it is widely used for background focus are:
 git clone https://github.com/88lin/lofi-radio-web.git
 cd lofi-radio-web
 
-# Install dependencies
-npm install
+# Install locked dependencies
+npm ci
 
 # Start development server
 npm run dev
 ```
 
-Visit http://localhost:3000 in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Production Build
 
@@ -219,35 +230,32 @@ npm run start
 
 ---
 
-## 📦 Deployment Guide
+## ☁️ Deployment Guide
 
-> 📌 **First, fork this repository to your own GitHub account.**
+> [!TIP]
+> **Before deploying your own copy, fork this repository.**
 >
 > 1. Visit the [lofi-radio-web](https://github.com/88lin/lofi-radio-web) repository homepage.
 > 2. Click the **Fork** button in the top right.
 > 3. Once complete, you will see a copy of the `lofi-radio-web` repository under your own GitHub account.
 >
-> All the following deployment methods are based on your forked repository.
+> The deployment options below assume that you are using your fork.
 
 ### Pre-deployment Checklist
 
-The current verified deployment prerequisites are as follows:
+> [!IMPORTANT]
+> This project includes server-side APIs and is not a static site. The platform must support the Next.js Node.js server runtime and permit outbound server requests.
+
+The runtime must provide:
 
 - Runtime requirement: Node.js `>= 20.9.0`
 - Application type: Standard Next.js server-side application (not a pure static site)
 - API dependency: `/api/bilibili-stream` explicitly uses the Node.js runtime
 - Outbound access: The deployment environment must allow server-side access to `api.live.bilibili.com` and `api.github.com`
 
-This means the deployment platform must satisfy at least two things:
-
-1. Support for Next.js server runtime mode.
-2. Support for server-side outbound requests using Node.js 20+.
-
-If a platform only supports pure static export or has limited support for Node.js runtime/outbound requests, it is not suitable as the default deployment path for this project.
-
 ### Deploy to Vercel (Recommended)
 
-[Vercel](https://vercel.com) is currently the most recommended deployment method and the hosting platform that best matches this repository's structure.
+[Vercel](https://vercel.com) matches the current repository structure and is the recommended hosting option.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/88lin/lofi-radio-web)
 
@@ -296,23 +304,24 @@ Once the container starts, the application will execute `npm run start` inside t
 
 ### Cloudflare Pages / Netlify / Other Platforms
 
-These platforms are not the primary recommended deployment paths for this repository. This is not because they "cannot" be used, but because:
+> [!CAUTION]
+> A static export cannot provide this project's server APIs. Before using Cloudflare Pages, Netlify, or another platform, verify its Next.js server adapter, Node.js version, and outbound network policy.
+
+Check these requirements carefully:
 
 - This project contains server-side APIs, not just pure static pages.
 - `/api/bilibili-stream` relies on the Node.js runtime and server-side outbound requests.
 - Different platforms vary significantly in their support for Next.js server runtime, adapters, Node.js versions, and network policies.
 
-If you are very familiar with these platforms, you can verify a custom adaptation plan; otherwise, it is highly recommended to prioritize:
+If you are familiar with these platforms, you can validate a custom setup. Otherwise, prefer:
 
 - Vercel
 - Standard Node.js Server
 - Docker + Reverse Proxy
 
-The practice of listing fixed build configurations for certain platforms in previous READMEs was inaccurate, so templated parameters that have not been verified against the current repository are no longer provided here.
-
 ---
 
-## 📁 Project Structure
+## 🗂️ Project Structure
 
 ```
 lofi-radio-web/
@@ -343,6 +352,7 @@ lofi-radio-web/
 │   │   └── utils.ts             # Utility functions
 │   └── store/                   # State management
 │       └── audioStore.ts        # Audio state
+├── assets/                      # README image assets
 ├── public/                      # Static assets
 │   ├── logo.svg                 # Logo
 │   └── manifest.json            # PWA configuration
@@ -368,7 +378,7 @@ How to update:
 
 1. Evaluate the availability and stability of a new station source.
 2. Update the `stations` array in `src/lib/stations.ts`.
-3. Synchronize the station list and total count in the README.
+3. Synchronize the station list and total count in `README.md` and `README.en-US.md`.
 4. Submit the changes.
 
 ### SEO Related Files
@@ -415,7 +425,7 @@ Before submitting a PR, it is recommended to read [CONTRIBUTING.md](./CONTRIBUTI
 
 ---
 
-## 📄 License
+## 📜 License
 
 This project is open-sourced under the [MIT License](LICENSE).
 
@@ -432,7 +442,7 @@ This project is open-sourced under the [MIT License](LICENSE).
 
 ---
 
-## 📮 Contact
+## 📬 Contact
 
 If you have questions or suggestions, feel free to:
 
@@ -442,7 +452,8 @@ If you have questions or suggestions, feel free to:
 - [📝 Blog](https://blog.88lin.eu.org/) - Moling Knowledge Base.
 
 ---
-## Star History
+
+## ⭐ Star History
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/88lin/lofi-radio-web/star-history/assets/my-star-history/star-history-dark.svg">

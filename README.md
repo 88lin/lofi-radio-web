@@ -1,31 +1,33 @@
-# 🎵 Lofi Radio Web
+<h1 align="center">🎧 Lofi Radio Web</h1>
 
 <div align="center">
 
-![Lofi Radio](https://img.shields.io/badge/Lofi-Radio-8B5CF6?style=for-the-badge&logo=music&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+**简体中文** · [🌐 English](./README.en-US.md)
 
-**Lofi（Low Fidelity）低保真音乐，是工作与学习等专注场景下公认的高适配背景音，被科学家认为是最适合专注工作学习的音乐。**
+![Lofi Radio](https://img.shields.io/badge/Lofi-Radio-EC4899?style=for-the-badge&logo=applemusic&logoColor=white&labelColor=BE185D)
+![Next.js](https://img.shields.io/badge/Next.js-16-8B5CF6?style=for-the-badge&logo=next.js&logoColor=white&labelColor=6D28D9)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3B82F6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=1D4ED8)
+![License](https://img.shields.io/badge/License-MIT-14B8A6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0F766E)
 
-macOS 风格灵动岛设计，21 个精选电台，打开即用，无需下载
+**Lofi（Low Fidelity）低保真音乐，以稳定节奏、弱歌词干扰与舒缓氛围，常被用于工作、学习和创作等专注场景。**
 
-**[🎧 在线体验](https://lofi.88lin.eu.org/)** · [📖 功能特性](#-功能特性) · [🚀 快速开始](#-快速开始) · [📦 部署指南](#-部署指南) · [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions)
+macOS 风格灵动岛设计，21 个精选电台，打开即听，无需注册或下载。
+
+**[🎧 在线体验](https://lofi.88lin.eu.org/)** · [✨ 功能特性](#-功能特性) · [🚀 快速开始](#-快速开始) · [☁️ 部署指南](#-部署指南) · [💬 Discussions](https://github.com/88lin/lofi-radio-web/discussions)
 
 </div>
 
 ---
 
-## 🖼️ 首页预览
+## ✨ 首页预览
 
 <div align="center">
 
-### 亮色模式
-![Lofi Radio Hero Light](https://cdn.jsdelivr.net/gh/88lin/picx-images-hosting@master/hero-image.jpg)
+<a href="https://lofi.88lin.eu.org/">
+  <img src="./assets/lofi-radio-preview.png" alt="Lofi Radio Web 暗色模式首页预览" width="100%">
+</a>
 
-### 暗色模式
-![Lofi Radio Hero Dark](https://cdn.jsdelivr.net/gh/88lin/picx-images-hosting@master/hero-image-dark.jpg)
+<sub>暗色模式 · 灵动岛播放器、实时专注时钟与快捷控制</sub>
 
 </div>
 
@@ -39,10 +41,10 @@ Lofi Radio Web 是 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) �
 
 ### 🎯 设计理念
 
-- **专注体验** - 灵动岛设计，小巧玲珑，安静陪伴不打扰
-- **跨平台** - 基于 Web 技术，支持桌面、移动端全平台访问
-- **即开即用** - 无需注册登录，无需下载安装，打开即用
-- **PWA 支持** - 可安装到桌面，像原生应用一样使用
+- **专注体验**：灵动岛设计，小巧轻量，安静陪伴不打扰
+- **跨平台**：基于 Web 技术，覆盖桌面端与移动端
+- **即开即用**：无需注册登录，无需下载安装，打开网页即可收听
+- **PWA 支持**：可安装为独立窗口，获得更接近原生应用的使用体验
 
 ### 🧠 为什么 Lofi 适合专注场景
 
@@ -54,11 +56,14 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 - **音色柔和**，常带雨声、黑胶噼啪声、环境底噪
 - **情绪克制**，不刻意制造高潮
 
-它之所以被广泛用于背景专注，核心原因是：
+这些特征让 Lofi 更适合作为不抢占注意力的背景声音：
 
-1. **不与语言脑区竞争注意力**：带歌词音乐容易占用语言处理资源，Lofi 的弱语义特征更适合长时间专注任务。
-2. **规律可预测，帮助进入状态**：稳定节奏与循环结构带来心理上的可预测性，更容易进入 Deep Work / Flow。
-3. **提供陪伴感，降低焦虑**：温和的情绪表达在不打断思路的前提下，缓解工作与考试带来的紧张感。
+1. **减少语言干扰**：较少的歌词不容易打断阅读、写作与编程等语言任务。
+2. **听感稳定可预测**：规律节奏与循环结构减少突兀变化，更适合长时间作为背景播放。
+3. **营造陪伴氛围**：柔和的音色可以填补过于安静的环境，又不会刻意制造情绪高潮。
+
+> [!NOTE]
+> 音乐对专注状态的影响因人而异，建议根据自己的任务、感受和使用环境选择合适的声音与音量。
 
 ---
 
@@ -69,19 +74,19 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 | 功能 | 描述 |
 |------|------|
 | **21 精选电台** | 涵盖 Lofi、Chillhop、Jazz、Classical、Hip-Hop、Ambient 等多种风格 |
-| **Bilibili 直播源** | 支持 Lofi Girl B站直播流，支持 FLV/HLS 自动兜底 |
+| **Bilibili 直播源** | 支持 Lofi Girl Bilibili 直播流，并提供 HLS/FLV 候选与故障回退 |
 | **全球流媒体来源** | 集成 Lofi Cafe、SomaFM、Code Radio、Swiss Classic 等多来源 |
-| **智能切换** | 一键切换电台，自动播放无缝衔接 |
+| **快捷切换** | 一键切换电台，并自动加载所选音源 |
 
 ### 🎨 界面设计
 
 | 功能 | 描述 |
 |------|------|
 | **灵动岛播放器** | macOS 风格灵动岛设计，可自由拖动到屏幕任意位置 |
-| **玻璃拟态效果** | 高斯模糊 + 透明度，精致美观 |
+| **玻璃拟态效果** | 通过高斯模糊与透明层次保持界面轻盈 |
 | **黑胶唱片动画** | 精美的黑胶唱片旋转动画，播放时自动旋转 |
 | **暗色/亮色主题** | 支持一键切换，自动跟随系统主题 |
-| **响应式设计** | 完美适配桌面端和移动端 |
+| **响应式设计** | 适配桌面端和移动端的不同屏幕尺寸 |
 
 ### ⌨️ 快捷键支持
 
@@ -93,7 +98,7 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 | `M` | 静音 / 取消静音 |
 | `T` | 切换主题（暗色/亮色） |
 
-### 📊 专注计时
+### ⏱️ 专注计时
 
 - 记录每日专注时长（仅在播放时计时）
 - 帮助培养高效工作习惯
@@ -166,9 +171,12 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 | **Rap Beats** | Hip-Hop / Beats | 运动 |
 | **Lofi Gaming** | Lofi / Gaming | 娱乐 |
 
+> [!NOTE]
+> 本仓库不托管电台音频。第三方流媒体可能因上游维护、地区限制或网络环境暂时不可用，遇到问题时可先切换其他电台。
+
 ---
 
-## 🛠️ 技术栈
+## 🧰 技术栈
 
 | 技术 | 描述 |
 |------|------|
@@ -188,8 +196,11 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 
 ### 环境要求
 
-- Node.js 20.9 或更高版本（Next.js 16 要求）
+- Node.js `20.9` 或更高版本（Next.js 16 要求）
 - npm、yarn、pnpm 或 bun
+
+> [!TIP]
+> 仓库已提交 `package-lock.json`。首次安装或 CI 环境建议使用 `npm ci`，需要更新依赖时再使用 `npm install`。
 
 ### 本地开发
 
@@ -198,14 +209,14 @@ Lofi（Low Fidelity）低保真音乐常用于学习、编程、写作与办公�
 git clone https://github.com/88lin/lofi-radio-web.git
 cd lofi-radio-web
 
-# 安装依赖
-npm install
+# 安装锁定版本的依赖
+npm ci
 
 # 启动开发服务器
 npm run dev
 ```
 
-打开浏览器访问 http://localhost:3000
+打开浏览器访问 [http://localhost:3000](http://localhost:3000)。
 
 ### 构建生产版本
 
@@ -219,35 +230,32 @@ npm run start
 
 ---
 
-## 📦 部署指南
+## ☁️ 部署指南
 
-> 📌 **首先，Fork 本仓库到你自己的 GitHub 账号下。**
+> [!TIP]
+> **部署自己的版本前，建议先 Fork 本仓库。**
 >
 > 1. 访问 [lofi-radio-web](https://github.com/88lin/lofi-radio-web) 仓库主页
 > 2. 点击右上角的 **Fork** 按钮
 > 3. 等待 Fork 完成，你将在自己的 GitHub 账号下看到 `lofi-radio-web` 仓库的副本
 >
-> 以下所有部署方式都将基于你 Fork 的仓库进行操作。
+> 下列部署方式均以你 Fork 后的仓库为基础。
 
 ### 部署前先确认
 
-当前仓库的已验证部署前提如下：
+> [!IMPORTANT]
+> 本项目包含服务端 API，不是纯静态站点。部署平台必须支持 Next.js Node.js 服务端运行时，并允许服务端访问外部 API。
+
+运行环境需要满足：
 
 - 运行时要求：Node.js `>= 20.9.0`
 - 应用类型：标准 Next.js 服务端应用，不是纯静态站点
 - API 依赖：`/api/bilibili-stream` 显式使用 Node.js runtime
 - 外网访问：部署环境需要允许服务端访问 `api.live.bilibili.com` 和 `api.github.com`
 
-这意味着部署平台至少要满足两件事：
-
-1. 支持 Next.js 的服务端运行模式
-2. 支持 Node.js 20+ 的服务端出网请求
-
-如果平台只适合纯静态导出，或者对 Node.js runtime / 服务端出网支持有限，就不适合作为本项目的默认部署路径。
-
 ### 部署到 Vercel（推荐）
 
-[Vercel](https://vercel.com) 是当前最推荐的部署方式，也是和本仓库结构最匹配的托管平台。
+[Vercel](https://vercel.com) 与当前仓库结构匹配，是优先推荐的托管方式。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/88lin/lofi-radio-web)
 
@@ -296,23 +304,24 @@ docker run -d --name lofi-radio-web -p 3000:3000 --restart unless-stopped lofi-r
 
 ### Cloudflare Pages / Netlify / 其他平台
 
-这类平台不是当前仓库的主推荐部署路径。原因不是“不能部署”，而是：
+> [!CAUTION]
+> 纯静态导出无法承载本项目的服务端 API。使用 Cloudflare Pages、Netlify 或其他平台前，请先确认其 Next.js 服务端适配器、Node.js 版本与出网策略。
+
+需要重点确认：
 
 - 本项目包含服务端 API，而不是纯静态页面
 - `/api/bilibili-stream` 依赖 Node.js runtime 和服务端出网请求
 - 不同平台对 Next.js server runtime、适配器、Node.js 版本和网络策略的支持差异较大
 
-如果你非常熟悉这些平台，可以自行验证适配方案；否则更建议优先使用：
+如果你熟悉这些平台，可以自行验证适配方案；否则建议优先使用：
 
 - Vercel
 - 标准 Node.js 服务器
 - Docker + 反向代理
 
-其中，原先 README 中把某些平台写成固定构建配置的做法并不准确，因此这里不再给出未经仓库验证的模板化参数。
-
 ---
 
-## 📁 项目结构
+## 🗂️ 项目结构
 
 ```
 lofi-radio-web/
@@ -343,6 +352,7 @@ lofi-radio-web/
 │   │   └── utils.ts             # 工具函数
 │   └── store/                   # 状态管理
 │       └── audioStore.ts        # 音频状态
+├── assets/                      # README 图片资源
 ├── public/                      # 静态资源
 │   ├── logo.svg                 # Logo
 │   └── manifest.json            # PWA 配置
@@ -368,7 +378,7 @@ lofi-radio-web/
 
 1. 评估新电台源的可用性与稳定性
 2. 更新 `src/lib/stations.ts` 中的 `stations` 数组
-3. 同步更新 README 的电台列表与总数
+3. 同步更新 `README.md` 与 `README.en-US.md` 的电台列表和总数
 4. 提交更改
 
 ### SEO 相关文件
@@ -415,7 +425,7 @@ lofi-radio-web/
 
 ---
 
-## 📄 开源协议 (License)
+## 📜 开源协议
 
 本项目采用 [MIT License](LICENSE) 开源协议。
 
@@ -432,7 +442,7 @@ lofi-radio-web/
 
 ---
 
-## 📮 联系方式
+## 📬 联系方式
 
 如有问题或建议，欢迎：
 
@@ -442,7 +452,8 @@ lofi-radio-web/
 - [📝 博客](https://blog.88lin.eu.org/) - 茉灵智库
 
 ---
-## Star History
+
+## ⭐ Star History
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/88lin/lofi-radio-web/star-history/assets/my-star-history/star-history-dark.svg">
