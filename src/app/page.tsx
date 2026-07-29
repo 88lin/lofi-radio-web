@@ -75,7 +75,7 @@ const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; 
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6, delay: 0.3 }}
       className={cn(
-        "inline-flex flex-col items-center px-8 py-5 rounded-3xl mb-8",
+        "inline-flex flex-col items-center px-6 py-4 rounded-3xl mb-8",
         isDark ? "bg-white/[0.03]" : "bg-black/[0.02]"
       )}
       style={{
@@ -98,7 +98,7 @@ const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; 
       </div>
       <div className="flex items-baseline gap-1.5">
         <span
-          className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight"
+          className="text-4xl sm:text-5xl font-bold tabular-nums tracking-tight"
           style={{
             backgroundImage: timeGradient,
             WebkitBackgroundClip: 'text',
@@ -110,7 +110,7 @@ const LiveClock = memo(({ isDark, stationColor, isPlaying }: { isDark: boolean; 
           {clock.h}:{clock.m}
         </span>
         <span
-          className="text-2xl font-semibold tabular-nums self-end pb-1"
+          className="text-xl font-semibold tabular-nums self-end pb-1"
           style={{
             color: isDark ? `${stationColor}d6` : stationColor,
             textShadow: isDark ? `0 0 14px ${stationColor}40` : 'none'
@@ -130,9 +130,9 @@ LiveClock.displayName = 'LiveClock';
 // ==================== 特性数据 ====================
 const features = [
   { icon: Radio, title: `${stations.length} 精选电台`, description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)' },
-  { icon: Sparkles, title: '专注计时', description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光', color: '#EC4899', bg: 'rgba(236,72,153,0.08)' },
-  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐；灵动岛支持拖动，移动端双击可快速展开，支持快捷键、 PWA 离线使用', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
-  { icon: Moon, title: '睡眠定时', description: '支持 15~120 分钟快速设置定时、1~480 分钟自定义定时，定时结束后自动自动暂停播放，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
+  { icon: Sparkles, title: '专注计时', description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光', color: '#A855F7', bg: 'rgba(168,85,247,0.08)' },
+  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐；灵动岛支持拖动，移动端双击可快速展开，支持快捷键、 PWA 离线使用', color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
+  { icon: Moon, title: '睡眠定时', description: '支持 15~120 分钟快速设置定时、1~480 分钟自定义定时，定时结束后自动自动暂停播放，安心入眠无需手动关闭', color: '#9333EA', bg: 'rgba(147,51,234,0.08)' },
 ];
 
 const scenes = [
@@ -434,7 +434,7 @@ export default function Home() {
 
         {/* 高级噪点质感 */}
         <div 
-          className="absolute inset-0 opacity-[0.03] sm:opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.025] sm:opacity-[0.03]"
           style={{ 
             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
             mixBlendMode: isDark ? 'overlay' : 'multiply'
@@ -442,7 +442,7 @@ export default function Home() {
         />
         <div className="absolute inset-0" style={{
           backgroundImage: `linear-gradient(${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'} 1px, transparent 1px)`,
-          backgroundSize: '64px 64px', opacity: 0.4,
+          backgroundSize: '64px 64px', opacity: isDark ? 0.25 : 0.4,
         }} />
       </div>
 
@@ -488,7 +488,7 @@ export default function Home() {
               </motion.h1>
 
               {/* 描述 */}
-              <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
+              <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
                 恰到好处的 Lofi 节拍，陪伴你进入深度专注。
                 <br className="hidden sm:block" />
                 macOS 灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
@@ -516,7 +516,7 @@ export default function Home() {
 
               {/* 快捷键 - 仅桌面 */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.5 }} className="hidden sm:flex justify-center">
-                <div className={cn("inline-flex items-center gap-4 px-5 py-2.5 rounded-2xl", isDark ? "bg-white/[0.025]" : "bg-black/[0.025]")}>
+                <div className={cn("inline-flex items-center gap-4 px-5 py-2.5 rounded-2xl", isDark ? "bg-white/[0.02]" : "bg-black/[0.02]")}>
                   {shortcuts.map((item, i) => (
                     <div key={i} className="flex items-center gap-1.5">
                       <kbd className={cn("px-2 py-0.5 rounded-md text-xs font-mono font-semibold", isDark ? "bg-white/10 text-white/50 border border-white/10" : "bg-black/5 text-zinc-500 border border-black/8")}>{item.key}</kbd>
@@ -744,7 +744,7 @@ export default function Home() {
 
         {/* 底部 */}
         <footer className={cn(
-          "py-8 px-4 sm:px-6",
+          "mt-4 py-10 px-4 sm:px-6",
           isDark ? "border-t border-white/5" : "border-t border-zinc-100"
         )}>
           <div className="max-w-5xl mx-auto">
