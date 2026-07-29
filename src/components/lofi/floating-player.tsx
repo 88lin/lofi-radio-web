@@ -564,10 +564,8 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
             </button>
           </div>
           
-          {/* 音量控制。上方电台名 h3 用的是 max-w-sm(384px)，这里和下面的
-              专注/睡眠一行却是 max-w-xs(320px)，导致同一列的轮廓在标题下方
-              收窄 64px。统一为 max-w-sm。 */}
-          <div className="w-full max-w-sm mb-4">
+          {/* 移动端保留 320px 上限，sm 以上再与电台名统一为 384px。 */}
+          <div className="w-full max-w-xs sm:max-w-sm mb-4">
             <div 
               className="px-4 py-3 rounded-2xl"
               style={{ background: 'rgba(255, 255, 255, 0.04)' }}
@@ -583,7 +581,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
           </div>
           
           {/* 专注时间 + 睡眠定时器 */}
-          <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+          <div className="grid grid-cols-2 gap-2 w-full max-w-xs sm:max-w-sm">
             {/* 专注时间 */}
             <div 
               className="flex items-center justify-center gap-1 px-1 py-2 rounded-full whitespace-nowrap"
