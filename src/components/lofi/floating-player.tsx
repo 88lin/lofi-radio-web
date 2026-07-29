@@ -426,16 +426,10 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
       <div 
         className="absolute inset-0 z-0"
         style={{
-          background: `linear-gradient(135deg, 
-            ${stationColor}25 0%, 
-            ${stationColor}10 30%,
-            ${stationColor}08 70%,
-            ${stationColor}18 100%
-          ),
-          linear-gradient(45deg,
-            ${stationColor}10 0%,
-            ${stationColor}15 50%,
-            ${stationColor}10 100%
+          background: `radial-gradient(ellipse at 50% 0%,
+            ${stationColor}20 0%,
+            ${stationColor}0a 45%,
+            transparent 75%
           ),
           rgba(15, 15, 25, 0.95)`,
           backdropFilter: 'blur(40px)',
@@ -513,7 +507,7 @@ const FullScreenPlayer = memo(({ onClose, remainingSeconds, suppressVinylTapUnti
             
             <button
               onClick={togglePlay}
-              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-200 hover:scale-105"
+              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-200 hover:scale-105 active:scale-95"
               style={{ 
                 background: `linear-gradient(135deg, ${stationColor}, ${stationColor}cc)`,
                 boxShadow: `0 8px 32px ${stationColor}40`
@@ -786,8 +780,8 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
           isPlaying ? "opacity-100 animate-breathe" : "opacity-30"
         )}
         style={{ 
-          background: `radial-gradient(ellipse, ${stationColor}40 0%, ${stationColor}15 45%, transparent 70%)`,
-          filter: 'blur(12px)',
+          background: `radial-gradient(ellipse, ${stationColor}33 0%, ${stationColor}12 45%, transparent 70%)`,
+          filter: 'blur(10px)',
         }}
       />
       
