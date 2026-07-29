@@ -297,7 +297,7 @@ const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
           <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{station.style1}</span>
           {station.custom && (
             <>
-              <span className={cn("text-xs", isDark ? "text-white/15" : "text-zinc-300")}>·</span>
+              <span aria-hidden="true" className={cn("text-xs", isDark ? "text-white/15" : "text-zinc-300")}>·</span>
               <span className="text-[10px] font-medium" style={{ color: `${station.color}bb` }}>{station.custom}</span>
             </>
           )}
@@ -552,7 +552,7 @@ export default function Home() {
                       <span className="text-xs" style={{ color: isDark ? '#F5E8FF' : '#6B21A8' }}>
                         双击灵动岛展开播放器
                       </span>
-                      <span className="text-xs" style={{ color: isDark ? 'rgba(245,232,255,0.45)' : 'rgba(107,33,168,0.35)' }}>·</span>
+                      <span aria-hidden="true" className="text-xs" style={{ color: isDark ? 'rgba(245,232,255,0.45)' : 'rgba(107,33,168,0.35)' }}>·</span>
                       <span className="text-xs" style={{ color: isDark ? 'rgba(245,232,255,0.82)' : 'rgba(107,33,168,0.72)' }}>
                         拖动可移动位置
                       </span>
@@ -762,7 +762,7 @@ export default function Home() {
                 <span>GitHub</span>
               </a>
               
-              <span className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
+              <span aria-hidden="true" className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
               
               <span className={cn(
                 "font-semibold",
