@@ -35,11 +35,10 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
       <div
         className={cn("absolute inset-0 rounded-full", isPlaying && "animate-spin-slow")}
         style={{
-          background: `
-            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 45%),
-            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.35) 0%, transparent 45%),
-            conic-gradient(from 0deg, #1a1a1a, #252525, #1a1a1a, #252525, #1a1a1a)
-          `,
+          // 只有随盘旋转的沟槽反光留在旋转层内。原本压在同一层的两道
+          // radial-gradient 是环境光，跟着盘一起转等于光源绕着唱片公转，
+          // 已移到下方的静态光照层。
+          background: 'conic-gradient(from 0deg, #1a1a1a, #252525, #1a1a1a, #252525, #1a1a1a)',
           boxShadow: `
             inset 0 2px 6px rgba(255, 255, 255, 0.05),
             inset 0 -2px 6px rgba(0, 0, 0, 0.35),
@@ -49,24 +48,44 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           `
         }}
       >
-        {/* 纹路 */}
-        {[...Array(8)].map((_, i) => (
+        {/* 纹路。原本是 8 圈、inset 从 7% 递增到 56%，而中心标签从 18% 起
+            ⇒ 8 圈里有 6 圈藏在标签下面，只有 2 圈落在可见的黑胶环带上；
+            且 rgba(255,255,255,0.012) 压在 #1a1a1a~#252525 上只有约 1% 的
+            亮度差，低于 1px 细线的可辨阈值 ⇒ 实际看不见任何纹路。
+            改为 14 圈均匀分布在 4%~30%（全部落在标签外的环带内），
+            亮度提到 4.5%，并每 4 圈加亮一次模拟 LP 的曲目分隔带。 */}
+        {[...Array(14)].map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full"
             style={{
-              inset: `${(i + 1) * 7}%`,
-              border: '1px solid rgba(255, 255, 255, 0.012)'
+              inset: `${4 + i * 2}%`,
+              border: `1px solid rgba(255, 255, 255, ${i % 4 === 0 ? 0.075 : 0.045})`
             }}
           />
         ))}
       </div>
       
-      {/* 中心标签 */}
+      {/* 静态光照层：镜面高光 + 对侧暗部 + 一道斜向掠光。
+          不参与旋转，因此光源方向恒定，唱片读作一个有材质的实体。 */}
+      <div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 45%),
+            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.35) 0%, transparent 45%),
+            linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.055) 46%, transparent 58%)
+          `
+        }}
+      />
+
+      {/* 中心标签。原 inset 18% ⇒ 标签直径 = 100% - 2×18% = 64% 唱盘直径，
+          真实 LP 的标签约 100mm / 302mm ≈ 33%，所以原来看起来是「一颗紫球
+          套在黑环里」。改 inset 32.5% ⇒ 标签直径 35%，接近真实比例。 */}
       <div
         className="absolute rounded-full flex items-center justify-center"
         style={{
-          inset: '18%',
+          inset: '32.5%',
           background: `
             radial-gradient(circle at 35% 35%, ${color}70 0%, transparent 50%),
             linear-gradient(135deg, ${color}, ${color}cc)
@@ -74,12 +93,17 @@ const VinylRecord = memo(({ isPlaying, size = 120, color = '#8B5CF6' }: { isPlay
           boxShadow: `
             inset 0 2px 8px rgba(0, 0, 0, 0.25),
             inset 0 -1px 2px rgba(255, 255, 255, 0.08),
-            0 0 30px ${color}40
+            0 0 0 1px rgba(255, 255, 255, 0.16),
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 0 24px ${color}38
           `
         }}
       >
-        <Music 
-          className="w-10 h-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" 
+        {/* 原本是固定 w-10 h-10(40px)，不随 size 缩放。标签缩到 35% 后
+            40px 图标会占满标签 63% 的直径，改为按 size 的 11% 缩放。 */}
+        <Music
+          size={Math.round(size * 0.11)}
+          className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
           style={{ color: 'rgba(255,255,255,0.95)' }}
         />
       </div>
