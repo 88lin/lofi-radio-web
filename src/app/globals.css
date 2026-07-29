@@ -383,9 +383,29 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* Smooth Scroll */
-html {
-  scroll-behavior: smooth;
+/* Smooth Scroll - only when the user has no motion preference */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduced Motion - disable decorative animations for sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  .animate-equalizer,
+  .animate-spin-slow,
+  .animate-breathe,
+  .animate-pulse-subtle,
+  .animate-pulse-glow,
+  .animate-shimmer,
+  .animate-gradient {
+    animation: none;
+  }
+
+  /* Keep equalizer bars visible as a static state indicator */
+  .animate-equalizer {
+    transform: scaleY(0.6);
+  }
 }
 
 /* Better Font Rendering */
