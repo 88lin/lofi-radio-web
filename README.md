@@ -19,6 +19,31 @@ macOS 风格灵动岛设计，21 个精选电台，打开即听，无需注册�
 
 ---
 
+## ❤️ 赞助商
+
+<table>
+<tr>
+<td width="180" align="center" valign="middle">
+  <a href="https://www.workbuddy.cn/events/invite?inviteCode=w0x2ic45z"><img src="https://download.codebuddy.cn/web/workbuddy/0bebf86e38e7d71ff0c313d661e7753ff996c54e/assets/workbuddy-logo-WhgOvEF7.png" alt="WorkBuddy" width="150"></a>
+</td>
+<td valign="middle"><b><a href="https://www.workbuddy.cn/events/invite?inviteCode=w0x2ic45z">WorkBuddy</a></b>&nbsp;是腾讯出品的全能 AI 工作台，是中国最受欢迎的效率 AI 智能体服务，说出要求、开始执行任务、交付完整成果。其中Hy3模型限时免费使用，注册即可获取2000积分，每月再赠送500积分，可用Kimi-K3、GLM-5.2等模型。</td>
+</tr>
+<tr>
+<td width="180" align="center" valign="middle">
+  <a href="https://gorouter.app/sign-up?aff=hfcV"><img src="https://cdn.jsdmirror.com/gh/88lin/picx-images-hosting@master/ScreenShot_2026-07-31_200922_732.webp" alt="GoRouter" width="150"></a>
+</td>
+<td valign="middle"><b><a href="https://gorouter.app/sign-up?aff=hfcV">GoRouter</a></b>&nbsp;是免费公益大模型API平台，可用Claude Opus 5 模型，目前较稳定。注册送＄70，每日签到得＄10左右，支持GitHub登录。</td>
+</tr>
+<tr>
+<td width="180" align="center" valign="middle">
+  <a href="https://agentrouter.org/register?aff=ugVO"><img src="https://cdn.jsdmirror.com/gh/88lin/picx-images-hosting@master/90C5FAD072EA247822CB88BB32512A41.webp" alt="Agent Router" width="150"></a>
+</td>
+<td valign="middle"><b><a href="https://agentrouter.org/register?aff=ugVO">Agent Router</a></b>&nbsp;是免费公益大模型API平台，支持GPT-5.6、Claude Opus 5 等主流模型，国内直连。注册送＄125，每日签到得＄25，被邀得＄50，支持GitHub/LinuxDo登录。</td>
+</tr>
+</table>
+
+---
+
 ## ✨ 首页预览
 
 <div align="center">
@@ -31,13 +56,9 @@ macOS 风格灵动岛设计，21 个精选电台，打开即听，无需注册�
 
 </div>
 
----
-
 ## 📖 项目简介
 
-Lofi Radio Web 是 [labilio/lofi-radio](https://github.com/labilio/lofi-radio) 的网页版实现，将原 Electron 桌面应用改造为现代化 Web 应用。
-
-**就像把咖啡店的背景音乐搬进你的书房** —— 不需要本地音源，不需要选歌单，打开网页即可收听。
+一个为专注场景而做的 Lofi Radio 网页版。Lofi音乐因节奏平稳、旋律循环、干扰较少，长期被公认为学习和工作场景中更适合作为背景音的音乐类型之一。项目采用 macOS 风格灵动岛设计，收录 21 个精选电台，打开即用。
 
 ### 🎯 设计理念
 
