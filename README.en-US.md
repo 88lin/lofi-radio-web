@@ -327,16 +327,25 @@ If you are familiar with these platforms, you can validate a custom setup. Other
 lofi-radio-web/
 ├── src/
 │   ├── app/                      # Next.js App Router
-│   │   ├── page.tsx             # Home page
-│   │   ├── layout.tsx           # Root layout
+│   │   ├── page.tsx             # Home server shell (emits home JSON-LD)
+│   │   ├── layout.tsx           # Root layout (metadata + site-level JSON-LD)
 │   │   ├── globals.css          # Global styles
+│   │   ├── stations/page.tsx    # Station directory (server-rendered)
+│   │   ├── faq/page.tsx         # FAQ (server-rendered)
+│   │   ├── about/page.tsx       # About page (server-rendered)
+│   │   ├── llms.txt/route.ts    # AI site overview (generated from data)
+│   │   ├── llms-full.txt/route.ts # AI full-content file
+│   │   ├── pricing.md/route.ts  # Machine-readable pricing
 │   │   ├── robots.ts            # robots.txt route
 │   │   ├── sitemap.ts           # sitemap.xml route
 │   │   └── api/                 # API routes
 │   │       └── bilibili-stream/ # Bilibili live stream parsing
 │   ├── components/              # Components
 │   │   ├── lofi/                # Lofi-related components
+│   │   │   ├── home-client.tsx  # Home client body (player / timers / theme)
 │   │   │   └── floating-player.tsx  # Floating player
+│   │   ├── seo/                 # SEO components
+│   │   │   └── site-chrome.tsx  # Content-page header/footer/JSON-LD
 │   │   ├── ui/                  # UI base components
 │   │   └── theme-provider.tsx   # Theme provider
 │   ├── hooks/                   # Custom Hooks
@@ -347,7 +356,8 @@ lofi-radio-web/
 │   ├── lib/                     # Utility libraries
 │   │   ├── stations.ts          # Station configurations
 │   │   ├── seo.ts               # SEO config and metadata/schema construction
-│   │   ├── seo-content.ts       # SEO copy (e.g., FAQs)
+│   │   ├── seo-content.ts       # SEO copy (FAQs, definitions, comparison table)
+│   │   ├── llms.ts              # llms.txt / llms-full.txt / pricing.md builders
 │   │   └── utils.ts             # Utility functions
 │   └── store/                   # State management
 │       └── audioStore.ts        # Audio state
@@ -357,6 +367,7 @@ lofi-radio-web/
 │   └── manifest.json            # PWA configuration
 ├── scripts/                     # Build helper scripts
 │   └── submit-indexnow.ts       # Manual IndexNow submission
+├── tests/                       # Unit tests (including SEO assertions)
 ├── package.json
 ├── Dockerfile
 ├── tailwind.config.ts
@@ -378,14 +389,29 @@ How to update:
 1. Evaluate the availability and stability of a new station source.
 2. Update the `stations` array in `src/lib/stations.ts`.
 3. Synchronize the station list and total count in `README.md` and `README.en-US.md`.
-4. Submit the changes.
+4. Bump `siteLastUpdated` in `src/lib/seo-content.ts` — it drives the visible "last updated" label, the sitemap `lastmod`, and the `llms.txt` header.
+5. Submit the changes.
 
 ### SEO Related Files
 
-- `src/lib/seo.ts`: Centrally manages metadata, Open Graph, Twitter, Schema, robots, and sitemap configurations.
-- `src/lib/seo-content.ts`: Manages SEO-visible copy, such as home page FAQs.
-- `src/app/robots.ts`: Generates `/robots.txt`.
-- `src/app/sitemap.ts`: Generates `/sitemap.xml`.
+| File | Purpose |
+|------|---------|
+| `src/lib/seo.ts` | Metadata, Open Graph, Twitter, Schema, robots and sitemap configuration |
+| `src/lib/seo-content.ts` | FAQs, Lofi definition block, scene comparison table, source list; holds `siteLastUpdated` |
+| `src/lib/llms.ts` | Builds `llms.txt` / `llms-full.txt` / `pricing.md` from station data |
+| `src/app/robots.ts` | `/robots.txt` — explicitly allows 17 AI crawlers, disallows `/api/` |
+| `src/app/sitemap.ts` | `/sitemap.xml` — the four indexable pages |
+| `src/app/llms.txt/route.ts` | `/llms.txt` — AI site overview |
+| `src/app/llms-full.txt/route.ts` | `/llms-full.txt` — full FAQ text and comparison table |
+| `src/app/pricing.md/route.ts` | `/pricing.md` — machine-readable pricing and limits |
+| `tests/seo.test.ts` | Asserts sitemap / robots / llms stay consistent with station data |
+
+### Four maintenance rules
+
+1. **Never hardcode the station count.** `llms.txt`, `pricing.md` and the JSON-LD all derive it from `stations.ts`; the READMEs are the only place that needs a manual sync.
+2. **Bump `siteLastUpdated` whenever copy changes.** AI search weights freshness, and a stale hard-coded date is worse than none.
+3. **Use native `<details>` for FAQs, not Radix Accordion.** Radix does not render collapsed content into the DOM, so non-rendering AI crawlers see zero answers.
+4. **Keep the root layout to site-level JSON-LD only** (`Organization` + `WebSite`). Page-level nodes (`WebPage`, `CollectionPage`, `FAQPage`, `ItemList`) must be emitted by their own page, otherwise every sub-page also claims to be the homepage. A regression test in `tests/seo.test.ts` enforces this.
 
 ---
 

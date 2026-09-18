@@ -68,3 +68,6 @@ dev.log
 *.bak
 upstream_stations.json
 original_stations.json
+
+# WorkBuddy - 本地 Agent 工作区，不推送到 GitHub
+/.workbuddy/

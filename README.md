@@ -360,16 +360,25 @@ docker run -d --name lofi-radio-web -p 3000:3000 --restart unless-stopped lofi-r
 lofi-radio-web/
 ├── src/
 │   ├── app/                      # Next.js App Router
-│   │   ├── page.tsx             # 首页
-│   │   ├── layout.tsx           # 根布局
+│   │   ├── page.tsx             # 首页服务端外壳（输出首页 JSON-LD）
+│   │   ├── layout.tsx           # 根布局（metadata + 站点级 JSON-LD）
 │   │   ├── globals.css          # 全局样式
+│   │   ├── stations/page.tsx    # 电台列表（服务端渲染）
+│   │   ├── faq/page.tsx         # 常见问题（服务端渲染）
+│   │   ├── about/page.tsx       # 关于页（服务端渲染）
+│   │   ├── llms.txt/route.ts    # AI 站点概览（由数据生成）
+│   │   ├── llms-full.txt/route.ts # AI 全量内容
+│   │   ├── pricing.md/route.ts  # 可机器读取的计费说明
 │   │   ├── robots.ts            # robots.txt 路由
 │   │   ├── sitemap.ts           # sitemap.xml 路由
 │   │   └── api/                 # API 路由
 │   │       └── bilibili-stream/ # B站直播流解析
 │   ├── components/              # 组件
 │   │   ├── lofi/                # Lofi 相关组件
+│   │   │   ├── home-client.tsx  # 首页客户端本体（播放器 / 计时 / 主题）
 │   │   │   └── floating-player.tsx  # 浮动播放器
+│   │   ├── seo/                 # SEO 相关组件
+│   │   │   └── site-chrome.tsx  # 内容页页头/页脚/JSON-LD
 │   │   ├── ui/                  # UI 基础组件
 │   │   └── theme-provider.tsx   # 主题提供者
 │   ├── hooks/                   # 自定义 Hooks
@@ -380,7 +389,8 @@ lofi-radio-web/
 │   ├── lib/                     # 工具库
 │   │   ├── stations.ts          # 电台配置
 │   │   ├── seo.ts               # SEO 配置与 metadata/schema 构建
-│   │   ├── seo-content.ts       # FAQ 等 SEO 文案内容
+│   │   ├── seo-content.ts       # FAQ、定义块、选型表等 SEO 文案
+│   │   ├── llms.ts              # llms.txt / llms-full.txt / pricing.md 生成
 │   │   └── utils.ts             # 工具函数
 │   └── store/                   # 状态管理
 │       └── audioStore.ts        # 音频状态
@@ -390,6 +400,7 @@ lofi-radio-web/
 │   └── manifest.json            # PWA 配置
 ├── scripts/                     # 构建辅助脚本
 │   └── submit-indexnow.ts       # 手动提交 IndexNow
+├── tests/                       # 单元测试（含 SEO 断言）
 ├── package.json
 ├── Dockerfile
 ├── tailwind.config.ts
@@ -411,14 +422,29 @@ lofi-radio-web/
 1. 评估新电台源的可用性与稳定性
 2. 更新 `src/lib/stations.ts` 中的 `stations` 数组
 3. 同步更新 `README.md` 与 `README.en-US.md` 的电台列表和总数
-4. 提交更改
+4. 更新 `src/lib/seo-content.ts` 里的 `siteLastUpdated`（页面「最后更新」、sitemap 的 lastmod、llms.txt 头部都取这个值）
+5. 提交更改
 
 ### SEO 相关文件
 
-- `src/lib/seo.ts`：集中管理 metadata、Open Graph、Twitter、Schema、robots 和 sitemap 配置
-- `src/lib/seo-content.ts`：管理首页 FAQ 等 SEO 可见文案内容
-- `src/app/robots.ts`：生成 `/robots.txt`
-- `src/app/sitemap.ts`：生成 `/sitemap.xml`
+| 文件 | 作用 |
+|------|------|
+| `src/lib/seo.ts` | 集中管理 metadata、Open Graph、Twitter、Schema、robots 和 sitemap 配置 |
+| `src/lib/seo-content.ts` | FAQ、Lofi 定义块、场景选型表、音源列表等可见文案；`siteLastUpdated` 在这里 |
+| `src/lib/llms.ts` | 生成 `llms.txt` / `llms-full.txt` / `pricing.md`，内容由数据派生 |
+| `src/app/robots.ts` | 生成 `/robots.txt`，显式放行 17 个 AI 抓取器、屏蔽 `/api/` |
+| `src/app/sitemap.ts` | 生成 `/sitemap.xml`，四个索引页 |
+| `src/app/llms.txt/route.ts` | `/llms.txt`，AI 站点概览 |
+| `src/app/llms-full.txt/route.ts` | `/llms-full.txt`，含 FAQ 全文与选型表 |
+| `src/app/pricing.md/route.ts` | `/pricing.md`，可机器读取的计费与限制 |
+| `tests/seo.test.ts` | 断言 sitemap / robots / llms 与电台数据一致 |
+
+### 维护时的四个约定
+
+1. **电台数量不要手写**。`llms.txt`、`pricing.md`、schema 里的数量都从 `stations.ts` 派生；README 里的数字是唯一需要手动同步的地方。
+2. **改了文案就改 `siteLastUpdated`**。AI 搜索普遍按新鲜度加权，写死的旧日期比不写更糟。
+3. **首页 FAQ 用原生 `<details>`，不要用 Radix Accordion**。Radix 在折叠状态下不把内容渲染进 DOM，非渲染型 AI 抓取器一条答案都读不到。
+4. **root layout 只放站点级 JSON-LD**（`Organization` + `WebSite`）。页面级节点（`WebPage` / `CollectionPage` / `FAQPage` / `ItemList`）必须由对应页面自己输出，否则每个子页面都会额外声明一遍「自己是首页」。`tests/seo.test.ts` 里有这条约束的回归断言。
 
 ---
 

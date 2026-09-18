@@ -1,12 +1,18 @@
 {
-  "name": "Lofi Radio 电台在线收听",
+  "id": "/",
+  "name": "Lofi Radio 在线专注音乐电台",
   "short_name": "Lofi Radio",
-  "description": "Lofi、Chill、Jazz 与白噪音在线收听，21个精选电台，覆盖学习、工作、编程、阅读与助眠等多种场景",
+  "description": "Lofi、Chill、Jazz、Classical、Ambient 与白噪音在线收听，覆盖学习、编程、阅读、写作、办公、放松与助眠等多种场景，免注册、免下载。",
+  "lang": "zh-CN",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#f8fafc",
   "orientation": "any",
+  "background_color": "#fafafa",
+  "theme_color": "#fafafa",
+  "categories": ["music", "entertainment", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/logo.svg",
@@ -27,13 +33,18 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["music", "entertainment", "productivity"],
   "shortcuts": [
     {
       "name": "开始播放",
       "short_name": "播放",
       "description": "开始收听 Lofi 音乐",
       "url": "/"
+    },
+    {
+      "name": "电台列表",
+      "short_name": "电台",
+      "description": "查看全部电台的风格、场景与音源",
+      "url": "/stations"
     }
   ]
 }

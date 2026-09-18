@@ -238,6 +238,35 @@ export const categories = [
   { id: '其他', name: '其他', count: stations.filter(s => !['学习', '编程', '阅读', '放松', '助眠', '专注'].includes(s.scene)).length },
 ];
 
+/** 场景名 → URL 锚点 slug。中文锚点在部分抓取器与分享场景里不可靠，统一用 ASCII slug。 */
+export const sceneSlugs: Record<string, string> = {
+  学习: "study",
+  编程: "coding",
+  阅读: "reading",
+  放松: "relax",
+  助眠: "sleep",
+  专注: "focus",
+  写作: "writing",
+  办公: "office",
+  运动: "workout",
+  娱乐: "gaming",
+};
+
+export function getSceneSlug(scene: string): string {
+  return sceneSlugs[scene] ?? "other";
+}
+
+/** 站点实际出现过的全部场景，按电台数量从多到少排序，用于生成目录页与 sitemap。 */
+export function getSceneList(): { scene: string; slug: string; count: number }[] {
+  const counters = new Map<string, number>();
+  for (const station of stations) {
+    counters.set(station.scene, (counters.get(station.scene) ?? 0) + 1);
+  }
+  return [...counters.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([scene, count]) => ({ scene, slug: getSceneSlug(scene), count }));
+}
+
 export function getFilteredStations(scene: string): Station[] {
   if (scene === 'all') return stations;
   if (scene === '其他') {
