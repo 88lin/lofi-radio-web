@@ -79,7 +79,10 @@ export default function StationsPage() {
             下表列出每个电台的名称、风格标签、适用场景、音源类型与来源域名。本站不托管音频文件，
             所有电台均直连第三方公开流媒体，稳定性取决于上游服务与你的网络环境。
           </p>
-          <div className="mt-6 overflow-x-auto">
+          {/* 桌面端用表格（表格也是 AI 摘录偏好的形态）。
+              移动端换成卡片列表：640px 的表在 338px 容器里要横向拖动才看得全，
+              每行被切掉一半，实际很难读。 */}
+          <div className="mt-6 hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] border-collapse text-left text-sm">
               <caption className="sr-only">
                 Lofi Radio 全部 {stations.length} 个在线电台清单
@@ -120,6 +123,45 @@ export default function StationsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* 卡片列表是版式元素，不是正文列表。ContentShell 的 [&_ul]/[&_li] 会
+              给它套上 list-disc 与 pl-6（arbitrary variant 权重高于普通工具类，
+              写 list-none 覆盖不掉），所以这里用内联样式强制清零。 */}
+          <ul
+            className="mt-6 space-y-2 md:hidden"
+            style={{ listStyle: "none", paddingLeft: 0 }}
+          >
+            {stations.map((station) => (
+              <li
+                key={station.id}
+                id={`m-${station.id}`}
+                className="rounded-xl border border-black/[0.06] bg-white px-4 py-3 dark:border-white/[0.08] dark:bg-zinc-900/40"
+                style={{ marginTop: 0 }}
+              >
+                <p className="font-semibold">{station.name}</p>
+                <dl className="mt-1.5 space-y-0.5 text-xs leading-6 text-zinc-500 dark:text-zinc-400">
+                  <div className="flex gap-2">
+                    <dt className="w-14 shrink-0">风格</dt>
+                    <dd className="!mt-0">
+                      {station.style1} / {station.style2}
+                    </dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-14 shrink-0">场景</dt>
+                    <dd className="!mt-0">{station.scene}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-14 shrink-0">音源</dt>
+                    <dd className="!mt-0">{typeLabel[station.type] ?? station.type}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-14 shrink-0">来源</dt>
+                    <dd className="!mt-0 break-all">{hostOf(station.url)}</dd>
+                  </div>
+                </dl>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section aria-labelledby="sources">

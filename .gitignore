@@ -71,3 +71,7 @@ original_stations.json
 
 # WorkBuddy - 本地 Agent 工作区，不推送到 GitHub
 /.workbuddy/
+
+# 本地视觉验收产物（截图）与浏览器自动化缓存，不推送
+/shots/
+/.playwright-mcp/

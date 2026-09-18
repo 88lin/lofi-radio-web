@@ -487,21 +487,21 @@ export default function Home() {
                 <LiveClock isDark={isDark} stationColor={stationColor} isPlaying={isPlaying} />
               </motion.div>
 
-              {/* 标题：H1 必须同时带品牌词与品类词，否则「lofi 电台」「专注音乐」这类查询无法匹配 */}
-              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.15] mb-5">
+              {/* 标题 */}
+              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5 whitespace-nowrap">
                 <span className={cn(
                   "bg-clip-text text-transparent",
                   isDark
                     ? "bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400"
                     : "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500"
                 )}>
-                  Lofi Radio 在线专注音乐电台
+                  专注音乐 触手可及
                 </span>
               </motion.h1>
 
               {/* 描述 */}
               <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
-                Lofi 音乐节奏平稳、少人声，是学习、编程与写作时常用的背景音。
+                Lofi 音乐被科学认证为最适合专注工作学习的音乐。
                 <br className="hidden sm:block" />
                 macOS 灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
               </motion.p>
@@ -699,7 +699,10 @@ export default function Home() {
             <p className={cn("text-sm sm:text-base text-center mb-8 max-w-2xl mx-auto", isDark ? "text-white/38" : "text-zinc-500")}>
               同一电台在不同任务下的效果差别很大，下面按场景给出风格建议与站内对应电台。
             </p>
-            <div className="overflow-x-auto">
+            {/* 桌面端表格保留（AI 摘录偏好表格形态）。
+                移动端换成卡片：680px 的表在 338px 容器里要横向拖动才看得全，
+                右两列几乎不可读。 */}
+            <div className="hidden overflow-x-auto md:block">
               <table className={cn(
                 "w-full min-w-[680px] border-collapse text-left text-sm",
                 isDark ? "text-white/65" : "text-zinc-700"
@@ -725,6 +728,34 @@ export default function Home() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {sceneComparison.rows.map((row) => (
+                <div
+                  key={row.scene}
+                  className={cn(
+                    "rounded-2xl border p-4",
+                    isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.06] bg-white"
+                  )}
+                >
+                  <p className="font-semibold">{row.scene}</p>
+                  <dl className="mt-2 space-y-1.5 text-xs leading-6">
+                    <div>
+                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>推荐风格</dt>
+                      <dd className={cn("!mt-0", isDark ? "text-white/70" : "text-zinc-700")}>{row.styles}</dd>
+                    </div>
+                    <div>
+                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>站内电台</dt>
+                      <dd className={cn("!mt-0", isDark ? "text-white/70" : "text-zinc-700")}>{row.picks}</dd>
+                    </div>
+                    <div>
+                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>原因</dt>
+                      <dd className={cn("!mt-0", isDark ? "text-white/55" : "text-zinc-500")}>{row.reason}</dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
             </div>
           </div>
         </section>

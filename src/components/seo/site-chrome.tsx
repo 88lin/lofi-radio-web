@@ -19,9 +19,9 @@ const navLinks = [
 export function ContentHeader({ current }: { current: string }) {
   return (
     <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/85 backdrop-blur-xl dark:border-white/[0.08] dark:bg-zinc-950/80">
-      {/* flex-wrap：logo + 4 个完整文字导航的固有宽度约 460px，超过 375px 的
-          小屏宽度。不换行会让 /stations 等新页面在手机上出现横向滚动。 */}
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+      {/* 小屏（≤640px）：logo 一行、导航独占一行并两端铺开，避免挤在一行溢出。
+          大屏：恢复成 logo 在左、导航在右的单行布局。 */}
+      <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Link
           href={pagePaths.home}
           className="flex shrink-0 items-center gap-2 font-bold tracking-tight text-zinc-900 dark:text-white"
@@ -42,8 +42,8 @@ export function ContentHeader({ current }: { current: string }) {
           Lofi Radio
         </Link>
 
-        <nav aria-label="站内导航" className="ml-auto">
-          <ul className="flex flex-wrap items-center justify-end gap-1 text-sm">
+        <nav aria-label="站内导航" className="w-full sm:ml-auto sm:w-auto">
+          <ul className="flex flex-wrap items-center justify-between gap-1 text-sm sm:justify-end">
             {navLinks.map((link) => {
               const active = link.href === current;
               return (
@@ -72,37 +72,47 @@ export function ContentHeader({ current }: { current: string }) {
 export function ContentFooter() {
   return (
     <footer className="mt-16 border-t border-black/[0.06] py-8 dark:border-white/[0.08]">
-      <div className="mx-auto max-w-4xl px-4 text-sm text-zinc-500 sm:px-6 dark:text-zinc-400">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link
-            href={pagePaths.stations}
-            className="underline-offset-4 hover:underline"
-          >
-            电台列表
-          </Link>
-          <Link href={pagePaths.faq} className="underline-offset-4 hover:underline">
-            常见问题
-          </Link>
-          <Link href={pagePaths.about} className="underline-offset-4 hover:underline">
-            关于
-          </Link>
-          <a
-            href={siteConfig.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline"
-          >
-            GitHub
-          </a>
-          <a
-            href={siteConfig.creatorUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline"
-          >
-            {siteConfig.author}
-          </a>
-        </div>
+      {/* 与首页 footer 保持一致的居中排版：两套页脚不该长成两种样子 */}
+      <div className="mx-auto max-w-4xl px-4 text-center text-sm text-zinc-500 sm:px-6 dark:text-zinc-400">
+        <nav aria-label="页脚导航">
+          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <li>
+              <Link href={pagePaths.stations} className="underline-offset-4 hover:underline">
+                电台列表
+              </Link>
+            </li>
+            <li>
+              <Link href={pagePaths.faq} className="underline-offset-4 hover:underline">
+                常见问题
+              </Link>
+            </li>
+            <li>
+              <Link href={pagePaths.about} className="underline-offset-4 hover:underline">
+                关于
+              </Link>
+            </li>
+            <li>
+              <a
+                href={siteConfig.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-4 hover:underline"
+              >
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a
+                href={siteConfig.creatorUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-4 hover:underline"
+              >
+                {siteConfig.author}
+              </a>
+            </li>
+          </ul>
+        </nav>
         <p className="mt-4">
           Made with ❤️ by{" "}
           <a
@@ -150,7 +160,10 @@ export function ContentShell({
               <time dateTime={updated}>{updated}</time>
             </p>
           ) : null}
-          <div className="mt-10 [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:tracking-tight sm:[&_h2]:text-2xl [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-base [&_h3]:font-semibold sm:[&_h3]:text-lg [&_p]:mt-4 [&_p]:leading-8 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mt-2 [&_li]:leading-8">
+          {/* ol 必须和 ul 一样显式补 list-style 与左内边距：
+              Tailwind preflight 会把 ol/ul 的 list-style 与 padding 全部清零，
+              只写 list-decimal 不给 pl-6，序号会渲染到内容框左侧外面被切掉。 */}
+          <div className="mt-10 [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:tracking-tight sm:[&_h2]:text-2xl [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-base [&_h3]:font-semibold sm:[&_h3]:text-lg [&_p]:mt-4 [&_p]:leading-8 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mt-2 [&_li]:leading-8">
             {children}
           </div>
         </article>
