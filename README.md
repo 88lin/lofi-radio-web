@@ -432,7 +432,7 @@ lofi-radio-web/
 | `src/lib/seo.ts` | 集中管理 metadata、Open Graph、Twitter、Schema、robots 和 sitemap 配置 |
 | `src/lib/seo-content.ts` | FAQ、Lofi 定义块、场景选型表、音源列表等可见文案；`siteLastUpdated` 在这里 |
 | `src/lib/llms.ts` | 生成 `llms.txt` / `llms-full.txt` / `pricing.md`，内容由数据派生 |
-| `src/app/robots.ts` | 生成 `/robots.txt`，显式放行 17 个 AI 抓取器、屏蔽 `/api/` |
+| `src/app/robots.ts` | 生成 `/robots.txt`，逐条显式声明 16 个 AI 抓取器 + Bingbot，统一屏蔽 `/api/` |
 | `src/app/sitemap.ts` | 生成 `/sitemap.xml`，四个索引页 |
 | `src/app/llms.txt/route.ts` | `/llms.txt`，AI 站点概览 |
 | `src/app/llms-full.txt/route.ts` | `/llms-full.txt`，含 FAQ 全文与选型表 |

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { pagePaths, siteConfig } from "@/lib/seo";
+import { pagePaths, serializeJsonLd, siteConfig } from "@/lib/seo";
 
 /**
  * 内容型子页（/stations、/faq、/about）共用的页头页脚。
@@ -19,7 +19,9 @@ const navLinks = [
 export function ContentHeader({ current }: { current: string }) {
   return (
     <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/85 backdrop-blur-xl dark:border-white/[0.08] dark:bg-zinc-950/80">
-      <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-3 sm:px-6">
+      {/* flex-wrap：logo + 4 个完整文字导航的固有宽度约 460px，超过 375px 的
+          小屏宽度。不换行会让 /stations 等新页面在手机上出现横向滚动。 */}
+      <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <Link
           href={pagePaths.home}
           className="flex shrink-0 items-center gap-2 font-bold tracking-tight text-zinc-900 dark:text-white"
@@ -41,7 +43,7 @@ export function ContentHeader({ current }: { current: string }) {
         </Link>
 
         <nav aria-label="站内导航" className="ml-auto">
-          <ul className="flex items-center gap-1 text-sm">
+          <ul className="flex flex-wrap items-center justify-end gap-1 text-sm">
             {navLinks.map((link) => {
               const active = link.href === current;
               return (
@@ -166,7 +168,7 @@ export function JsonLd({ data }: { data: unknown }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }

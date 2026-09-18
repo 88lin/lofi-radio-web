@@ -203,6 +203,19 @@ export function buildPageMetadata({
   };
 }
 
+/**
+ * JSON-LD 序列化。
+ *
+ * 必须把 `<` 转成 `\u003c`：结果要塞进 `<script>` 标签，而 HTML 解析器只要遇到
+ * `</script` 就会提前结束脚本块——哪怕这段字符出现在一个字符串字面量内部。
+ *
+ * 目前所有 schema 文案都是仓库内常量、不含用户输入，所以这不是当下的漏洞；
+ * 加这一层是为了让「以后有人在描述里写一句带尖括号的话」不至于变成注入点。
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 function buildOrganization() {
   return {
     "@type": "Organization",
@@ -278,17 +291,21 @@ export function buildStationEntities() {
         description:
           station.description ||
           `${station.name} 是适合${station.scene}场景的 ${station.style1} / ${station.style2} 在线音乐电台。`,
-        audio: {
-          "@type": "AudioObject",
-          contentUrl: station.url,
-          encodingFormat:
-            station.type === "m3u8"
-              ? "application/vnd.apple.mpegurl"
-              : station.type === "mp3"
-                ? "audio/mpeg"
-                : "video/x-flv",
-        },
-        ...(station.type === "bilibili" ? { inLanguage: "zh-CN" } : {}),
+        // bilibili 源的 url 是直播间页面地址，不是可直接播放的音频流。
+        // 把它写成 AudioObject.contentUrl 再配一个 video/x-flv，
+        // 对不做渲染的解析器是明确的误导——这类只保留 url，不声明 audio 子对象。
+        ...(station.type === "bilibili"
+          ? { inLanguage: "zh-CN" }
+          : {
+              audio: {
+                "@type": "AudioObject",
+                contentUrl: station.url,
+                encodingFormat:
+                  station.type === "m3u8"
+                    ? "application/vnd.apple.mpegurl"
+                    : "audio/mpeg",
+              },
+            }),
       },
     };
   });
@@ -505,7 +522,9 @@ export function buildRobotsConfig(): MetadataRoute.Robots {
       })),
     ],
     sitemap: `${siteConfig.url}/sitemap.xml`,
-    host: siteConfig.url,
+    // Host 是 Yandex 的指令，它要的是裸主机名；带 scheme 会被当成无效值忽略。
+    // Google 直接忽略这一行，所以写错没有代价，写对只是顺手。
+    host: new URL(siteConfig.url).host,
   };
 }
 

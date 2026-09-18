@@ -158,14 +158,21 @@ export function buildPricingMarkdown(): string {
 `;
 }
 
+/** llms.txt 的约定类型。后缀是 .md 的路由要用 text/markdown，别混用。 */
+export const PLAIN_TEXT = "text/plain; charset=utf-8";
+export const MARKDOWN_TEXT = "text/markdown; charset=utf-8";
+
 /**
  * 只设 Content-Type，不设 Cache-Control——缓存策略统一写在 next.config.ts 的
  * headers() 里。两处都写会产出两条 Cache-Control 响应头，行为不可预期。
  */
-export function textResponse(body: string): Response {
+export function textResponse(
+  body: string,
+  contentType: string = PLAIN_TEXT,
+): Response {
   return new Response(body, {
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": contentType,
     },
   });
 }

@@ -1,4 +1,4 @@
-import { buildPricingMarkdown, textResponse } from "@/lib/llms";
+import { buildPricingMarkdown, MARKDOWN_TEXT, textResponse } from "@/lib/llms";
 
 /**
  * `/pricing.md`
@@ -10,5 +10,7 @@ import { buildPricingMarkdown, textResponse } from "@/lib/llms";
 export const dynamic = "force-static";
 
 export function GET() {
-  return textResponse(buildPricingMarkdown());
+  // 后缀是 .md，且 layout 里 <link rel="alternate" type="text/markdown"> 已声明过，
+  // 这里必须给 text/markdown，否则实际响应类型与声明不一致。
+  return textResponse(buildPricingMarkdown(), MARKDOWN_TEXT);
 }

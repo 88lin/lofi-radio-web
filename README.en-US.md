@@ -399,7 +399,7 @@ How to update:
 | `src/lib/seo.ts` | Metadata, Open Graph, Twitter, Schema, robots and sitemap configuration |
 | `src/lib/seo-content.ts` | FAQs, Lofi definition block, scene comparison table, source list; holds `siteLastUpdated` |
 | `src/lib/llms.ts` | Builds `llms.txt` / `llms-full.txt` / `pricing.md` from station data |
-| `src/app/robots.ts` | `/robots.txt` — explicitly allows 17 AI crawlers, disallows `/api/` |
+| `src/app/robots.ts` | `/robots.txt` — declares 16 AI crawlers + Bingbot one by one, disallows `/api/` for all |
 | `src/app/sitemap.ts` | `/sitemap.xml` — the four indexable pages |
 | `src/app/llms.txt/route.ts` | `/llms.txt` — AI site overview |
 | `src/app/llms-full.txt/route.ts` | `/llms-full.txt` — full FAQ text and comparison table |

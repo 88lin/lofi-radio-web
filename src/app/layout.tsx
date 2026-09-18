@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { buildSiteMetadata, buildSiteSchema } from "@/lib/seo";
+import { buildSiteMetadata, buildSiteSchema, serializeJsonLd } from "@/lib/seo";
 
 import type { Viewport } from "next";
 
@@ -40,7 +40,7 @@ export default function RootLayout({
             结果是首屏 HTML 里根本没有 JSON-LD。这里必须直接输出。 */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteSchema) }}
         />
         {/* 给 AI 检索/代理的机器可读入口。llms.txt 是站点概览，llms-full.txt 是全量内容。 */}
         <link
