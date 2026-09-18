@@ -122,9 +122,7 @@ export function ContentFooter() {
             className="font-semibold text-violet-600 underline-offset-4 hover:underline dark:text-violet-400"
           >
             {siteConfig.author}
-          </a>{" "}
-          · 内容最后更新：
-          <time dateTime={siteConfig.lastUpdated}>{siteConfig.lastUpdated}</time>
+          </a>
         </p>
       </div>
     </footer>

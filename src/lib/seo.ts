@@ -445,7 +445,7 @@ export function buildFaqPageSchema() {
         "@id": `${siteConfig.url}${pagePaths.faq}#webpage`,
         url: `${siteConfig.url}${pagePaths.faq}`,
         name: "Lofi Radio 常见问题",
-        description: `关于 Lofi Radio 的 ${homepageFaqs.length} 个常见问题：是否收费、电台数量、场景选型、播放失败排查、隐私与版权说明。`,
+        description: `关于 Lofi Radio 的 ${homepageFaqs.length} 个常见问题：是否收费、电台数量、场景选型、播放失败排查，以及开源与自部署。`,
         isPartOf: { "@id": websiteId },
         dateModified: siteConfig.lastUpdated,
         inLanguage: "zh-CN",

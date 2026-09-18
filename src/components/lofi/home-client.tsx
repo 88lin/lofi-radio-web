@@ -15,7 +15,7 @@ import { MOBILE_ISLAND_EXPAND_LEARNED_EVENT, MOBILE_ISLAND_HINT_DISMISSED_KEY } 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { homepageFaqs, lofiDefinition, sceneComparison, siteLastUpdated } from '@/lib/seo-content';
+import { homepageFaqs, lofiDefinition, sceneComparison } from '@/lib/seo-content';
 import { siteConfig } from '@/lib/seo';
 
 function useMounted() {
@@ -477,7 +477,7 @@ export default function Home() {
                     border: isDark ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(139,92,246,0.15)',
                   }}>
                   <Sparkles className="w-3.5 h-3.5" />
-                  {stations.length} 个电台 · 免注册收听
+                  {stations.length} 个精选电台
                   <ChevronRight className="w-3 h-3 opacity-50" />
                 </Link>
               </motion.div>
@@ -651,14 +651,6 @@ export default function Home() {
                 <li key={item}>{item}</li>
               ))}
             </ul>
-            <p className={cn(
-              "mt-5 text-xs sm:text-sm leading-6 rounded-xl px-4 py-3 border",
-              isDark
-                ? "text-white/45 border-white/[0.08] bg-white/[0.02]"
-                : "text-zinc-500 border-zinc-200 bg-zinc-50"
-            )}>
-              {lofiDefinition.caveat}
-            </p>
           </div>
         </section>
 
@@ -773,18 +765,6 @@ export default function Home() {
                 <StationCard key={station.id} station={station} isDark={isDark} isActive={currentStation?.id === station.id} isPlaying={isPlaying} onClick={() => handleStationClick(station.id)} />
               ))}
             </motion.div>
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mt-6">
-              <Button variant="outline" size="sm" className={cn("rounded-full gap-2 px-5 h-9", isDark && "border-white/15 text-white/60 hover:bg-white/[0.07] hover:text-white/80")} onClick={() => setMiniMode(false)}>
-                打开播放器
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-            <p className={cn("text-center mt-4 text-xs sm:text-sm", isDark ? "text-white/35" : "text-zinc-500")}>
-              完整清单（含风格、音源类型与来源站点）见{" "}
-              <Link href="/stations" className={cn("underline underline-offset-4 font-medium", isDark ? "text-violet-400" : "text-violet-600")}>
-                Lofi Radio 电台列表
-              </Link>
-            </p>
           </div>
         </section>
 
@@ -914,15 +894,6 @@ export default function Home() {
                 </li>
               </ul>
             </nav>
-
-            <div className={cn("flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs", isDark ? "text-white/35" : "text-zinc-400")}>
-              <span>
-                内容最后更新：
-                <time dateTime={siteLastUpdated}>{siteLastUpdated}</time>
-              </span>
-              <span aria-hidden="true" className={cn(isDark ? "text-white/20" : "text-zinc-300")}>·</span>
-              <span>{stations.length} 个电台，免费、免注册、无广告</span>
-            </div>
 
             <div className="mt-3 text-center">
               <span className={cn(

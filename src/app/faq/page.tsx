@@ -6,7 +6,7 @@ import { homepageFaqs, howToStart, siteLastUpdated } from "@/lib/seo-content";
 
 export const metadata: Metadata = buildPageMetadata({
   title: `Lofi Radio 常见问题 - ${homepageFaqs.length} 个使用问题解答`,
-  description: `Lofi Radio 的 ${homepageFaqs.length} 个常见问题：是否收费与注册、电台数量与风格、学习编程助眠该选哪个电台、播放失败的排查办法、睡眠定时用法、隐私与版权说明，以及开源与自部署方式。`,
+  description: `Lofi Radio 的 ${homepageFaqs.length} 个常见问题：是否收费与注册、电台数量与风格、学习编程助眠该选哪个电台、播放失败的排查办法、睡眠定时用法，以及开源与自部署方式。`,
   path: pagePaths.faq,
   keywords: [
     "lofi radio 常见问题",
@@ -26,7 +26,7 @@ export default function FaqPage() {
       <ContentShell
         current={pagePaths.faq}
         title="Lofi Radio 常见问题"
-        lead={`这里汇总了使用 Lofi Radio 时最常被问到的 ${homepageFaqs.length} 个问题：收费与注册、电台数量与风格、不同场景该选哪个电台、播放失败的排查办法、睡眠定时用法、隐私与版权，以及开源自部署。所有答案都在本页直接展开，无需点击。`}
+        lead={`这里汇总了使用 Lofi Radio 时最常被问到的 ${homepageFaqs.length} 个问题：收费与注册、电台数量与风格、不同场景该选哪个电台、播放失败的排查办法、睡眠定时用法，以及开源自部署。所有答案都在本页直接展开，无需点击。`}
         updated={siteLastUpdated}
       >
         <section aria-labelledby="how-to-start">
