@@ -189,7 +189,7 @@ export default function AboutPage() {
                 href={pagePaths.stations}
                 className="font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400"
               >
-                {pagePaths.stations}
+                查看全部电台
               </a>
             </li>
           </ul>

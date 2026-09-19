@@ -12,7 +12,7 @@ import {
   serializeJsonLd,
   siteConfig,
 } from '../src/lib/seo';
-import { homepageFaqs, siteLastUpdated } from '../src/lib/seo-content';
+import { homepageFaqs, sceneComparison, siteLastUpdated } from '../src/lib/seo-content';
 import { getSceneList, stations } from '../src/lib/stations';
 
 test('sitemap only lists indexable pages and every URL is absolute', () => {
@@ -68,8 +68,6 @@ test('homepage JSON-LD is serialisable and covers the core entities', () => {
 
   const types = schema['@graph'].map((node) => node['@type']);
   for (const expected of [
-    'Organization',
-    'WebSite',
     'WebPage',
     'SoftwareApplication',
     'ItemList',
@@ -77,6 +75,9 @@ test('homepage JSON-LD is serialisable and covers the core entities', () => {
     'BreadcrumbList',
   ]) {
     assert.ok(types.includes(expected), `首页 JSON-LD 缺少 ${expected}`);
+  }
+  for (const forbidden of ['Organization', 'WebSite']) {
+    assert.ok(!types.includes(forbidden), `页面级 schema 不应再重复 ${forbidden}`);
   }
 });
 
@@ -131,6 +132,18 @@ test('every station belongs to exactly one scene bucket in the directory', () =>
   );
   for (const slug of slugs) {
     assert.match(slug, /^[a-z-]+$/, `场景 slug 必须是 ASCII 小写：${slug}`);
+  }
+});
+
+test('scene comparison only names real stations and scenes', () => {
+  const knownScenes = new Set(getSceneList().map((scene) => scene.scene));
+  const knownStations = new Set(stations.map((station) => station.name));
+
+  for (const row of sceneComparison.rows) {
+    assert.ok(knownScenes.has(row.scene), `对照表出现了不存在的场景：${row.scene}`);
+    for (const name of row.picks.split('、').map((item) => item.trim()).filter(Boolean)) {
+      assert.ok(knownStations.has(name), `对照表推荐了不存在的电台：${name}`);
+    }
   }
 });
 

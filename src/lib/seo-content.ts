@@ -32,46 +32,64 @@ export const sceneComparison = {
   columns: ["使用场景", "推荐风格", "站内电台", "为什么这么选"],
   rows: [
     {
-      scene: "学习 / 备考",
-      styles: "Lofi hip-hop、Chill",
+      scene: "学习",
+      styles: "Lofi、Chill、Study",
       picks: "Lofi Studying、Lofi Girl、Lofi Box",
       reason: "人声占比低，适合需要记忆、做题、读教材的长时间任务。",
     },
     {
-      scene: "编程 / 深度工作",
-      styles: "Ambient、Downtempo",
+      scene: "编程",
+      styles: "Ambient、Lofi、Coding",
       picks: "Groove Salad、Code Radio",
       reason: "结构平缓、重复度高，连续播放数小时也不容易产生听觉疲劳。",
     },
     {
       scene: "阅读",
-      styles: "Jazz、日系 Lofi",
+      styles: "Jazz、日系 Lofi、Chill",
       picks: "Jazz Box、Lofi Japanese、Chill Sky、B3cks Radio",
       reason: "旋律存在感弱，不会在翻页与停顿之间制造节奏落差。",
     },
     {
-      scene: "写作 / 办公",
-      styles: "Smooth Jazz、Mellow",
-      picks: "Jazz Smooth、Jazz Groove、Swiss Classic",
+      scene: "写作",
+      styles: "Jazz Groove",
+      picks: "Jazz Groove",
       reason: "有乐器质感但不抢戏，适合需要组织语言又要保持节奏的工作。",
     },
     {
-      scene: "放松 / 休息",
+      scene: "办公",
+      styles: "Smooth Jazz、Mellow",
+      picks: "Jazz Smooth",
+      reason: "旋律克制、节奏稳定，适合需要持续输出又不能被打断的办公时段。",
+    },
+    {
+      scene: "专注",
+      styles: "Classical、Symphony",
+      picks: "Swiss Classic",
+      reason: "结构完整但不喧闹，适合需要长时间保持注意力的深度任务。",
+    },
+    {
+      scene: "放松",
       styles: "Chillwave、Alt",
       picks: "Chill Wave、Lofi Chilling、Paradise",
       reason: "情绪明亮但不激烈，作为切换状态的背景声更合适。",
     },
     {
-      scene: "助眠 / 睡前",
+      scene: "助眠",
       styles: "Ambient、白噪音",
       picks: "Rain Sounds、Drone Zone、ASP、Lofi Sleeping",
       reason: "几乎无旋律起伏，接近持续音墙，配合睡眠定时可自动停止。",
     },
     {
-      scene: "运动 / 游戏",
-      styles: "Hip-Hop Beats、Gaming Lofi",
-      picks: "Rap Beats、Lofi Gaming",
+      scene: "运动",
+      styles: "Hip-Hop Beats",
+      picks: "Rap Beats",
       reason: "节拍更明确，需要外部驱动感时比纯氛围音更有效。",
+    },
+    {
+      scene: "娱乐",
+      styles: "Gaming Lofi",
+      picks: "Lofi Gaming",
+      reason: "节奏清楚但不喧宾夺主，适合游戏或轻松娱乐时当背景层。",
     },
   ],
 };
@@ -131,7 +149,7 @@ export const homepageFaqs = [
   {
     question: "学习、编程、助眠分别该选哪个电台？",
     answer:
-      "简单对应：学习选 Lofi Studying 或 Lofi Girl；编程选 Groove Salad、Code Radio；阅读选 Jazz Box、Lofi Japanese；助眠选 Rain Sounds、Drone Zone、ASP 或 Lofi Sleeping。更细的场景对照可参考首页的「不同场景该选哪种音乐」表格。",
+      "简单对应：学习选 Lofi Studying 或 Lofi Girl；编程选 Groove Salad、Code Radio；阅读选 Jazz Box、Lofi Japanese、Chill Sky、B3cks Radio；写作选 Jazz Groove；办公选 Jazz Smooth；专注选 Swiss Classic；助眠选 Rain Sounds、Drone Zone、ASP 或 Lofi Sleeping。更细的场景对照见首页「不同场景该选哪种音乐」。",
   },
   {
     question: "手机上也能播放吗？",

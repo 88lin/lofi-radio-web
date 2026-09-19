@@ -259,8 +259,10 @@ export function buildSiteSchema() {
 
 export function buildBreadcrumbSchema(
   trail: { name: string; path: string }[],
-  id: string = `${siteConfig.url}#breadcrumb`,
 ) {
+  const leafPath = trail[trail.length - 1]?.path ?? pagePaths.home;
+  const id = `${siteConfig.url}${leafPath === pagePaths.home ? "" : leafPath}#breadcrumb`;
+
   return {
     "@type": "BreadcrumbList",
     "@id": id,
@@ -355,8 +357,6 @@ export function buildHomepageSchema() {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      buildOrganization(),
-      buildWebsite(),
       {
         "@type": "WebPage",
         "@id": `${siteConfig.url}#webpage`,
@@ -404,8 +404,6 @@ export function buildStationsPageSchema() {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      buildOrganization(),
-      buildWebsite(),
       {
         "@type": "CollectionPage",
         "@id": `${siteConfig.url}${pagePaths.stations}#webpage`,
@@ -438,8 +436,6 @@ export function buildFaqPageSchema() {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      buildOrganization(),
-      buildWebsite(),
       {
         "@type": "FAQPage",
         "@id": `${siteConfig.url}${pagePaths.faq}#webpage`,
@@ -469,13 +465,10 @@ export function buildFaqPageSchema() {
           text: step.text,
         })),
       },
-      buildBreadcrumbSchema(
-        [
-          { name: siteConfig.fullName, path: pagePaths.home },
-          { name: "常见问题", path: pagePaths.faq },
-        ],
-        `${siteConfig.url}${pagePaths.faq}#breadcrumb`,
-      ),
+      buildBreadcrumbSchema([
+        { name: siteConfig.fullName, path: pagePaths.home },
+        { name: "常见问题", path: pagePaths.faq },
+      ]),
     ],
   };
 }
@@ -484,8 +477,6 @@ export function buildAboutPageSchema() {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      buildOrganization(),
-      buildWebsite(),
       {
         "@type": "AboutPage",
         "@id": `${siteConfig.url}${pagePaths.about}#webpage`,

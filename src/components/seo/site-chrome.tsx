@@ -101,16 +101,6 @@ export function ContentFooter() {
                 GitHub
               </a>
             </li>
-            <li>
-              <a
-                href={siteConfig.creatorUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline-offset-4 hover:underline"
-              >
-                {siteConfig.author}
-              </a>
-            </li>
           </ul>
         </nav>
         <p className="mt-4">
@@ -155,7 +145,7 @@ export function ContentShell({
           {updated ? (
             <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
               最后更新：
-              <time dateTime={updated}>{updated}</time>
+              <time className="ml-1" dateTime={updated}>{updated}</time>
             </p>
           ) : null}
           {/* ol 必须和 ul 一样显式补 list-style 与左内边距：

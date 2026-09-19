@@ -46,7 +46,7 @@ export default function StationsPage() {
       <ContentShell
         current={pagePaths.stations}
         title={`Lofi Radio 电台列表（共 ${stations.length} 个）`}
-        lead={`Lofi Radio 收录 ${stations.length} 个可直接播放的在线音乐电台，覆盖 Lofi、Chill、Jazz、Classical、Ambient、Hip-Hop Beats 与白噪音等风格，按学习、编程、阅读、写作、办公、放松、运动、娱乐、助眠 ${sceneList.length} 类场景组织。全部免注册、免下载，在浏览器中打开 ${siteConfig.url} 即可收听。`}
+        lead={`Lofi Radio 收录 ${stations.length} 个可直接播放的在线音乐电台，覆盖 Lofi、Chill、Jazz、Classical、Ambient、Hip-Hop Beats 与白噪音等风格，按学习、编程、阅读、写作、办公、专注、放松、运动、娱乐、助眠 ${sceneList.length} 类场景组织。全部免注册、免下载，在浏览器中打开 ${siteConfig.url} 即可收听。`}
         updated={siteLastUpdated}
       >
         <section aria-labelledby="scene-index">

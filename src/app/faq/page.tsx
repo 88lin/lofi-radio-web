@@ -53,11 +53,14 @@ export default function FaqPage() {
                 key={faq.question}
                 open
                 id={`faq-${index + 1}`}
-                className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3 sm:px-6 sm:py-4 dark:border-white/[0.08] dark:bg-zinc-900/40"
+                className="group rounded-2xl border border-black/[0.06] bg-white px-4 py-3 sm:px-6 sm:py-4 dark:border-white/[0.08] dark:bg-zinc-900/40"
               >
-                <summary className="cursor-pointer list-none text-base font-semibold marker:hidden">
-                  <span className="mr-2 text-violet-600 dark:text-violet-400">Q{index + 1}.</span>
-                  {faq.question}
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="mr-2 text-violet-600 dark:text-violet-400">Q{index + 1}.</span>
+                    {faq.question}
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 text-zinc-400 transition-transform duration-200 group-open:rotate-90 dark:text-zinc-500">›</span>
                 </summary>
                 <p className="mt-3 leading-8 text-zinc-600 dark:text-zinc-300">{faq.answer}</p>
               </details>

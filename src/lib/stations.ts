@@ -226,16 +226,26 @@ export const stations: Station[] = [
   }
 ];
 
-// 按场景分类
+const PRIMARY_SCENES = ['学习', '编程', '阅读', '放松', '助眠', '专注'] as const;
+
+function countByScene(scene: string): number {
+  return stations.filter((s) => s.scene === scene).length;
+}
+
+function countOtherScenes(): number {
+  return stations.filter((s) => !PRIMARY_SCENES.includes(s.scene as (typeof PRIMARY_SCENES)[number])).length;
+}
+
+// 播放器分类条：主场景单独列出，写作 / 办公 / 运动 / 娱乐并入「其他」，避免小屏挤成两行。
 export const categories = [
   { id: 'all', name: '全部', count: stations.length },
-  { id: '学习', name: '学习', count: stations.filter(s => s.scene === '学习').length },
-  { id: '编程', name: '编程', count: stations.filter(s => s.scene === '编程').length },
-  { id: '阅读', name: '阅读', count: stations.filter(s => s.scene === '阅读').length },
-  { id: '放松', name: '放松', count: stations.filter(s => s.scene === '放松').length },
-  { id: '助眠', name: '助眠', count: stations.filter(s => s.scene === '助眠').length },
-  { id: '专注', name: '专注', count: stations.filter(s => s.scene === '专注').length },
-  { id: '其他', name: '其他', count: stations.filter(s => !['学习', '编程', '阅读', '放松', '助眠', '专注'].includes(s.scene)).length },
+  { id: '学习', name: '学习', count: countByScene('学习') },
+  { id: '编程', name: '编程', count: countByScene('编程') },
+  { id: '阅读', name: '阅读', count: countByScene('阅读') },
+  { id: '放松', name: '放松', count: countByScene('放松') },
+  { id: '助眠', name: '助眠', count: countByScene('助眠') },
+  { id: '专注', name: '专注', count: countByScene('专注') },
+  { id: '其他', name: '其他', count: countOtherScenes() },
 ];
 
 /** 场景名 → URL 锚点 slug。中文锚点在部分抓取器与分享场景里不可靠，统一用 ASCII slug。 */
@@ -270,9 +280,9 @@ export function getSceneList(): { scene: string; slug: string; count: number }[]
 export function getFilteredStations(scene: string): Station[] {
   if (scene === 'all') return stations;
   if (scene === '其他') {
-    return stations.filter(s => !['学习', '编程', '阅读', '放松', '助眠', '专注'].includes(s.scene));
+    return stations.filter((s) => !PRIMARY_SCENES.includes(s.scene as (typeof PRIMARY_SCENES)[number]));
   }
-  return stations.filter(s => s.scene === scene);
+  return stations.filter((s) => s.scene === scene);
 }
 
 export function getStationsByScene(scene: string): Station[] {
