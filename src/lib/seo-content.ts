@@ -17,10 +17,32 @@ export const lofiDefinition = {
   term: "什么是 Lofi 音乐？",
   short:
     "Lofi（Low Fidelity，低保真）是一类刻意保留录音瑕疵的慢节奏 hip-hop / chill 音乐：节奏普遍偏慢（常见区间约 60–90 BPM），旋律简单循环，极少人声，常叠加雨声、黑胶噼啪声等环境底噪。它不靠情绪高潮抓注意力，因此常被当作学习、编程和写作时的背景音。",
+  /**
+   * 三条机制。只存内容，不存颜色——配色由渲染方按 palette.ts 的 accentCycle 取，
+   * 换色板时不需要动这份内容数据。
+   */
   mechanism: [
-    "人声少：没有完整歌词，不容易触发大脑的语言加工，与阅读、写作、编程这类语言任务抢资源的概率更低。",
-    "变化少：规律的节奏与循环结构让听感可预测，长时间播放不易产生「被打断」的感觉。",
-    "存在感低：音色柔和、情绪克制，能填补过安静的环境，又不强制你把注意力交给它。",
+    {
+      title: "人声少",
+      body: "没有完整歌词，不容易触发大脑的语言加工，与阅读、写作、编程这类语言任务抢资源的概率更低。",
+    },
+    {
+      title: "变化少",
+      body: "规律的节奏与循环结构让听感可预测，长时间播放不易产生「被打断」的感觉。",
+    },
+    {
+      title: "存在感低",
+      body: "音色柔和、情绪克制，能填补过安静的环境，又不强制你把注意力交给它。",
+    },
+  ],
+  /**
+   * 定义里的可量化特征，单独抽出来做标注展示。
+   * 三条都是 short 里已经说过的，不是新增断言——改 short 时请一并核对。
+   */
+  traits: [
+    { label: "节奏", value: "60–90 BPM" },
+    { label: "人声", value: "极少 / 无歌词" },
+    { label: "底噪", value: "雨声 · 黑胶噼啪声" },
   ],
   caveat:
     "需要说明的是：音乐对专注的影响个体差异很大，现有研究结论并不一致。以上是该风格被广泛用于专注场景的常见解释，不是实验室结论。建议按任务类型、个人感受和音量自行调整。",
@@ -149,7 +171,7 @@ export const homepageFaqs = [
   {
     question: "学习、编程、助眠分别该选哪个电台？",
     answer:
-      "简单对应：学习选 Lofi Studying 或 Lofi Girl；编程选 Groove Salad、Code Radio；阅读选 Jazz Box、Lofi Japanese、Chill Sky、B3cks Radio；写作选 Jazz Groove；办公选 Jazz Smooth；专注选 Swiss Classic；助眠选 Rain Sounds、Drone Zone、ASP 或 Lofi Sleeping。更细的场景对照见首页「不同场景该选哪种音乐」。",
+      "简单对应：学习选 Lofi Studying 或 Lofi Girl；编程选 Groove Salad、Code Radio；阅读选 Jazz Box、Lofi Japanese、Chill Sky、B3cks Radio；写作选 Jazz Groove；办公选 Jazz Smooth；专注选 Swiss Classic；助眠选 Rain Sounds、Drone Zone、ASP 或 Lofi Sleeping。更细的场景对照见「电台列表」页的「不同场景该选哪种音乐」。",
   },
   {
     question: "手机上也能播放吗？",
@@ -179,7 +201,7 @@ export const howToStart = {
   description:
     "从打开网页到配好睡眠定时，四步即可开始一段不被打扰的专注时间。",
   steps: [
-    { name: "打开网页", text: "在浏览器访问 https://lofi.88lin.eu.org/ ，无需注册或下载。" },
+    { name: "打开网页", text: "在浏览器打开 Lofi Radio 首页，无需注册、无需下载客户端。" },
     { name: "选一个电台", text: "按场景挑选：学习用 Lofi Studying，编程用 Code Radio，助眠用 Rain Sounds。" },
     { name: "点开始播放", text: "点击「开始播放」，可在浮动播放器里调节音量；空格键也能播放 / 暂停。" },
     { name: "设定结束条件", text: "需要休息就设睡眠定时（15–120 分钟快捷档，或自定义 1–480 分钟），到点自动暂停。" },

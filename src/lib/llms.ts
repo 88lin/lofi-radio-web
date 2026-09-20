@@ -45,7 +45,7 @@ export function buildLlmsTxt(): string {
 - [电台列表](${abs(pagePaths.stations)})：${siteFacts.stationCount} 个电台的风格、场景、音源类型与来源域名
 - [常见问题](${abs(pagePaths.faq)})：${homepageFaqs.length} 个常见问题与「如何开始」步骤
 - [关于](${abs(pagePaths.about)})：项目背景、电台筛选方法、音源与版权、隐私说明
-- [llms-full.txt](${abs("/llms-full.txt")})：本文件的全量版本（含 FAQ 全文与场景选型表）
+- [llms-full.txt](${abs("/llms-full.txt")})：站点概览的全量版本（含 FAQ 全文与场景选型表）
 - [pricing.md](${abs("/pricing.md")})：可机器读取的计费与条款说明
 
 ## 电台目录（按场景，共 ${siteFacts.stationCount} 个）
@@ -87,7 +87,7 @@ ${lofiDefinition.short}
 
 为什么它常被用在专注场景：
 
-${lofiDefinition.mechanism.map((item) => `- ${item}`).join("\n")}
+${lofiDefinition.mechanism.map((item) => `- ${item.title}：${item.body}`).join("\n")}
 
 注意：${lofiDefinition.caveat}
 
