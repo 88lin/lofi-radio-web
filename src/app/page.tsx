@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
+
 import HomeClient from "@/components/lofi/home-client";
 import { JsonLd } from "@/components/seo/site-chrome";
-import { buildHomepageSchema } from "@/lib/seo";
+import { buildHomeMetadata, buildHomepageSchema } from "@/lib/seo";
 
 /**
  * 首页本体是客户端组件（播放器、专注计时、睡眠定时、主题切换都依赖浏览器状态），
@@ -10,6 +12,8 @@ import { buildHomepageSchema } from "@/lib/seo";
  * （WebPage / ItemList / FAQPage / BreadcrumbList / SoftwareApplication），
  * 站点级的 Organization + WebSite 由 root layout 统一输出。
  */
+export const metadata: Metadata = buildHomeMetadata();
+
 export default function HomePage() {
   return (
     <>
