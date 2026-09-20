@@ -6,7 +6,7 @@ import {
   siteFacts,
   siteLastUpdated,
 } from "./seo-content";
-import { stations } from "./stations";
+import { type Station, stations } from "./stations";
 
 export const siteConfig = {
   name: "Lofi Radio",
@@ -107,14 +107,7 @@ export function buildSiteMetadata(): Metadata {
     authors: [{ name: siteConfig.author, url: siteConfig.creatorUrl }],
     creator: siteConfig.author,
     publisher: siteConfig.author,
-    alternates: {
-      canonical: pagePaths.home,
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: googleBotDirectives,
-    },
+    // 这里刻意不写 alternates / robots，见 buildHomeMetadata 的说明。
     icons: {
       icon: "/logo.svg",
       shortcut: "/logo.svg",
@@ -154,6 +147,25 @@ export function buildSiteMetadata(): Metadata {
   };
 }
 
+/**
+ * 首页专属的 canonical + robots。
+ *
+ * 这两项必须由首页而不是 root layout 输出：layout 的 metadata 会被每一条没有覆盖它的
+ * 路由继承，其中包括 Next 自动生成的 /_not-found——结果是 404 页同时带上
+ * `noindex`（Next 加的）和 `index, follow`（layout 继承的）两条互相矛盾的 robots，
+ * 并且 canonical 指向首页，等于声明「这个 404 是首页的副本」。
+ */
+export function buildHomeMetadata(): Metadata {
+  return {
+    alternates: { canonical: pagePaths.home },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: googleBotDirectives,
+    },
+  };
+}
+
 /** 子页面 metadata 构造器：避免每页重复 canonical / robots / OG 的样板。 */
 export function buildPageMetadata({
   title,
@@ -179,7 +191,9 @@ export function buildPageMetadata({
       googleBot: googleBotDirectives,
     },
     openGraph: {
-      type: "article",
+      // 这几页是清单页 / 问答页 / 关于页，都不是有发布时间和作者署名的文章。
+      // 写 article 会让抓取器去找 article:published_time 之类根本不存在的字段。
+      type: "website",
       locale: siteConfig.locale,
       url,
       siteName: siteConfig.fullName,
@@ -275,39 +289,59 @@ export function buildBreadcrumbSchema(
   };
 }
 
-/** 电台实体。首页与 /stations 共用，保证两处描述一致。 */
+/**
+ * 音源地址对应的 MIME 类型。
+ * bilibili 的 url 是直播间页面而不是可直接播放的流，所以它是 text/html——
+ * 这一条是整段分支存在的唯一理由。
+ */
+const streamContentTypes: Record<Station["type"], string> = {
+  mp3: "audio/mpeg",
+  m3u8: "application/vnd.apple.mpegurl",
+  bilibili: "text/html",
+};
+
+/**
+ * 电台实体。首页与 /stations 共用，保证两处描述一致。
+ *
+ * 用 RadioChannel 而不是 RadioStation：schema.org 的 RadioStation 挂在
+ * Thing > Organization > LocalBusiness 下，指的是有地址、营业时间的实体广播公司，
+ * 并且 genre 与 audio 都不在它的合法属性里。按那个类型声明，抓取器读到的是
+ * 21 家缺了地址的本地商户。RadioChannel 属于 BroadcastChannel，genre 是它的正式属性。
+ */
 export function buildStationEntities() {
+  const stationsPageUrl = `${siteConfig.url}${pagePaths.stations}`;
+
   return stations.map((station, index) => {
-    const nodeId = `${siteConfig.url}/stations#${station.id}`;
+    const nodeId = `${stationsPageUrl}#${station.id}`;
 
     return {
       "@type": "ListItem",
       position: index + 1,
       item: {
-        "@type": "RadioStation",
+        "@type": "RadioChannel",
+        // @id 只是图里的标识符，不承诺页面上存在同名锚点
         "@id": nodeId,
         identifier: station.id,
         name: station.name,
-        url: station.url,
+        // url 表示「这个实体的网页」。这里曾经直接写音频流地址，
+        // 等于告诉解析器该电台的主页是一个 .mp3 文件。
+        //
+        // 也不写 #<id> 锚点：/stations 在小屏用卡片、大屏用表格，两套 DOM 互为
+        // display:none，锚点只在其中一个视口下能跳转，另一个视口下是死链。
+        url: stationsPageUrl,
         genre: [station.style1, station.style2],
         description:
           station.description ||
           `${station.name} 是适合${station.scene}场景的 ${station.style1} / ${station.style2} 在线音乐电台。`,
-        // bilibili 源的 url 是直播间页面地址，不是可直接播放的音频流。
-        // 把它写成 AudioObject.contentUrl 再配一个 video/x-flv，
-        // 对不做渲染的解析器是明确的误导——这类只保留 url，不声明 audio 子对象。
-        ...(station.type === "bilibili"
-          ? { inLanguage: "zh-CN" }
-          : {
-              audio: {
-                "@type": "AudioObject",
-                contentUrl: station.url,
-                encodingFormat:
-                  station.type === "m3u8"
-                    ? "application/vnd.apple.mpegurl"
-                    : "audio/mpeg",
-              },
-            }),
+        // 真正的收听地址放在 ListenAction 里，并用 contentType 如实标注它是什么。
+        potentialAction: {
+          "@type": "ListenAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: station.url,
+            contentType: streamContentTypes[station.type],
+          },
+        },
       },
     };
   });
@@ -344,7 +378,8 @@ export function buildHomepageSchema() {
     },
     featureList: [
       `在线收听 ${stations.length} 个 Lofi、Chill、Jazz、Classical、Ambient 与白噪音电台`,
-      "按学习、编程、阅读、写作、办公、放松、运动、娱乐、助眠场景分类",
+      // 漏一个场景就等于告诉抓取器站内没有这类电台，tests/seo.test.ts 会核对完整性
+      "按学习、编程、阅读、写作、办公、专注、放松、运动、娱乐、助眠场景分类",
       "支持 MP3、HLS/M3U8 与 Bilibili 直播流",
       "移动端播放器、睡眠定时（15–480 分钟）与每日专注时长记录",
       "键盘快捷键、亮/暗主题、PWA 安装",

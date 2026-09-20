@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { PlayerHost } from "@/components/lofi/player-host";
 import { buildSiteMetadata, buildSiteSchema, serializeJsonLd } from "@/lib/seo";
 
 import type { Viewport } from "next";
@@ -42,18 +43,27 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteSchema) }}
         />
-        {/* 给 AI 检索/代理的机器可读入口。llms.txt 是站点概览，llms-full.txt 是全量内容。 */}
+        {/* 给 AI 检索/代理的机器可读入口。llms.txt 是站点概览，llms-full.txt 是全量内容。
+            type 必须与路由实际返回的 Content-Type 一致：这两个路由走 text/plain
+            （浏览器能直接打开看；text/markdown 在 Chrome 里会变成下载）。
+            真正以 text/markdown 返回的是 /pricing.md。 */}
         <link
           rel="alternate"
-          type="text/markdown"
+          type="text/plain"
           href="/llms.txt"
           title="Lofi Radio · llms.txt 站点概览"
         />
         <link
           rel="alternate"
-          type="text/markdown"
+          type="text/plain"
           href="/llms-full.txt"
           title="Lofi Radio · llms-full.txt 全量内容"
+        />
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href="/pricing.md"
+          title="Lofi Radio · 计费与限制说明"
         />
         {/* 统计脚本改为 afterInteractive：原来的裸 <script async> 会参与首屏资源竞争，
             直接影响 LCP，而 LCP 是 Core Web Vitals 里权重最高的一项。 */}
@@ -87,6 +97,8 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
+          {/* 播放器挂在这里而不是首页里，音乐才能跨页面继续放，见 PlayerHost 的说明 */}
+          <PlayerHost />
           <Toaster />
           <PWAInstallPrompt />
         </ThemeProvider>

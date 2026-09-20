@@ -289,6 +289,35 @@ export function getStationsByScene(scene: string): Station[] {
   return stations.filter(s => s.scene === scene);
 }
 
+/**
+ * 首页「精选电台」用的抽样：每个场景取第一个，按场景在数组里首次出现的顺序。
+ *
+ * 首页不再铺满全部电台——21 张卡片把首屏拉得很长，而完整清单在 /stations
+ * （带风格 / 场景 / 音源类型）、JSON-LD 的 ItemList 与 llms.txt 里都是全量的，
+ * 浮动播放器也能按分类浏览到每一个，所以这里只负责给出覆盖面。
+ */
+export function getFeaturedStations(limit = 8): Station[] {
+  const picked = new Map<string, Station>();
+  for (const station of stations) {
+    if (!picked.has(station.scene)) picked.set(station.scene, station);
+    if (picked.size === limit) break;
+  }
+  return [...picked.values()];
+}
+
+/**
+ * 场景色 = 该场景第一个电台的颜色。
+ *
+ * 派生而不是另写一张映射表：加电台、改配色时不会出现「场景是紫色、
+ * 里面的电台全是青色」这种对不上的情况。
+ *
+ * 只用于填充与浅色底（`${color}18` 这类），不要直接当浅色背景上的文字色——
+ * 数据里有 #84CC16、#22C55E 这种亮色，作为正文色对比度不过关。
+ */
+export function getSceneColor(scene: string): string {
+  return stations.find((s) => s.scene === scene)?.color ?? '#8B5CF6';
+}
+
 export function getStationById(id: string): Station | undefined {
   return stations.find(s => s.id === id);
 }

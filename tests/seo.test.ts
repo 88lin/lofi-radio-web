@@ -4,8 +4,10 @@ import test from 'node:test';
 import nextConfig from '../next.config';
 import { buildLlmsFullTxt, buildLlmsTxt, buildPricingMarkdown } from '../src/lib/llms';
 import {
+  buildHomeMetadata,
   buildHomepageSchema,
   buildRobotsConfig,
+  buildSiteMetadata,
   buildSiteSchema,
   buildSitemapEntries,
   buildStationEntities,
@@ -202,21 +204,65 @@ test('mutable files are not served with immutable caching', async () => {
   assert.ok(cacheControl('/icon-192.png').includes('immutable'), '图标应保持长缓存');
 });
 
-test('bilibili live rooms are not described as audio streams', () => {
+test('station entities describe a web page, not a raw audio stream', () => {
   const entities = buildStationEntities();
+  assert.equal(entities.length, stations.length);
+
+  for (const entry of entities) {
+    const station = stations.find((s) => s.id === entry.item.identifier);
+    assert.ok(station, `schema 里出现了未知电台：${entry.item.identifier}`);
+
+    // RadioStation 在 schema.org 里是 LocalBusiness 的子类（有地址、营业时间的
+    // 广播公司），genre 也不是它的合法属性。网络流要用 BroadcastChannel 这一支。
+    assert.equal(entry.item['@type'], 'RadioChannel');
+    // url 指的是「这个实体的网页」。写成音频流地址等于声明该电台的主页是个 .mp3；
+    // 也不能带 #<id>——/stations 的表格与卡片互为 display:none，锚点只在单一视口有效
+    assert.equal(entry.item.url, `${siteConfig.url}/stations`);
+    assert.equal(entry.item['@id'], `${siteConfig.url}/stations#${station!.id}`);
+    assert.equal(
+      entry.item.potentialAction.target.urlTemplate,
+      station!.url,
+      `${station!.name} 的收听地址应保留在 ListenAction 里`,
+    );
+  }
+
   const bilibili = stations.find((station) => station.type === 'bilibili');
   assert.ok(bilibili, '数据集里应该存在 bilibili 类型的电台');
-
-  const node = entities.find((entry) => entry.item.identifier === bilibili!.id);
-  assert.ok(node, 'schema 里找不到 bilibili 电台实体');
-  assert.equal(node!.item.url, bilibili!.url, '直播间地址仍应保留在 url 上');
-  assert.ok(!('audio' in node!.item), '直播间页面地址不应被声明成 AudioObject.contentUrl');
+  const live = entities.find((entry) => entry.item.identifier === bilibili!.id);
+  // 直播间给的是页面地址，不是可直接播放的流，别标成 audio/*
+  assert.equal(live!.item.potentialAction.target.contentType, 'text/html');
 
   for (const station of stations.filter((entry) => entry.type !== 'bilibili')) {
     const direct = entities.find((entry) => entry.item.identifier === station.id);
+    assert.match(
+      direct!.item.potentialAction.target.contentType,
+      /^(audio\/mpeg|application\/vnd\.apple\.mpegurl)$/,
+      `${station.name} 是直连音频流，contentType 应如实标注`,
+    );
+  }
+});
+
+test('canonical and robots stay off the root layout', () => {
+  // layout 的 metadata 会被每条未覆盖的路由继承，包括 Next 自动生成的 /_not-found。
+  // 放在这里的结果是 404 页同时输出 noindex 与 index,follow，且 canonical 指向首页。
+  const site = buildSiteMetadata();
+  assert.equal(site.alternates, undefined, 'canonical 不应写在 root layout 上');
+  assert.equal(site.robots, undefined, 'robots 不应写在 root layout 上');
+
+  const home = buildHomeMetadata();
+  assert.equal(home.alternates?.canonical, '/');
+  assert.ok(home.robots, '首页仍然需要显式声明可索引');
+});
+
+test('the app schema names every scene the site actually has', () => {
+  const app = (buildHomepageSchema()['@graph'] as { '@type': string; featureList?: string[] }[])
+    .find((node) => node['@type'] === 'SoftwareApplication');
+  const featureText = app!.featureList!.join('\n');
+
+  for (const { scene } of getSceneList()) {
     assert.ok(
-      direct && 'audio' in direct.item,
-      `${station.name} 是直连音频流，应当声明 audio 子对象`,
+      featureText.includes(scene),
+      `featureList 漏了「${scene}」场景，等于告诉抓取器站内没有这类电台`,
     );
   }
 });

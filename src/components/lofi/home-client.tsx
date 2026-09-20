@@ -4,19 +4,18 @@ import { useEffect, useSyncExternalStore, useCallback, memo, useState } from 're
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Github, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight, Radio, Clock3 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { FloatingPlayer } from '@/components/lofi/floating-player';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
 import { useSleepTimer } from '@/hooks/useSleepTimer';
 
 import { useAudioStore } from '@/store/audioStore';
-import { stations } from '@/lib/stations';
+import { stations, getFeaturedStations } from '@/lib/stations';
 import { MOBILE_ISLAND_EXPAND_LEARNED_EVENT, MOBILE_ISLAND_HINT_DISMISSED_KEY } from '@/lib/mobile-island-events';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { homepageFaqs, lofiDefinition, sceneComparison } from '@/lib/seo-content';
+import { homepageFaqs, lofiDefinition } from '@/lib/seo-content';
 import { siteConfig } from '@/lib/seo';
+import { accentAt } from '@/lib/palette';
 
 function useMounted() {
   return useSyncExternalStore(() => () => {}, () => true, () => false);
@@ -130,15 +129,15 @@ LiveClock.displayName = 'LiveClock';
 
 // ==================== 特性数据 ====================
 const features = [
-  { icon: Radio, title: `${stations.length} 精选电台`, description: '涵盖 Lo-Fi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)' },
+  { icon: Radio, title: `${stations.length} 精选电台`, description: '涵盖 Lofi、Chill、Jazz、Classical 等多种音乐风格，适合学习、工作、阅读、放松等各种场景', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)' },
   { icon: Sparkles, title: '专注计时', description: '记录你的每日专注时长，帮助你培养高效工作习惯，让音乐陪伴你的专注时光', color: '#EC4899', bg: 'rgba(236,72,153,0.08)' },
-  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐；灵动岛支持拖动，移动端双击可快速展开，支持快捷键、 PWA 离线使用', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
-  { icon: Moon, title: '睡眠定时', description: '支持 15~120 分钟快速设置定时、1~480 分钟自定义定时，定时结束后自动自动暂停播放，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
+  { icon: Waves, title: '在线收听', description: '无需下载安装，打开网页即可享受高品质音乐；灵动岛支持拖动，移动端双击可快速展开，支持快捷键，可添加到主屏幕独立打开', color: '#06B6D4', bg: 'rgba(6,182,212,0.08)' },
+  { icon: Moon, title: '睡眠定时', description: '支持 15–120 分钟快捷档、1–480 分钟自定义定时，到点自动暂停播放，安心入眠无需手动关闭', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
 ];
 
 const scenes = [
-  { id: '学习', icon: '📚', title: '学习', description: 'Lo-fi 音乐帮助你集中注意力', color: '#8B5CF6' },
-  { id: '编程', icon: '💻', title: '编程', description: '氛围音乐激发创作灵感', color: '#06B6D4' },
+  { id: '学习', icon: '📚', title: '学习', description: '少人声的 Lofi，适合长时间的读写任务', color: '#8B5CF6' },
+  { id: '编程', icon: '💻', title: '编程', description: '结构平缓的氛围音，连听几小时也不累', color: '#06B6D4' },
   { id: '阅读', icon: '📖', title: '阅读', description: '轻柔爵士陪伴你的阅读时光', color: '#10B981' },
   { id: '助眠', icon: '🌙', title: '助眠', description: '自然白噪音帮助你入眠', color: '#F59E0B' },
 ];
@@ -150,6 +149,17 @@ const shortcuts = [
   { key: 'M', label: '静音' },
   { key: 'T', label: '切换主题' },
 ];
+
+// 首页电台网格的抽样，模块级常量：数据是静态的，没必要每次渲染重算
+const featuredStations = getFeaturedStations(8);
+
+/** 机制文案写成「短标题：说明」。用 indexOf 而不是 split，后半句里再出现全角冒号也不会被吃掉。 */
+function splitMechanism(item: string): { title: string | null; body: string } {
+  const at = item.indexOf('：');
+  if (at <= 0) return { title: null, body: item };
+  return { title: item.slice(0, at), body: item.slice(at + 1) };
+}
+
 
 // 导航栏组件 - 药丸胶囊形式 + 高斯模糊
 const NavBar = memo(({ isDark, isPlaying, currentStation, stationColor, onThemeToggle }: {
@@ -255,13 +265,16 @@ const SceneCard = memo(({ scene, isDark, onClick }: { scene: typeof scenes[0]; i
   >
     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 100%, ${scene.color}12 0%, transparent 65%)` }} />
     <div className="text-3xl mb-3 relative">{scene.icon}</div>
-    <h4 className={cn("font-semibold text-sm mb-1 relative", isDark ? "text-white/90" : "text-zinc-900")}>{scene.title}</h4>
-    <p className={cn("text-xs leading-relaxed relative", isDark ? "text-white/38" : "text-zinc-500")}>{scene.description}</p>
+    <h3 className={cn("font-semibold text-sm mb-1 relative", isDark ? "text-white/90" : "text-zinc-900")}>{scene.title}</h3>
+    <p className={cn("text-sm leading-relaxed relative", isDark ? "text-white/45" : "text-zinc-500")}>{scene.description}</p>
   </motion.button>
 ));
 SceneCard.displayName = 'SceneCard';
 
 // 电台卡片组件 - 使用 button 提升可访问性
+// 电台卡片组件 - 使用 button 提升可访问性。
+// 选中态用 1px 内描边而不是 3px 左侧色条：色条是最典型的「AI 生成 UI」特征，
+// 而且卡片里已经有色块、电台名变色、右侧呼吸点三重提示，不缺这一条。
 const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
   station: typeof stations[0]; isDark: boolean; isActive: boolean; isPlaying: boolean; onClick: () => void;
 }) => (
@@ -277,7 +290,7 @@ const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
         ? "bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] focus-visible:ring-offset-zinc-950"
         : "bg-white hover:shadow-lg border border-black/[0.04] focus-visible:ring-offset-gray-50"
     )}
-    style={{ borderLeft: `3px solid ${isActive ? station.color : 'transparent'}` }}
+    style={isActive ? { boxShadow: `inset 0 0 0 1.5px ${station.color}66` } : undefined}
   >
     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `linear-gradient(135deg, ${station.color}09 0%, transparent 55%)` }} />
     <div className="relative flex items-center gap-3">
@@ -293,9 +306,9 @@ const StationCard = memo(({ station, isDark, isActive, isPlaying, onClick }: {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <h4 className={cn("text-sm font-semibold truncate transition-colors", isActive ? "" : isDark ? "text-white/80 group-hover:text-white/95" : "text-zinc-800")} style={isActive ? { color: station.color } : {}}>
+        <h3 className={cn("text-sm font-semibold truncate transition-colors", isActive ? "" : isDark ? "text-white/80 group-hover:text-white/95" : "text-zinc-800")} style={isActive ? { color: station.color } : {}}>
           {station.name}
-        </h4>
+        </h3>
         <div className="flex items-center gap-1 mt-0.5">
           <span className={cn("text-xs", isDark ? "text-white/30" : "text-zinc-400")}>{station.style1}</span>
           {station.custom && (
@@ -334,8 +347,6 @@ export default function Home() {
   const setSelectedCategory = useAudioStore((s) => s.setSelectedCategory);
   const { focusTime } = useFocusTimer();
   const { remainingSeconds } = useSleepTimer();
-
-  useAudioPlayer();
 
   const handleStationClick = useCallback((id: string) => { selectStationById(id); setMiniMode(false); }, [selectStationById, setMiniMode]);
   const handleSceneClick = useCallback((sceneId: string) => {
@@ -415,16 +426,23 @@ export default function Home() {
   const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
 
-  // Update theme-color meta tag for iOS PWA navigation bar
+  // 同步 theme-color，让 iOS PWA 的状态栏跟着站内主题走。
+  //
+  // layout 的 viewport.themeColor 会输出两条带 media 的 meta（light / dark 各一条）。
+  // 只改第一条是不够的：系统处于深色、站内切成亮色时，浏览器命中的是 dark 那条，
+  // 状态栏会停在深色不动。所以两条都写成当前主题色，让 media 查询失去作用。
   useEffect(() => {
     if (!mounted) return;
-    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
-    if (!meta) {
-      meta = document.createElement('meta');
+    const color = isDark ? '#0a0a0c' : '#fafafa';
+    const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+    if (metas.length === 0) {
+      const meta = document.createElement('meta');
       meta.name = 'theme-color';
+      meta.content = color;
       document.head.appendChild(meta);
+      return;
     }
-    meta.content = isDark ? '#0a0a0c' : '#fafafa';
+    metas.forEach((meta) => { meta.content = color; });
   }, [isDark, mounted]);
 
   return (
@@ -487,8 +505,9 @@ export default function Home() {
                 <LiveClock isDark={isDark} stationColor={stationColor} isPlaying={isPlaying} />
               </motion.div>
 
-              {/* 标题 */}
-              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5 whitespace-nowrap">
+              {/* 标题：不加 whitespace-nowrap。外层是 overflow-x-hidden，
+                  一旦在更窄的机型（如 280px 的折叠屏）放不下就会被静默裁掉半句。 */}
+              <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5 text-balance">
                 <span className={cn(
                   "bg-clip-text text-transparent",
                   isDark
@@ -501,7 +520,10 @@ export default function Home() {
 
               {/* 描述 */}
               <motion.p variants={fadeInUp} className={cn("text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed", isDark ? "text-white/45" : "text-zinc-500")}>
-                Lofi 音乐被科学认证为最适合专注工作学习的音乐。
+                {/* 不要写「被科学认证」之类的绝对表述：站内 /about、FAQ 与
+                    lofiDefinition.caveat 都明确说了研究结论并不一致，
+                    首屏一句越界的断言会把整站的可信度一起拉低。 */}
+                慢节奏、少人声的背景音，是很多人学习与编程时的默认选择。
                 <br className="hidden sm:block" />
                 macOS 灵动岛设计，{stations.length} 个精选电台，打开即用，无需下载。
               </motion.p>
@@ -634,28 +656,89 @@ export default function Home() {
 
         {/* 什么是 Lofi 音乐
             定义块：不做入场动画、不用客户端状态渲染，保证在首屏 HTML 里就是完整文本。
-            AI 抓取器多数不执行 JS，这段内容必须能被纯文本快照直接读到。 */}
-        <section id="what-is-lofi" className="pt-4 pb-8 sm:py-10 px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto">
-            <h2 className={cn("text-2xl sm:text-3xl font-bold mb-4", isDark ? "text-white" : "text-zinc-900")}>
-              {lofiDefinition.term}
-            </h2>
-            <p className={cn("text-sm sm:text-base leading-8 mb-6", isDark ? "text-white/55" : "text-zinc-600")}>
-              {lofiDefinition.short}
-            </p>
-            <h3 className={cn("text-base sm:text-lg font-semibold mb-3", isDark ? "text-white/85" : "text-zinc-800")}>
-              为什么它常被用在专注场景
-            </h3>
-            <ul className={cn("list-disc pl-5 space-y-2 text-sm sm:text-base leading-7", isDark ? "text-white/50" : "text-zinc-600")}>
-              {lofiDefinition.mechanism.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+            AI 抓取器多数不执行 JS，这段内容必须能被纯文本快照直接读到。
+
+            布局上刻意做成全页唯一的左对齐双栏：首页其余每一节都是
+            「居中标题 + 居中副标题 + 网格」，再堆一节同构的就只会更平。 */}
+        <section id="what-is-lofi" className="py-8 sm:py-14 px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className={cn(
+              "overflow-hidden rounded-[20px] border",
+              isDark ? "border-white/[0.09]" : "border-[#F2D4E4]"
+            )}>
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+                {/* 左栏：定义本体。紫色渐染呼应站点主色，不是一块中性白板。 */}
+                <div
+                  className={cn(
+                    "p-6 sm:p-9 border-b lg:border-b-0 lg:border-r",
+                    isDark ? "border-white/[0.07]" : "border-black/[0.05]"
+                  )}
+                  style={{ background: isDark ? '#33132A' : '#FFE3F1' }}
+                >
+                  <h2 className={cn("text-2xl sm:text-3xl font-bold tracking-tight", isDark ? "text-white" : "text-zinc-900")}>
+                    {lofiDefinition.term}
+                  </h2>
+                  <p className={cn("mt-4 text-base leading-7 sm:leading-8", isDark ? "text-white/60" : "text-zinc-600")}>
+                    {lofiDefinition.short}
+                  </p>
+
+                  {/* 等宽字用在这里是因为它们确实是量值，不是拿 mono 扮「技术感」 */}
+                  <dl className={cn(
+                    "mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t pt-5",
+                    isDark ? "border-white/[0.12]" : "border-[#F2A3C8]"
+                  )}>
+                    {lofiDefinition.traits.map((trait) => (
+                      <div key={trait.label}>
+                        <dt className={cn("text-xs", isDark ? "text-white/40" : "text-zinc-500")}>
+                          {trait.label}
+                        </dt>
+                        <dd className={cn("mt-1 font-mono text-base font-semibold", isDark ? "text-[#FBCFE8]" : "text-[#BE185D]")}>
+                          {trait.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+
+                {/* 右栏：三条机制。每条用一个色标领读，色值来自 palette.ts 的 accentCycle，
+                    和 /about 上同一段内容取的是同一条规则。 */}
+                <div className={cn("p-6 sm:p-9", isDark ? "bg-white/[0.02]" : "bg-white")}>
+                  <h3 className={cn("text-base font-semibold", isDark ? "text-white/85" : "text-zinc-800")}>
+                    为什么它常被用在专注场景
+                  </h3>
+                  <dl className="mt-1">
+                    {lofiDefinition.mechanism.map((item, index) => (
+                      <div
+                        key={item.title}
+                        className={cn(
+                          "border-b py-4 last:border-0 last:pb-0",
+                          isDark ? "border-white/[0.06]" : "border-black/[0.05]"
+                        )}
+                      >
+                        <dt className="flex items-center gap-2.5">
+                          <span
+                            aria-hidden="true"
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: accentAt(index).solid }}
+                          />
+                          <span className={cn("text-base font-semibold", isDark ? "text-white/90" : "text-zinc-900")}>
+                            {item.title}
+                          </span>
+                        </dt>
+                        <dd className={cn("mt-1.5 pl-[1.3rem] text-sm leading-6", isDark ? "text-white/45" : "text-zinc-500")}>
+                          {item.body}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="sm:py-2 px-4 sm:px-6">
+        <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>为什么选择 Lofi Radio</h2>
@@ -680,90 +763,32 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 场景选型对比表
-            表格是 AI 摘录与 AI Overview 偏好的形态，比散文更容易被整块引用。
-            同样不使用入场动画，保证非渲染型抓取器能读到。 */}
-        <section id="scene-comparison" className="py-6 sm:py-8 px-4 sm:px-6">
-          <div className="max-w-5xl mx-auto">
-            <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3 text-center", isDark ? "text-white" : "text-zinc-900")}>
-              不同场景该选哪种音乐
-            </h2>
-            <p className={cn("text-sm sm:text-base text-center mb-8 max-w-2xl mx-auto", isDark ? "text-white/38" : "text-zinc-500")}>
-              同一电台在不同任务下的效果差别很大，下面按场景给出风格建议与站内对应电台。
-            </p>
-            {/* 桌面端表格保留（AI 摘录偏好表格形态）。
-                移动端换成卡片：680px 的表在 338px 容器里要横向拖动才看得全，
-                右两列几乎不可读。 */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className={cn(
-                "w-full min-w-[680px] border-collapse text-left text-sm",
-                isDark ? "text-white/65" : "text-zinc-700"
-              )}>
-                <caption className="sr-only">{sceneComparison.caption}</caption>
-                <thead>
-                  <tr className={isDark ? "bg-white/[0.04]" : "bg-black/[0.03]"}>
-                    {sceneComparison.columns.map((col) => (
-                      <th key={col} scope="col" className="px-3 py-2.5 font-semibold whitespace-nowrap">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sceneComparison.rows.map((row) => (
-                    <tr key={row.scene} className={cn("border-t", isDark ? "border-white/[0.07]" : "border-black/[0.06]")}>
-                      <th scope="row" className="px-3 py-3 font-semibold whitespace-nowrap">{row.scene}</th>
-                      <td className="px-3 py-3">{row.styles}</td>
-                      <td className="px-3 py-3">{row.picks}</td>
-                      <td className="px-3 py-3">{row.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-3 md:hidden">
-              {sceneComparison.rows.map((row) => (
-                <div
-                  key={row.scene}
-                  className={cn(
-                    "rounded-2xl border p-4",
-                    isDark ? "border-white/[0.07] bg-white/[0.03]" : "border-black/[0.06] bg-white"
-                  )}
-                >
-                  <p className="font-semibold">{row.scene}</p>
-                  <dl className="mt-2 space-y-1.5 text-xs leading-6">
-                    <div>
-                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>推荐风格</dt>
-                      <dd className={cn("!mt-0", isDark ? "text-white/70" : "text-zinc-700")}>{row.styles}</dd>
-                    </div>
-                    <div>
-                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>站内电台</dt>
-                      <dd className={cn("!mt-0", isDark ? "text-white/70" : "text-zinc-700")}>{row.picks}</dd>
-                    </div>
-                    <div>
-                      <dt className={cn(isDark ? "text-white/35" : "text-zinc-400")}>原因</dt>
-                      <dd className={cn("!mt-0", isDark ? "text-white/55" : "text-zinc-500")}>{row.reason}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* 电台展示 */}
         <section className="py-6 sm:py-8 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-10">
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>精选电台</h2>
-              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>涵盖多种风格，总有适合你的音乐</p>
-            </motion.div>
+              <p className={cn("text-base sm:text-lg", isDark ? "text-white/38" : "text-zinc-500")}>每个场景各挑一个，覆盖全部 {stations.length} 个电台的风格区间</p>            </motion.div>
+            {/* 首页只做抽样。全量清单在 /stations（也是 JSON-LD ItemList 与 llms.txt 的全量来源），
+                想直接切换任意一个电台走浮动播放器的分类浏览即可，功能上没有缺口。 */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {/* 全量渲染：只放 8 个会让 21 个电台里有 13 个永远进不了首屏 HTML */}
-              {stations.map((station) => (
+              {featuredStations.map((station) => (
                 <StationCard key={station.id} station={station} isDark={isDark} isActive={currentStation?.id === station.id} isPlaying={isPlaying} onClick={() => handleStationClick(station.id)} />
               ))}
+            </motion.div>
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-6 flex justify-center">
+              <Link
+                href="/stations"
+                className={cn(
+                  "group inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors",
+                  isDark
+                    ? "border-[#5C2447] bg-[#33132A] text-[#FBCFE8] hover:border-[#7A2E5C]"
+                    : "border-[#FBC7E0] bg-[#FFE3F1] text-[#BE185D] hover:border-[#F2A3C8]"
+                )}
+              >
+                查看全部 {stations.length} 个电台
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
             </motion.div>
           </div>
         </section>
@@ -803,16 +828,6 @@ export default function Home() {
         <section className="py-6 sm:py-10 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="text-center mb-8 sm:mb-10">
-              <div className="mb-3 flex justify-center">
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-full px-3 py-1 text-[11px] sm:text-xs font-semibold tracking-[0.18em] uppercase",
-                    isDark ? "bg-white/[0.05] text-white/45 border border-white/[0.07]" : "bg-black/[0.03] text-zinc-500 border border-black/[0.05]"
-                  )}
-                >
-                  FAQ
-                </span>
-              </div>
               <h2 className={cn("text-2xl sm:text-3xl font-bold mb-3", isDark ? "text-white" : "text-zinc-900")}>Lofi Radio 常见问题</h2>
               <p className={cn("text-sm sm:text-base max-w-3xl mx-auto leading-relaxed", isDark ? "text-white/38" : "text-zinc-500")}>把使用时最容易遇到的几个问题整理在这里，既方便第一次打开网站时快速了解，也能帮你更快找到适合自己的收听方式和使用场景。</p>
             </motion.div>
@@ -839,7 +854,7 @@ export default function Home() {
                     id={`faq-${index + 1}`}
                     open={index === 0}
                     className={cn(
-                      "rounded-[22px] border mb-2 last:mb-0 px-4 sm:px-6 transition-colors",
+                      "group rounded-[22px] border mb-2 last:mb-0 px-4 sm:px-6 transition-colors",
                       isDark
                         ? "border-white/[0.07] bg-white/[0.02] open:bg-white/[0.04]"
                         : "border-black/[0.04] bg-black/[0.02] open:bg-black/[0.03]"
@@ -855,7 +870,10 @@ export default function Home() {
                       <ChevronRight
                         aria-hidden="true"
                         className={cn(
-                          "size-3.5 shrink-0 transition-transform duration-200 open:rotate-90",
+                          // 必须走 group-open：裸 open 变体编译成 `:is([open],…)`，
+                          // 要求元素自己带 open 属性。这个 svg 在 summary 里面，
+                          // 永远拿不到 open，箭头会一直不转。
+                          "size-3.5 shrink-0 transition-transform duration-200 group-open:rotate-90",
                           isDark ? "text-white/40" : "text-zinc-400"
                         )}
                       />
@@ -878,15 +896,15 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <nav aria-label="页脚导航" className="mb-5">
               <ul className={cn("flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm", isDark ? "text-white/50" : "text-zinc-500")}>
-                <li><Link href="/stations" className={cn("transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>电台列表</Link></li>
-                <li><Link href="/faq" className={cn("transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>常见问题</Link></li>
-                <li><Link href="/about" className={cn("transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>关于</Link></li>
+                <li><Link href="/stations" className={cn("inline-block py-1.5 transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>电台列表</Link></li>
+                <li><Link href="/faq" className={cn("inline-block py-1.5 transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>常见问题</Link></li>
+                <li><Link href="/about" className={cn("inline-block py-1.5 transition-colors hover:underline", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}>关于</Link></li>
                 <li>
                   <a
                     href={siteConfig.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={cn("flex items-center gap-1.5 transition-colors", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}
+                    className={cn("flex items-center gap-1.5 py-1.5 transition-colors", isDark ? "hover:text-white/80" : "hover:text-zinc-800")}
                   >
                     <Github className="w-4 h-4" />
                     <span>GitHub</span>
@@ -914,9 +932,6 @@ export default function Home() {
           </div>
         </footer>
       </div>
-      
-      {/* 浮动播放器 */}
-      <FloatingPlayer />
     </main>
   );
 }
