@@ -1,4 +1,4 @@
-import { getSceneList, getStationsByScene, stations } from "./stations";
+import { getSceneList, stations } from "./stations";
 
 const stationCount = stations.length;
 const sceneList = getSceneList();
@@ -50,7 +50,6 @@ export const lofiDefinition = {
 
 /** 场景选型对比表。表格比散文更容易被 AI 摘录，也是 Google AI Overview 偏好的形态。 */
 export const sceneComparison = {
-  caption: `Lofi Radio ${stationCount} 个电台按场景的选型对照`,
   columns: ["使用场景", "推荐风格", "站内电台", "为什么这么选"],
   rows: [
     {
@@ -207,18 +206,3 @@ export const howToStart = {
     { name: "设定结束条件", text: "需要休息就设睡眠定时（15–120 分钟快捷档，或自定义 1–480 分钟），到点自动暂停。" },
   ],
 };
-
-/** 场景 → 电台的快捷索引，用于目录页与 llms-full.txt。 */
-export function buildSceneIndex() {
-  return sceneList.map(({ scene, slug, count }) => ({
-    scene,
-    slug,
-    count,
-    stations: getStationsByScene(scene).map((s) => ({
-      id: s.id,
-      name: s.name,
-      styles: `${s.style1} / ${s.style2}`,
-      type: s.type,
-    })),
-  }));
-}

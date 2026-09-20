@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore, useCallback, memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Github, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight, Radio, Clock3 } from 'lucide-react';
+import { Sun, Moon, Github, Sparkles, Play, Pause, ExternalLink, Waves, Music4, ChevronRight, Radio, Clock3, RotateCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useFocusTimer } from '@/hooks/useFocusTimer';
 import { useSleepTimer } from '@/hooks/useSleepTimer';
@@ -335,11 +335,9 @@ export default function Home() {
 
   const requestPlay = useAudioStore((s) => s.requestPlay);
   const requestPause = useAudioStore((s) => s.requestPause);
-  const nextStation = useAudioStore((s) => s.nextStation);
-  const prevStation = useAudioStore((s) => s.prevStation);
-  const toggleMute = useAudioStore((s) => s.toggleMute);
   const isPlaying = useAudioStore((s) => s.isPlaying);
   const isLoading = useAudioStore((s) => s.isLoading);
+  const isSlowConnection = useAudioStore((s) => s.isSlowConnection);
   const userWantsPlay = useAudioStore((s) => s.userWantsPlay);
   const currentStation = useAudioStore((s) => s.currentStation);
   const setMiniMode = useAudioStore((s) => s.setMiniMode);
@@ -364,23 +362,6 @@ export default function Home() {
     else if (userWantsPlay) requestPause();
     else requestPlay();
   }, [hasError, retryStation, userWantsPlay, requestPlay, requestPause]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      // 不要抢浏览器/系统快捷键，例如 Cmd+← 返回上一页、Ctrl+T 新标签页、Shift+Space 向上滚动
-      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
-      switch (e.code) {
-        case 'Space': e.preventDefault(); togglePlay(); break;
-        case 'ArrowLeft': e.preventDefault(); prevStation(); break;
-        case 'ArrowRight': e.preventDefault(); nextStation(); break;
-        case 'KeyM': e.preventDefault(); toggleMute(); break;
-        case 'KeyT': e.preventDefault(); handleThemeToggle(); break;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleThemeToggle, togglePlay, nextStation, prevStation, toggleMute]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -425,25 +406,6 @@ export default function Home() {
 
   const isDark = mounted ? resolvedTheme === 'dark' : false;
   const stationColor = currentStation?.color || '#8B5CF6';
-
-  // 同步 theme-color，让 iOS PWA 的状态栏跟着站内主题走。
-  //
-  // layout 的 viewport.themeColor 会输出两条带 media 的 meta（light / dark 各一条）。
-  // 只改第一条是不够的：系统处于深色、站内切成亮色时，浏览器命中的是 dark 那条，
-  // 状态栏会停在深色不动。所以两条都写成当前主题色，让 media 查询失去作用。
-  useEffect(() => {
-    if (!mounted) return;
-    const color = isDark ? '#0a0a0c' : '#fafafa';
-    const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
-    if (metas.length === 0) {
-      const meta = document.createElement('meta');
-      meta.name = 'theme-color';
-      meta.content = color;
-      document.head.appendChild(meta);
-      return;
-    }
-    metas.forEach((meta) => { meta.content = color; });
-  }, [isDark, mounted]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
@@ -542,7 +504,11 @@ export default function Home() {
                         : '0 8px 32px rgba(139,92,246,0.35)',
                       color: isDark ? '#4c1d95' : undefined,
                     }}>
-                    {isPlaying ? <><Pause className="w-5 h-5 mr-2" /><span>正在播放</span></> : <><Play className="w-5 h-5 mr-2" /><span>开始播放</span></>}
+                    {hasError
+                      ? <><RotateCcw className="w-5 h-5 mr-2" /><span>重试播放</span></>
+                      : isPlaying
+                        ? <><Pause className="w-5 h-5 mr-2" /><span>正在播放</span></>
+                        : <><Play className="w-5 h-5 mr-2" /><span>开始播放</span></>}
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
@@ -818,7 +784,14 @@ export default function Home() {
                       : '0 8px 32px rgba(139,92,246,0.4)',
                     color: isDark ? '#4c1d95' : undefined,
                   }}>
-                  {userWantsPlay ? <><Pause className="w-5 h-5 mr-2" />{isLoading ? '加载中...' : '正在播放'}</> : <><Play className="w-5 h-5 mr-2" />立即开始</>}
+                  {/* 按钮文案必须和真实状态一致：出错时还写「正在播放」，
+                      用户看到的就是「一切正常但没有声音」。
+                      「慢」单独一档，不能混进失败——见 audioStore 的说明。 */}
+                  {hasError
+                    ? <><RotateCcw className="w-5 h-5 mr-2" />播放失败，点击重试</>
+                    : userWantsPlay
+                      ? <><Pause className="w-5 h-5 mr-2" />{isSlowConnection ? '网络较慢，连接中…' : isLoading ? '加载中...' : '正在播放'}</>
+                      : <><Play className="w-5 h-5 mr-2" />立即开始</>}
                 </Button>
               </motion.div>
             </div>

@@ -5,7 +5,7 @@ import { ContentShell, JsonLd, SourceList } from "@/components/seo/site-chrome";
 import { SceneTag, StationChip, StationPlayButton } from "@/components/lofi/station-controls";
 import { buildPageMetadata, buildStationsPageSchema, pagePaths } from "@/lib/seo";
 import { sceneComparison, siteLastUpdated, stationSources } from "@/lib/seo-content";
-import { getSceneColor, getSceneList, getStationsByScene, stations } from "@/lib/stations";
+import { getSceneColor, getSceneList, getSceneSlug, getStationsByScene, stations } from "@/lib/stations";
 import { shadeBorder, shadeSurface, tintBorder, tintSurface } from "@/lib/palette";
 
 const sceneList = getSceneList();
@@ -45,10 +45,13 @@ const typeLabel: Record<string, string> = {
  *
  * 电台名单取自 stations.ts 而不是对照表里手写的 picks 字符串——加电台时不会漏，
  * 而且拼出来的是可以直接点播的实体，不只是一串文字。
+ *
+ * slug 用作面板的 ASCII 锚点，llms.txt 的场景目录直接深链到这里。
  */
 const scenePanels = sceneComparison.rows
   .map((row) => ({
     scene: row.scene,
+    slug: getSceneSlug(row.scene),
     styles: row.styles,
     reason: row.reason,
     color: getSceneColor(row.scene),
@@ -81,7 +84,8 @@ export default function StationsPage() {
             {scenePanels.map((panel) => (
               <div
                 key={panel.scene}
-                className="rounded-2xl border bg-[var(--sf)] border-[var(--bd)] p-5 dark:bg-[var(--sf-d)] dark:border-[var(--bd-d)]"
+                id={panel.slug}
+                className="scroll-mt-24 rounded-2xl border bg-[var(--sf)] border-[var(--bd)] p-5 dark:bg-[var(--sf-d)] dark:border-[var(--bd-d)]"
                 style={{
                   "--sf": tintSurface(panel.color),
                   "--bd": tintBorder(panel.color),
@@ -217,14 +221,7 @@ export default function StationsPage() {
           <h2 id="play">收听与快捷键</h2>
           <div className="mt-4 leading-8 text-zinc-600 dark:text-zinc-300">
             上面任意一个电台名都能直接点开播放，播放器会停在屏幕角落，切换页面也不会中断。
-            在{" "}
-            <Link
-              href={pagePaths.home}
-              className="font-medium text-[#BE185D] underline-offset-4 hover:underline dark:text-[#FBCFE8]"
-            >
-              首页
-            </Link>{" "}
-            还可以用键盘控制：
+            全站都可以用键盘控制（焦点不在输入框或按钮上时）：
           </div>
 
           {/* 快捷键是一张图例，不是正文，所以给它独立表面并居中——

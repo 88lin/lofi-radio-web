@@ -4,6 +4,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { ThemeColorSync } from "@/components/theme-color-sync";
 import { PlayerHost } from "@/components/lofi/player-host";
 import { buildSiteMetadata, buildSiteSchema, serializeJsonLd } from "@/lib/seo";
 
@@ -97,8 +99,11 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
-          {/* 播放器挂在这里而不是首页里，音乐才能跨页面继续放，见 PlayerHost 的说明 */}
+          {/* 播放器挂在这里而不是首页里，音乐才能跨页面继续放，见 PlayerHost 的说明。
+              快捷键与主题色同步同理：它们服务的是全站，不是首页。 */}
           <PlayerHost />
+          <KeyboardShortcuts />
+          <ThemeColorSync />
           <Toaster />
           <PWAInstallPrompt />
         </ThemeProvider>

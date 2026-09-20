@@ -11,6 +11,7 @@ import {
   buildSiteSchema,
   buildSitemapEntries,
   buildStationEntities,
+  pagePaths,
   serializeJsonLd,
   siteConfig,
 } from '../src/lib/seo';
@@ -146,6 +147,24 @@ test('scene comparison only names real stations and scenes', () => {
     for (const name of row.picks.split('、').map((item) => item.trim()).filter(Boolean)) {
       assert.ok(knownStations.has(name), `对照表推荐了不存在的电台：${name}`);
     }
+  }
+
+  // /stations 的场景锚点由对照表的行渲染，llms.txt 又深链到那些锚点。
+  // 漏一行就等于 llms.txt 里多一条跳不到的死链。
+  const coveredScenes = new Set(sceneComparison.rows.map((row) => row.scene));
+  for (const scene of knownScenes) {
+    assert.ok(coveredScenes.has(scene), `对照表漏了「${scene}」场景，它的锚点会变成死链`);
+  }
+});
+
+test('llms.txt scene anchors point at slugs the stations page renders', () => {
+  const llms = buildLlmsTxt();
+
+  for (const { scene, slug } of getSceneList()) {
+    assert.ok(
+      llms.includes(`${siteConfig.url}${pagePaths.stations}#${slug}`),
+      `llms.txt 缺少「${scene}」的场景锚点`,
+    );
   }
 });
 

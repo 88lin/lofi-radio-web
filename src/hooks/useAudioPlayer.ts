@@ -85,6 +85,30 @@ const fetchWithTimeout = async (url: string, timeout: number = 15000): Promise<R
   }
 };
 
+/**
+ * 看门狗的三个阈值。
+ *
+ * 之所以要分三档而不是一个超时：「连不上」和「网络慢」的正确处置是相反的。
+ * 慢就该接着等（数据在往回走，几十秒后自己会响）；这时候报错会诱导用户点重试，
+ * 而重试会 destroy 掉 hls 实例、清空已经缓冲的部分，从头再来——在弱网下
+ * 用户可能永远等不到那一次成功。
+ */
+// 迟迟没出声先给个「网络较慢」的提示。只是提示，不是错误，也不打断加载。
+const SLOW_HINT_MS = 10000;
+/**
+ * 一个字节都没动过多久才算「连不上」。
+ *
+ * 给到 60s 是因为两边的代价不对称：弱网下 DNS + 建连 + 首包本来就可能耗掉
+ * 半分钟到一分钟，这时候误报会把用户推去点重试、丢掉已有进度；而真的连不上时
+ * 多等这十几秒的代价只是提示晚一点——何况 10s 起就已经在显示「仍在连接」了。
+ * 注意这一档只兜「完全没有任何数据回来」；真的下载起来之后计时会被不断重置，
+ * 缓冲阶段再慢也不会触发。
+ */
+const NO_PROGRESS_TIMEOUT_MS = 60000;
+// 即便一直在下载，迟迟放不出声的绝对上限（例如拿到的根本不是能播的流）。
+const CONNECT_CEILING_MS = 120000;
+const WATCHDOG_PROBE_MS = 1000;
+
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLMediaElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -117,6 +141,7 @@ export function useAudioPlayer() {
     setPlaying,
     setLoading,
     setError,
+    setSlowConnection,
   } = useAudioStore();
 
   // 清理函数
@@ -177,12 +202,20 @@ export function useAudioPlayer() {
         } else if (err.name === 'AbortError') {
           console.log('[Player] Play request interrupted by media reload');
         } else {
+          // 必须 setError：不报错的话这条失败对用户完全不可见——按钮停在「暂停」，
+          // 既没有声音也没有提示。地区阻断下 play() 抛的 NotSupportedError
+          // 原本就是在这里被吞掉的。
           console.error('[Player] Play error:', err);
-          setLoading(false);
           setPlaying(false);
+          setError(
+            true,
+            err.name === 'NotSupportedError'
+              ? '该音源在当前网络环境下不可用'
+              : '播放失败，请重试',
+          );
         }
       });
-  }, [setPlaying, setLoading]);
+  }, [setPlaying, setLoading, setError]);
 
   // 加载 Bilibili 直播流
   const loadBilibiliStream = useCallback<LoadBilibiliStream>(async (station, requestId) => {
@@ -963,6 +996,107 @@ export function useAudioPlayer() {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  /**
+   * 播放看门狗。
+   *
+   * 其余的错误处理全部挂在 media 的 error 事件和 hls.js / flv.js 的 fatal error 上，
+   * 而地区阻断、DNS 污染这类故障里连接是被丢包吃掉的：不会 RST、不触发 error，
+   * 浏览器只发一个 waiting，UI 就永远停在「加载中」——没有声音也没有任何提示。
+   *
+   * 但「连不上」和「慢」必须分开判。判据是有没有**任何进展**：
+   * currentTime 前进、buffered 变长、readyState 上升，三者任一成立就说明
+   * 数据在往回走，只是慢，这时候绝不能报错（见上面阈值处的说明）。
+   * 这三个信号对 MP3 / HLS / FLV 三条路径都成立——HLS 和 FLV 走 MediaSource，
+   * 分片每 append 一次 buffered 就会变长。
+   *
+   * 另外看门狗只改 store，不碰播放器：报了错底下的加载也还在跑，
+   * 用户什么都不做也可能自己响起来，那时 setPlaying(true) 会把错误清掉。
+   * 它同时兜「一直没连上」和「放着放着断流」两种情况——后者不会触发
+   * pause 事件，isPlaying 会一直停在 true，只靠事件是发现不了的。
+   */
+  useEffect(() => {
+    if (!userWantsPlay || !currentStation) return;
+
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const progressMark = () => {
+      let buffered = 0;
+      for (let i = 0; i < audio.buffered.length; i += 1) {
+        buffered += audio.buffered.end(i) - audio.buffered.start(i);
+      }
+      return `${audio.currentTime}|${audio.readyState}|${buffered.toFixed(3)}`;
+    };
+
+    const startedAt = Date.now();
+    let lastMark = progressMark();
+    let lastProgressAt = startedAt;
+    let hasSounded = false;
+    let hintedSlow = false;
+    let gaveUp = false;
+
+    const timerId = window.setInterval(() => {
+      const state = useAudioStore.getState();
+      if (!state.userWantsPlay) return;
+
+      const now = Date.now();
+      const mark = progressMark();
+      if (mark !== lastMark) {
+        lastMark = mark;
+        lastProgressAt = now;
+        if (state.isPlaying && audio.currentTime > 0) hasSounded = true;
+      }
+
+      const stalledFor = now - lastProgressAt;
+      const waitedFor = now - startedAt;
+      // 「用户已经多久没听到声音了」。出过声之后只看卡了多久，
+      // 还没出声则从点播那一刻算起——不然数据一直在慢慢下，
+      // 用户等了半分钟却连个「还在连」都看不到。
+      const silentFor = hasSounded ? stalledFor : waitedFor;
+
+      if (silentFor < SLOW_HINT_MS) {
+        if (hintedSlow) {
+          hintedSlow = false;
+          setSlowConnection(false);
+        }
+        gaveUp = false;
+        return;
+      }
+
+      // 断流（一点数据都不回来了）和「连上了但迟迟起不来」分开判。
+      // 绝对上限只管「还没出声」这一段：已经放过的流卡住是断流，不是连不上。
+      const deadStall = stalledFor >= NO_PROGRESS_TIMEOUT_MS;
+      const tooLongToStart = !hasSounded && waitedFor >= CONNECT_CEILING_MS;
+
+      if (deadStall || tooLongToStart) {
+        if (gaveUp) return; // 报一次就够，不要每秒刷一遍同一个错误
+        gaveUp = true;
+        console.warn(
+          `[Player] Watchdog giving up: no progress for ${stalledFor}ms, waited ${waitedFor}ms, sounded=${hasSounded}`,
+        );
+        setError(
+          true,
+          hasSounded
+            ? '播放中断了，请重试或换一个电台'
+            : deadStall
+              ? '连接不上这个音源，可能被网络环境拦截了，换一个电台试试'
+              : '音源响应过慢，请重试或换一个电台',
+        );
+        return;
+      }
+
+      if (!hintedSlow) {
+        hintedSlow = true;
+        setSlowConnection(true);
+      }
+    }, WATCHDOG_PROBE_MS);
+
+    return () => {
+      window.clearInterval(timerId);
+      setSlowConnection(false);
+    };
+  }, [userWantsPlay, currentStation?.id, stationLoadToken, setError, setSlowConnection]);
 
   return null;
 }

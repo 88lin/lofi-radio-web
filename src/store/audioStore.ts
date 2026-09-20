@@ -10,6 +10,14 @@ interface AudioState {
   isLoading: boolean;
   hasError: boolean;
   errorMessage: string | null;
+  /**
+   * 「还在连，但明显比平时慢」。
+   *
+   * 它不是错误：数据确实在往回走，只是网络卡。单独一个状态是因为
+   * 「慢」和「失败」的处置完全相反——慢就该接着等，点重试反而会把
+   * 已经缓冲的部分全丢掉重来。
+   */
+  isSlowConnection: boolean;
   
   // 用户意图状态
   userWantsPlay: boolean;
@@ -37,6 +45,7 @@ interface AudioState {
   setPlaying: (playing: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (hasError: boolean, message?: string | null) => void;
+  setSlowConnection: (slow: boolean) => void;
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   setMuted: (muted: boolean) => void;
@@ -75,6 +84,37 @@ const getStartOfToday = () => {
   return start.getTime();
 };
 
+type AudioSet = (partial: Partial<AudioState>) => void;
+type AudioGet = () => AudioState;
+
+/**
+ * 选台的统一实现。
+ *
+ * 递增 stationLoadToken 这一步不能省：useAudioPlayer 的加载 effect 只看「电台 id
+ * 变了没」和「令牌变了没」，重新选中当前这个电台时两者都不变，它会直接跳过，
+ * 上一次加载失败留下的死 audio 元素永远不会被重建——表现就是按钮变回暂停、
+ * 错误提示消失、但一直没有声音。
+ * 反过来，若这个电台本来就在正常出声，就什么都别做，不要把它打断。
+ */
+function applyStationSelection(index: number, set: AudioSet, get: AudioGet) {
+  if (index < 0 || index >= stations.length) return;
+
+  const station = stations[index];
+  const { currentStation, isPlaying, stationLoadToken } = get();
+  const keepPlaying = currentStation?.id === station.id && isPlaying;
+
+  set({
+    stationIndex: index,
+    currentStation: station,
+    userWantsPlay: true,
+    stationLoadToken: keepPlaying ? stationLoadToken : stationLoadToken + 1,
+    isLoading: !keepPlaying,
+    hasError: false,
+    errorMessage: null,
+    isSlowConnection: false,
+  });
+}
+
 export const useAudioStore = create<AudioState>()(
   persist(
     (set, get) => ({
@@ -82,6 +122,7 @@ export const useAudioStore = create<AudioState>()(
       isLoading: false,
       hasError: false,
       errorMessage: null,
+      isSlowConnection: false,
       userWantsPlay: false,
       volume: 0.5,
       isMuted: false,
@@ -123,15 +164,16 @@ export const useAudioStore = create<AudioState>()(
       },
       
       // 用户请求播放 - 只是表达意图
-      requestPlay: () => set({ 
-        userWantsPlay: true, 
-        hasError: false, 
-        errorMessage: null 
+      requestPlay: () => set({
+        userWantsPlay: true,
+        hasError: false,
+        errorMessage: null
       }),
-      
+
       // 用户请求暂停
-      requestPause: () => set({ 
-        userWantsPlay: false 
+      requestPause: () => set({
+        userWantsPlay: false,
+        isSlowConnection: false
       }),
       
       // 由音频事件设置真实播放状态
@@ -141,11 +183,14 @@ export const useAudioStore = create<AudioState>()(
         get().checkAndResetDailyFocus();
         const state = get();
         if (playing) {
-          set({ 
-            isPlaying: true, 
+          set({
+            isPlaying: true,
             isLoading: false,
             hasError: false,
-            errorMessage: null
+            errorMessage: null,
+            // 真的出声了，之前报过的「慢 / 超时」一律作废——
+            // 看门狗宁可先提醒再被推翻，也不能让用户对着静音的界面干等
+            isSlowConnection: false
           });
           // 开始计时
           if (!state.focusStartTime) {
@@ -165,43 +210,28 @@ export const useAudioStore = create<AudioState>()(
       },
       
       setLoading: (loading) => set({ isLoading: loading }),
-      
-      setError: (hasError, message = null) => set({ 
-        hasError, 
-        errorMessage: message,
-        isLoading: false
-      }),
+
+      // 只有「报错」才意味着加载结束；「清空错误」是重新开始加载的前奏，
+      // 不能顺手把 isLoading 也关掉。loadStation 里就是 setLoading(true) 紧跟着
+      // setError(false, null)，一起关掉的话刚点下重试的那一两秒钟按钮会显示成
+      // 暂停图标——又变回「看起来在播、其实没声音」。
+      setError: (hasError, message = null) =>
+        set(
+          hasError
+            ? { hasError: true, errorMessage: message, isLoading: false, isSlowConnection: false }
+            : { hasError: false, errorMessage: null }
+        ),
+
+      setSlowConnection: (slow) => set({ isSlowConnection: slow }),
       
       setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
       setMuted: (muted) => set({ isMuted: muted }),
       
-      selectStation: (index) => {
-        if (index >= 0 && index < stations.length) {
-          set({ 
-            stationIndex: index, 
-            currentStation: stations[index],
-            userWantsPlay: true,
-            isLoading: true,
-            hasError: false,
-            errorMessage: null
-          });
-        }
-      },
-      
-      selectStationById: (id) => {
-        const index = stations.findIndex(s => s.id === id);
-        if (index >= 0) {
-          set({ 
-            stationIndex: index, 
-            currentStation: stations[index],
-            userWantsPlay: true,
-            isLoading: true,
-            hasError: false,
-            errorMessage: null
-          });
-        }
-      },
+      selectStation: (index) => applyStationSelection(index, set, get),
+
+      selectStationById: (id) =>
+        applyStationSelection(stations.findIndex(s => s.id === id), set, get),
       
       nextStation: () => {
         const { stationIndex } = get();
@@ -221,7 +251,8 @@ export const useAudioStore = create<AudioState>()(
         userWantsPlay: true,
         isLoading: true,
         hasError: false,
-        errorMessage: null
+        errorMessage: null,
+        isSlowConnection: false
       }),
       
       // 开始专注计时

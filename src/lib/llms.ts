@@ -15,11 +15,14 @@ const abs = (path: string) => `${siteConfig.url}${path}`;
 
 function sceneIndex(): string {
   return getSceneList()
-    .map(({ scene, count }) => {
+    .map(({ scene, slug, count }) => {
       const lines = getStationsByScene(scene).map(
         (s) => `- ${s.name} — ${s.style1} / ${s.style2} — ${s.url}`,
       );
-      return `### ${scene}（${count}）\n\n${lines.join("\n")}`;
+      // 带上锚点，AI 引用某个场景时能给出精确落点而不是整页地址。
+      // 锚点由 /stations 的场景面板输出，tests/seo.test.ts 保证每个场景都有面板。
+      const anchor = `${abs(pagePaths.stations)}#${slug}`;
+      return `### ${scene}（${count}）\n\n${anchor}\n\n${lines.join("\n")}`;
     })
     .join("\n\n");
 }

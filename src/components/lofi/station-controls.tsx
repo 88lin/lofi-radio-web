@@ -1,6 +1,6 @@
 'use client';
 
-import { Pause, Play } from 'lucide-react';
+import { Loader2, Pause, Play, RotateCcw } from 'lucide-react';
 
 import { useAudioStore } from '@/store/audioStore';
 import { getSceneColor, type Station } from '@/lib/stations';
@@ -14,16 +14,27 @@ import { cn } from '@/lib/utils';
  * 播放本身由 layout 里的 PlayerHost 负责，这里只往全局 store 写意图。
  */
 
+/** 失败态的红色，浅底深字都用它，和 palette.ts 里的语义色保持一个量级。 */
+const FAIL_COLOR = '#DC2626';
+
 function useStationPlayback(stationId: string) {
   const current = useAudioStore((s) => s.currentStation);
   const userWantsPlay = useAudioStore((s) => s.userWantsPlay);
   const isPlaying = useAudioStore((s) => s.isPlaying);
+  const isLoading = useAudioStore((s) => s.isLoading);
+  const hasError = useAudioStore((s) => s.hasError);
+  const isSlowConnection = useAudioStore((s) => s.isSlowConnection);
   const selectStationById = useAudioStore((s) => s.selectStationById);
   const requestPause = useAudioStore((s) => s.requestPause);
   const requestPlay = useAudioStore((s) => s.requestPlay);
+  const retryStation = useAudioStore((s) => s.retryStation);
   const setMiniMode = useAudioStore((s) => s.setMiniMode);
 
   const isCurrent = current?.id === stationId;
+  const isFailed = isCurrent && hasError;
+  // 不加 !isPlaying：直播流放着放着断流时不会触发 pause 事件，isPlaying 会一直
+  // 停在 true，只有 waiting 事件把 isLoading 抬起来——这时候该转圈，不是显示均衡器。
+  const isBuffering = isCurrent && userWantsPlay && isLoading && !hasError;
 
   const toggle = () => {
     if (!isCurrent) {
@@ -31,12 +42,32 @@ function useStationPlayback(stationId: string) {
       setMiniMode(true);
       return;
     }
-    if (userWantsPlay) requestPause();
+    // 出错时点播放 = 重试当前电台，原因同播放器内的处理：只调 requestPlay 会把
+    // hasError 清掉却不重新加载（加载 effect 认为电台和令牌都没变，直接跳过），
+    // 结果是错误提示消失、按钮变成暂停、但一直没有声音。
+    if (isFailed) retryStation();
+    else if (userWantsPlay) requestPause();
     else requestPlay();
   };
 
-  return { isCurrent, isActive: isCurrent && userWantsPlay, isSounding: isCurrent && isPlaying, toggle };
+  return {
+    isCurrent,
+    // 失败态不能算「正在播放」：这一格的图标是用户判断有没有在响的唯一依据
+    isActive: isCurrent && userWantsPlay && !hasError,
+    isSounding: isCurrent && isPlaying,
+    // 「在连但还没出声」必须和「已经在放」区分开，否则连不上的那段时间里
+    // 按钮显示的是暂停图标，看起来和正常播放一模一样。
+    // 要带上 userWantsPlay：页面刚打开时播放器会预载当前电台，那会儿
+    // isLoading 也是 true，但用户并没有点过任何东西，不该转圈。
+    isBuffering,
+    /** 还在连、只是慢。这是提示不是错误，文案不能写成「失败」。 */
+    isSlow: isBuffering && isSlowConnection,
+    isFailed,
+    toggle,
+  };
 }
+
+type PlaybackState = ReturnType<typeof useStationPlayback>;
 
 /** 播放中的三根跳动竖条。用真实的动画条而不是一个静态图标，状态一眼可辨。 */
 function Equalizer({ color }: { color: string }) {
@@ -54,6 +85,33 @@ function Equalizer({ color }: { color: string }) {
 }
 
 /**
+ * 五态图标：失败 → 重试，缓冲 → 转圈，出声 → 均衡器，有播放意图 → 暂停，其余 → 播放。
+ * 缓冲要排在出声前面：流卡住时 isPlaying 仍是 true，先判它才不会一边没声一边跳均衡器。
+ */
+function StateIcon({
+  state,
+  color,
+  size,
+}: {
+  state: PlaybackState;
+  color: string;
+  size: string;
+}) {
+  if (state.isFailed) return <RotateCcw className={size} style={{ color: FAIL_COLOR }} />;
+  if (state.isBuffering) return <Loader2 className={cn(size, 'animate-spin')} style={{ color }} />;
+  if (state.isSounding) return <Equalizer color={color} />;
+  if (state.isActive) return <Pause className={size} style={{ color }} />;
+  return <Play className={cn(size, 'translate-x-[1px]')} style={{ color }} />;
+}
+
+function playbackLabel(station: Station, state: PlaybackState) {
+  if (state.isFailed) return `重试播放 ${station.name}（播放失败）`;
+  if (state.isSlow) return `${station.name} 网络较慢，仍在连接，点击停止`;
+  if (state.isBuffering) return `${station.name} 连接中，点击停止`;
+  return state.isActive ? `暂停 ${station.name}` : `播放 ${station.name}`;
+}
+
+/**
  * 电台清单里的一行/一张卡。
  * 整行是一个 button：键盘可达，不需要给 <tr> 挂 onClick 那种鼠标专属的写法。
  */
@@ -64,14 +122,15 @@ export function StationPlayButton({
   station: Station;
   layout: 'row' | 'card';
 }) {
-  const { isCurrent, isActive, isSounding, toggle } = useStationPlayback(station.id);
-  const label = isActive ? `暂停 ${station.name}` : `播放 ${station.name}`;
+  const state = useStationPlayback(station.id);
+  const { isCurrent, isActive, isFailed, isSlow, toggle } = state;
+  const swatch = isFailed ? FAIL_COLOR : station.color;
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={label}
+      aria-label={playbackLabel(station, state)}
       aria-pressed={isActive}
       className={cn(
         'group/play flex min-h-11 items-center gap-3 rounded-xl text-left transition-colors',
@@ -82,15 +141,9 @@ export function StationPlayButton({
     >
       <span
         className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--sf)] transition-transform group-hover/play:scale-105 dark:bg-[var(--sf-d)]"
-        style={{ "--sf": tintSurface(station.color), "--sf-d": shadeSurface(station.color) } as React.CSSProperties}
+        style={{ "--sf": tintSurface(swatch), "--sf-d": shadeSurface(swatch) } as React.CSSProperties}
       >
-        {isSounding ? (
-          <Equalizer color={station.color} />
-        ) : isActive ? (
-          <Pause className="h-4 w-4" style={{ color: station.color }} />
-        ) : (
-          <Play className="h-4 w-4 translate-x-[1px]" style={{ color: station.color }} />
-        )}
+        <StateIcon state={state} color={station.color} size="h-4 w-4" />
       </span>
       <span className="min-w-0">
         <span
@@ -103,7 +156,18 @@ export function StationPlayButton({
         >
           {station.name}
         </span>
-        {layout === 'card' ? (
+        {/* 失败和「慢」必须分开讲：整站只有浮动播放器会显示状态，清单页上
+            21 行里只有这一行出了问题，不在原地讲一句用户无从判断。
+            尤其不能把「还在连」写成「失败」——用户一点重试就把缓冲全丢了。 */}
+        {isFailed ? (
+          <span className="mt-0.5 block text-sm font-medium text-[#DC2626] dark:text-[#FCA5A5]">
+            播放失败 · 点击重试
+          </span>
+        ) : isSlow ? (
+          <span className="mt-0.5 block text-sm font-medium text-[#92400E] dark:text-[#FDE68A]">
+            网络较慢，仍在连接…
+          </span>
+        ) : layout === 'card' ? (
           <span className="mt-0.5 block text-sm text-zinc-500 dark:text-zinc-400">
             {station.style1} / {station.style2}
           </span>
@@ -115,34 +179,32 @@ export function StationPlayButton({
 
 /** 场景面板里的电台小胶囊，点一下直接播。 */
 export function StationChip({ station }: { station: Station }) {
-  const { isCurrent, isActive, isSounding, toggle } = useStationPlayback(station.id);
+  const state = useStationPlayback(station.id);
+  const { isCurrent, isActive, isFailed, toggle } = state;
+  const swatch = isFailed ? FAIL_COLOR : station.color;
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={isActive ? `暂停 ${station.name}` : `播放 ${station.name}`}
+      aria-label={playbackLabel(station, state)}
       aria-pressed={isActive}
       className={cn(
         'inline-flex min-h-9 items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 text-sm font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899] focus-visible:ring-offset-2',
         'focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#101014]',
-        isCurrent
-          ? 'bg-[#FFE3F1] text-[#BE185D] dark:bg-[#33132A] dark:text-[#FBCFE8]'
-          : 'bg-black/[0.04] text-zinc-600 hover:bg-black/[0.07] hover:text-zinc-900 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.11] dark:hover:text-white',
+        isFailed
+          ? 'bg-[#FEE2E2] text-[#B91C1C] dark:bg-[#3A1414] dark:text-[#FCA5A5]'
+          : isCurrent
+            ? 'bg-[#FFE3F1] text-[#BE185D] dark:bg-[#33132A] dark:text-[#FBCFE8]'
+            : 'bg-black/[0.04] text-zinc-600 hover:bg-black/[0.07] hover:text-zinc-900 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.11] dark:hover:text-white',
       )}
     >
       <span
         className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--sf)] dark:bg-[var(--sf-d)]"
-        style={{ "--sf": tintSurface(station.color), "--sf-d": shadeSurface(station.color) } as React.CSSProperties}
+        style={{ "--sf": tintSurface(swatch), "--sf-d": shadeSurface(swatch) } as React.CSSProperties}
       >
-        {isSounding ? (
-          <Equalizer color={station.color} />
-        ) : isActive ? (
-          <Pause className="h-2.5 w-2.5" style={{ color: station.color }} />
-        ) : (
-          <Play className="h-2.5 w-2.5 translate-x-[0.5px]" style={{ color: station.color }} />
-        )}
+        <StateIcon state={state} color={station.color} size="h-2.5 w-2.5" />
       </span>
       {station.name}
     </button>
