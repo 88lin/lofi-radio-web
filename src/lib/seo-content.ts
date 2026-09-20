@@ -10,7 +10,7 @@ const sceneList = getSceneList();
  * 以及 llms.txt / llms-full.txt 的头部。改内容时请一并改这里——
  * AI 搜索引擎普遍按新鲜度加权，写死的旧日期比不写更糟。
  */
-export const siteLastUpdated = "2026-09-19";
+export const siteLastUpdated = "2026-09-20";
 
 /** 首页与 /about 共用的定义块。控制在 60 词以内，方便被整段摘录。 */
 export const lofiDefinition = {
