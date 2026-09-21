@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { createHlsRecoveryController } from '@/lib/hls-recovery';
-import { shouldReleasePlayIntent } from '@/lib/media-pause';
+import { isSelfInitiatedPause, nextPlayIntent } from '@/lib/media-intent';
 import { Station } from '@/lib/stations';
 import Hls, { type ErrorData } from 'hls.js';
 
@@ -132,8 +132,8 @@ export function useAudioPlayer() {
   });
   // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
   const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
-  // 下一个 pause 事件是不是站内自己发起的，见 shouldReleasePlayIntent
-  const expectPauseRef = useRef(false);
+  // 最近一次站内发起暂停的时刻，用来把它和原生暂停区分开，见 media-intent.ts
+  const selfPauseAtRef = useRef(0);
 
   const {
     currentStation,
@@ -148,14 +148,14 @@ export function useAudioPlayer() {
   } = useAudioStore();
 
   /**
-   * 站内发起的暂停。先打标记，handlePause 才能把它和原生暂停区分开。
-   * 只在确实还在播时打标记——已经是暂停态时 pause() 不会再触发事件，
-   * 标记会留到下一次真正的原生暂停上被误判成「自己发起的」。
+   * 站内发起的暂停。记下时刻，handlePause 才能把它和原生暂停区分开。
+   * 只在确实还在播时记——已经是暂停态时 pause() 不会再触发事件，
+   * 记下来只会让紧随其后的一次原生暂停落进时间窗里被误判。
    */
   const pauseMedia = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!audio.paused) expectPauseRef.current = true;
+    if (!audio.paused) selfPauseAtRef.current = Date.now();
     audio.pause();
   }, []);
 
@@ -900,24 +900,34 @@ export function useAudioPlayer() {
     document.body.appendChild(audio);
     audioRef.current = audio;
     
+    // 把 pause / playing 反映到播放意图上。判定见 media-intent.ts：
+    // 意图停在 true 会让看门狗把用户主动暂停误报成中断，停在 false 会让
+    // 站内按钮反过来（显示「播放」、点一下反而继续播），看门狗也不会启动。
+    const syncPlayIntent = (event: 'pause' | 'playing') => {
+      const store = useAudioStore.getState();
+      const action = nextPlayIntent({
+        event,
+        paused: audio.paused,
+        ended: audio.ended,
+        selfInitiated: isSelfInitiatedPause(Date.now(), selfPauseAtRef.current),
+        userWantsPlay: store.userWantsPlay,
+      });
+
+      if (action === 'release') store.requestPause();
+      else if (action === 'restore') store.requestPlay();
+    };
+
     // playing 事件 - 只有音频真正在播放时才触发
     const handlePlaying = () => {
       setLoading(false);
       setPlaying(true);
+      syncPlayIntent('playing');
     };
-    
+
     // pause 事件
     const handlePause = () => {
-      const selfInitiated = expectPauseRef.current;
-      expectPauseRef.current = false;
       setPlaying(false);
-
-      // 原生暂停（系统媒体控件、耳机按钮、来电抢占音频焦点）不经过 requestPause，
-      // 播放意图会留在 true，看门狗随后把它误判成断流。三种来源的区别见
-      // shouldReleasePlayIntent 的说明。
-      if (shouldReleasePlayIntent({ selfInitiated, ended: audio.ended })) {
-        useAudioStore.getState().requestPause();
-      }
+      syncPlayIntent('pause');
     };
     
     // waiting 事件 - 缓冲中
