@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import {
   SELF_PAUSE_WINDOW_MS,
-  isSelfInitiatedPause,
+  createPauseOriginTracker,
   nextPlayIntent,
   type PlayIntentAction,
 } from '../src/lib/media-intent';
@@ -15,30 +15,33 @@ import {
  * 前一个事件留下的状态影响了后一个事件的判定，单看一步看不出来。
  */
 
-/** 顺着事件序列跑一遍，返回每一步的动作和跟着变化的 userWantsPlay。 */
-function runSequence(
-  steps: {
-    at: number;
-    event: 'pause' | 'playing';
-    paused: boolean;
-    ended?: boolean;
-    /** 这一步之前站内主动调了 pause()（切台清理 / 用户点暂停） */
-    selfPausedAt?: number;
-  }[],
-  initialUserWantsPlay: boolean,
-) {
+type Step =
+  /** 站内主动调 pause()（切台清理 / 用户点暂停） */
+  | { at: number; selfPause: true }
+  | { at: number; event: 'pause' | 'playing'; paused: boolean; ended?: boolean };
+
+/** 顺着事件序列跑一遍，返回每个事件的动作和跟着变化的 userWantsPlay。 */
+function runSequence(steps: Step[], initialUserWantsPlay: boolean) {
+  const origin = createPauseOriginTracker();
   let userWantsPlay = initialUserWantsPlay;
-  let lastSelfPauseAt = 0;
   const actions: PlayIntentAction[] = [];
 
   for (const step of steps) {
-    if (step.selfPausedAt !== undefined) lastSelfPauseAt = step.selfPausedAt;
+    if ('selfPause' in step) {
+      origin.markSelfPause(step.at);
+      continue;
+    }
+
+    // 与 useAudioPlayer 的 syncPlayIntent 保持同一套调用顺序
+    let selfInitiated = false;
+    if (step.event === 'pause') selfInitiated = origin.consume(step.at);
+    else origin.reset();
 
     const action = nextPlayIntent({
       event: step.event,
       paused: step.paused,
       ended: step.ended ?? false,
-      selfInitiated: isSelfInitiatedPause(step.at, lastSelfPauseAt),
+      selfInitiated,
       userWantsPlay,
     });
 
@@ -54,7 +57,10 @@ test('切台清理发出的暂停不动播放意图', () => {
   // cleanup() 会 pause 掉旧的流。若因此把 userWantsPlay 清成 false，
   // 下一个电台加载完就不会自动播。
   const { actions, userWantsPlay } = runSequence(
-    [{ at: 1000, event: 'pause', paused: true, selfPausedAt: 1000 }],
+    [
+      { at: 1000, selfPause: true },
+      { at: 1010, event: 'pause', paused: true },
+    ],
     true,
   );
 
@@ -62,16 +68,31 @@ test('切台清理发出的暂停不动播放意图', () => {
   assert.equal(userWantsPlay, true);
 });
 
-test('切台之后的原生暂停不会被上一次清理的标记吞掉', () => {
-  // cleanup() 里 pause() 紧接着 load()，而 load() 会把还没派发的 pause 事件
-  // 一并清掉。若用「一次性标记 + 事件消费」，那个标记永远没人消费，
-  // 下一次真正的原生暂停就会被误判成站内发起的，意图留在 true，
-  // 看门狗 60 秒后误报「播放中断」。
+test('切台后新电台已开播，1 秒内的原生暂停仍要算原生', () => {
+  // 只按「离上一次自发暂停多久」判的话，新电台几百毫秒就开播时窗口还没过期，
+  // 紧接着的原生暂停会被当成站内暂停：意图停在 true，按钮显示「暂停」却
+  // 恢复不了播放，看门狗 60 秒后还会误报连接失败。
+  // playing 必须作废上一轮的登记。
   const { actions, userWantsPlay } = runSequence(
     [
-      // t=1000 切台：标记这一刻，但 pause 事件被 load() 吃掉了，不产生事件
-      // t=40000 用户按系统媒体控件暂停
-      { at: 40000, event: 'pause', paused: true, selfPausedAt: 1000 },
+      { at: 0, selfPause: true }, // 切台 cleanup，pause 事件被 load() 清掉
+      { at: 200, event: 'playing', paused: false }, // 新电台开播
+      { at: 400, event: 'pause', paused: true }, // 系统媒体控件暂停
+    ],
+    true,
+  );
+
+  assert.deepEqual(actions, [null, 'release'], '开播之后的原生暂停必须同步意图');
+  assert.equal(userWantsPlay, false);
+});
+
+test('切台之后隔很久的原生暂停不会被登记吞掉', () => {
+  // cleanup() 里 pause() 紧接着 load()，而 load() 会把还没派发的 pause 事件
+  // 一并清掉。登记没人消费时，时间窗是最后一道兜底。
+  const { actions, userWantsPlay } = runSequence(
+    [
+      { at: 1000, selfPause: true },
+      { at: 40000, event: 'pause', paused: true },
     ],
     true,
   );
@@ -99,11 +120,23 @@ test('原生暂停后再原生恢复，意图要对称地还回去', () => {
 test('站内暂停不会被重复 release', () => {
   // 用户点暂停时 store 已经把意图置成 false，随后的 pause 事件不该再动它
   const { actions } = runSequence(
-    [{ at: 5000, event: 'pause', paused: true, selfPausedAt: 5000 }],
+    [
+      { at: 5000, selfPause: true },
+      { at: 5010, event: 'pause', paused: true },
+    ],
     false,
   );
 
   assert.deepEqual(actions, [null]);
+});
+
+test('一次自发暂停只挡一次 pause 事件', () => {
+  // consume 之后登记就作废了，否则同一次登记会把后面的原生暂停也一起挡掉
+  const origin = createPauseOriginTracker();
+  origin.markSelfPause(1000);
+
+  assert.equal(origin.consume(1010), true);
+  assert.equal(origin.consume(1020), false, '第二次 pause 不该再被当成站内发起');
 });
 
 test('正常播放时的 playing 不重复 restore', () => {
@@ -138,9 +171,14 @@ test('过期事件不改意图', () => {
 });
 
 test('自发暂停的时间窗到点即失效', () => {
-  assert.equal(isSelfInitiatedPause(1000, 1000), true);
-  assert.equal(isSelfInitiatedPause(1000 + SELF_PAUSE_WINDOW_MS - 1, 1000), true);
-  assert.equal(isSelfInitiatedPause(1000 + SELF_PAUSE_WINDOW_MS, 1000), false);
-  // 从来没有自发暂停过（hook 里 ref 初值就是 0）
-  assert.equal(isSelfInitiatedPause(Date.now(), 0), false);
+  const origin = createPauseOriginTracker();
+
+  origin.markSelfPause(1000);
+  assert.equal(origin.consume(1000 + SELF_PAUSE_WINDOW_MS - 1), true);
+
+  origin.markSelfPause(1000);
+  assert.equal(origin.consume(1000 + SELF_PAUSE_WINDOW_MS), false);
+
+  // 从来没有登记过
+  assert.equal(createPauseOriginTracker().consume(Date.now()), false);
 });

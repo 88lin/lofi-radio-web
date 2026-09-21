@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { createHlsRecoveryController } from '@/lib/hls-recovery';
-import { isSelfInitiatedPause, nextPlayIntent } from '@/lib/media-intent';
+import { createPauseOriginTracker, nextPlayIntent } from '@/lib/media-intent';
 import { Station } from '@/lib/stations';
 import Hls, { type ErrorData } from 'hls.js';
 
@@ -132,8 +132,8 @@ export function useAudioPlayer() {
   });
   // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
   const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
-  // 最近一次站内发起暂停的时刻，用来把它和原生暂停区分开，见 media-intent.ts
-  const selfPauseAtRef = useRef(0);
+  // 区分站内暂停与原生暂停，见 media-intent.ts
+  const pauseOriginRef = useRef(createPauseOriginTracker());
 
   const {
     currentStation,
@@ -148,14 +148,14 @@ export function useAudioPlayer() {
   } = useAudioStore();
 
   /**
-   * 站内发起的暂停。记下时刻，handlePause 才能把它和原生暂停区分开。
-   * 只在确实还在播时记——已经是暂停态时 pause() 不会再触发事件，
-   * 记下来只会让紧随其后的一次原生暂停落进时间窗里被误判。
+   * 站内发起的暂停。先登记，handlePause 才能把它和原生暂停区分开。
+   * 只在确实还在播时登记——已经是暂停态时 pause() 不会再触发事件，
+   * 登记下来只会让紧随其后的一次原生暂停被误判。
    */
   const pauseMedia = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!audio.paused) selfPauseAtRef.current = Date.now();
+    if (!audio.paused) pauseOriginRef.current.markSelfPause(Date.now());
     audio.pause();
   }, []);
 
@@ -905,11 +905,22 @@ export function useAudioPlayer() {
     // 站内按钮反过来（显示「播放」、点一下反而继续播），看门狗也不会启动。
     const syncPlayIntent = (event: 'pause' | 'playing') => {
       const store = useAudioStore.getState();
+
+      let selfInitiated = false;
+      if (event === 'pause') {
+        selfInitiated = pauseOriginRef.current.consume(Date.now());
+      } else {
+        // 能重新播起来，就说明切台清理登记的那次自发暂停已经作废——事件要么
+        // 早已派发，要么被 load() 清掉了。不在这里作废的话，新电台开播后
+        // 1 秒内的原生暂停会被当成站内暂停，按钮显示「暂停」却恢复不了播放。
+        pauseOriginRef.current.reset();
+      }
+
       const action = nextPlayIntent({
         event,
         paused: audio.paused,
         ended: audio.ended,
-        selfInitiated: isSelfInitiatedPause(Date.now(), selfPauseAtRef.current),
+        selfInitiated,
         userWantsPlay: store.userWantsPlay,
       });
 

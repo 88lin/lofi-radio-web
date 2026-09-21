@@ -3,30 +3,63 @@
  *
  * 背景：站内的播放意图是 store 里的 userWantsPlay，而元素自己会被站外的东西
  * 改状态——系统 / 浏览器媒体控件、耳机按钮、来电抢占音频焦点。两边不同步就会
- * 出两类问题：意图停在 true 会让看门狗把「用户主动暂停」误报成播放中断；
- * 意图停在 false 会让站内按钮反过来（显示「播放」，点一下反而继续播），
- * 看门狗也不会启动。
+ * 出两类问题：意图停在 true 会让站内按钮反过来（显示「暂停」，点一下执行
+ * requestPause 恢复不了播放），看门狗还会在 60 秒后误报连接失败；意图停在
+ * false 则相反，按钮显示「播放」点一下反而继续播，看门狗也不启动。
  *
  * 判定放在这里而不是散在事件处理器里，是因为每条分支都挡着一个不明显的回归，
- * 而且事件顺序（切台 → 原生暂停 → 原生恢复）只有纯函数才好整段测。
+ * 而且这些回归全都出在事件顺序上（切台 → 开播 → 原生暂停），只有纯逻辑才好
+ * 整段测。
  */
 
 /**
  * 站内自己发起的暂停，pause 事件会在这个时间窗内派发。
  *
- * 用时间窗而不是「打一个一次性标记、由事件消费」：cleanup() 里 pause() 之后
- * 紧接着就是 load()，而 load() 会把还没派发的 pause 事件一并清掉，标记就永远
- * 没人消费，一直留到下一次真正的原生暂停上被误判成「自己发起的」。
- * 时间窗到点自动失效，不依赖事件一定送达。
- *
- * 取 1s 是就两边的代价权衡：判成「原生」的代价是切台时清掉播放意图、下一台
- * 不会自动播；判成「自己发起」的代价只是这一次原生暂停没同步，看门狗 60s 后
- * 多报一句中断。所以窗口宁可给宽一点。
+ * 时间窗只是兜底，真正的失效点是 markSelfPause / consume / reset 这三个调用
+ * （见 createPauseOriginTracker）。留着它是因为「pause 事件一定会送达」这个
+ * 前提不成立——cleanup() 里 pause() 紧接着就是 load()，而 load() 会把还没
+ * 派发的 pause 事件一并清掉，那次登记就没人消费。
  */
 export const SELF_PAUSE_WINDOW_MS = 1000;
 
-export function isSelfInitiatedPause(now: number, lastSelfPauseAt: number): boolean {
-  return now - lastSelfPauseAt < SELF_PAUSE_WINDOW_MS;
+export interface PauseOriginTracker {
+  /** 站内主动调用 pause() 时登记。 */
+  markSelfPause(now: number): void;
+  /** 取出这次 pause 的来源并作废登记：一次 pause() 最多对应一次事件。 */
+  consume(now: number): boolean;
+  /** 播放（重新）开始，作废此前的登记。 */
+  reset(): void;
+}
+
+/**
+ * 「这次 pause 是站内自己发起的吗」。
+ *
+ * 只按时间距离判是不够的：切台时 cleanup() 会登记一次自发暂停，而新电台可能
+ * 几百毫秒就开播了，此时窗口还没过期——紧接着的原生暂停会被当成站内暂停，
+ * 意图停在 true，播放按钮显示「暂停」却恢复不了播放，看门狗 60 秒后还会
+ * 误报连接失败。
+ * 所以 playing 事件必须 reset()：能重新播起来，就说明之前登记的那次暂停
+ * 要么事件早已派发、要么已经被 load() 清掉，无论如何都已经作废了。
+ */
+export function createPauseOriginTracker(): PauseOriginTracker {
+  // 哨兵取 -Infinity 而不是 0：now - 0 在小时间戳下会落进窗口里，
+  // 「从来没登记过」就成了「刚刚登记过」。
+  const NEVER = Number.NEGATIVE_INFINITY;
+  let lastSelfPauseAt = NEVER;
+
+  return {
+    markSelfPause(now) {
+      lastSelfPauseAt = now;
+    },
+    consume(now) {
+      const selfInitiated = now - lastSelfPauseAt < SELF_PAUSE_WINDOW_MS;
+      lastSelfPauseAt = NEVER;
+      return selfInitiated;
+    },
+    reset() {
+      lastSelfPauseAt = NEVER;
+    },
+  };
 }
 
 /** release = 同步成「不想播了」，restore = 同步成「想播」，null = 不动。 */
