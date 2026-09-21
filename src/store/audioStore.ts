@@ -94,24 +94,36 @@ type AudioGet = () => AudioState;
  * 变了没」和「令牌变了没」，重新选中当前这个电台时两者都不变，它会直接跳过，
  * 上一次加载失败留下的死 audio 元素永远不会被重建——表现就是按钮变回暂停、
  * 错误提示消失、但一直没有声音。
- * 反过来，若这个电台本来就在正常出声，就什么都别做，不要把它打断。
  */
 function applyStationSelection(index: number, set: AudioSet, get: AudioGet) {
   if (index < 0 || index >= stations.length) return;
 
   const station = stations[index];
-  const { currentStation, isPlaying, stationLoadToken } = get();
-  const keepPlaying = currentStation?.id === station.id && isPlaying;
+  const { currentStation, isPlaying, isLoading, hasError, isSlowConnection, stationLoadToken } = get();
+
+  /**
+   * 「这一台已经在正常工作」= 正在出声，或正在连。两种都不该推倒重来：
+   * 出声的别打断；正在连的重来会 destroy 掉 hls 实例、丢掉已经缓冲的部分，
+   * 弱网下用户可能因此永远等不到成功那一次。
+   *
+   * hasError 必须参与判断。断流不会触发 pause 事件，isPlaying 会一直停在 true，
+   * 只看 isPlaying 的话「看门狗报错 → 用户点同一台」会走进不重载的分支，
+   * 把错误清掉却什么都没做，正好退回到这套改动要修的「界面正常但没有声音」。
+   */
+  const keepCurrentLoad =
+    currentStation?.id === station.id && !hasError && (isPlaying || isLoading);
 
   set({
     stationIndex: index,
     currentStation: station,
     userWantsPlay: true,
-    stationLoadToken: keepPlaying ? stationLoadToken : stationLoadToken + 1,
-    isLoading: !keepPlaying,
+    stationLoadToken: keepCurrentLoad ? stationLoadToken : stationLoadToken + 1,
+    isLoading: keepCurrentLoad ? isLoading : true,
     hasError: false,
     errorMessage: null,
-    isSlowConnection: false,
+    // 沿用当前这次加载时慢提示要保留：看门狗的 hintedSlow 是 effect 内的局部
+    // 状态，这里清掉它不会再被重新置起来，提示就永远消失了。
+    isSlowConnection: keepCurrentLoad ? isSlowConnection : false,
   });
 }
 

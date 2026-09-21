@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { createHlsRecoveryController } from '@/lib/hls-recovery';
+import { shouldReleasePlayIntent } from '@/lib/media-pause';
 import { Station } from '@/lib/stations';
 import Hls, { type ErrorData } from 'hls.js';
 
@@ -131,6 +132,8 @@ export function useAudioPlayer() {
   });
   // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
   const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
+  // 下一个 pause 事件是不是站内自己发起的，见 shouldReleasePlayIntent
+  const expectPauseRef = useRef(false);
 
   const {
     currentStation,
@@ -143,6 +146,18 @@ export function useAudioPlayer() {
     setError,
     setSlowConnection,
   } = useAudioStore();
+
+  /**
+   * 站内发起的暂停。先打标记，handlePause 才能把它和原生暂停区分开。
+   * 只在确实还在播时打标记——已经是暂停态时 pause() 不会再触发事件，
+   * 标记会留到下一次真正的原生暂停上被误判成「自己发起的」。
+   */
+  const pauseMedia = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!audio.paused) expectPauseRef.current = true;
+    audio.pause();
+  }, []);
 
   // 清理函数
   const cleanup = useCallback(() => {
@@ -158,14 +173,14 @@ export function useAudioPlayer() {
       flvPlayerRef.current = null;
     }
     if (audioRef.current) {
-      audioRef.current.pause();
+      pauseMedia();
       // 注意：不能用 src = ''。空字符串会被解析成当前页面地址，浏览器会去把
       // HTML 当媒体加载，随后异步抛出 MEDIA_ERR_SRC_NOT_SUPPORTED，把
       // loadStation() 刚刚清空的错误状态重新写成"该音源在当前网络环境下不可用"。
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
     }
-  }, []);
+  }, [pauseMedia]);
 
   // 尝试播放音频
   const tryPlay = useCallback((requestId: number) => {
@@ -893,7 +908,16 @@ export function useAudioPlayer() {
     
     // pause 事件
     const handlePause = () => {
+      const selfInitiated = expectPauseRef.current;
+      expectPauseRef.current = false;
       setPlaying(false);
+
+      // 原生暂停（系统媒体控件、耳机按钮、来电抢占音频焦点）不经过 requestPause，
+      // 播放意图会留在 true，看门狗随后把它误判成断流。三种来源的区别见
+      // shouldReleasePlayIntent 的说明。
+      if (shouldReleasePlayIntent({ selfInitiated, ended: audio.ended })) {
+        useAudioStore.getState().requestPause();
+      }
     };
     
     // waiting 事件 - 缓冲中
@@ -985,10 +1009,10 @@ export function useAudioPlayer() {
       }
     } else {
       // 用户想要暂停 - 立即暂停
-      audio.pause();
+      pauseMedia();
       setLoading(false);
     }
-  }, [userWantsPlay, currentStation, tryPlay, setLoading]);
+  }, [userWantsPlay, currentStation, tryPlay, setLoading, pauseMedia]);
 
   // 监听音量变化
   useEffect(() => {
