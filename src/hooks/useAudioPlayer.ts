@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAudioStore } from '@/store/audioStore';
 import { createHlsRecoveryController } from '@/lib/hls-recovery';
 import { createPauseOriginTracker, nextPlayIntent } from '@/lib/media-intent';
@@ -132,8 +132,10 @@ export function useAudioPlayer() {
   });
   // loadBilibiliStream 需要在内部重试时自我调用，这里用 ref 转发，避免在声明前引用自身
   const loadBilibiliStreamRef = useRef<LoadBilibiliStream | null>(null);
-  // 区分站内暂停与原生暂停，见 media-intent.ts
-  const pauseOriginRef = useRef(createPauseOriginTracker());
+  // 区分站内暂停与原生暂停，见 media-intent.ts。
+  // useState 的惰性初始化：只在首次渲染构造一次，而且不像 useRef 那样
+  // 需要在渲染期读 .current（react-hooks/refs 会报错）。
+  const [pauseOrigin] = useState(createPauseOriginTracker);
 
   const {
     currentStation,
@@ -155,9 +157,9 @@ export function useAudioPlayer() {
   const pauseMedia = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!audio.paused) pauseOriginRef.current.markSelfPause(Date.now());
+    if (!audio.paused) pauseOrigin.markSelfPause(Date.now());
     audio.pause();
-  }, []);
+  }, [pauseOrigin]);
 
   // 清理函数
   const cleanup = useCallback(() => {
@@ -908,12 +910,12 @@ export function useAudioPlayer() {
 
       let selfInitiated = false;
       if (event === 'pause') {
-        selfInitiated = pauseOriginRef.current.consume(Date.now());
+        selfInitiated = pauseOrigin.consume(Date.now());
       } else {
         // 能重新播起来，就说明切台清理登记的那次自发暂停已经作废——事件要么
         // 早已派发，要么被 load() 清掉了。不在这里作废的话，新电台开播后
         // 1 秒内的原生暂停会被当成站内暂停，按钮显示「暂停」却恢复不了播放。
-        pauseOriginRef.current.reset();
+        pauseOrigin.reset();
       }
 
       const action = nextPlayIntent({

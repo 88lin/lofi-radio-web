@@ -221,7 +221,7 @@ export default function StationsPage() {
           <h2 id="play">收听与快捷键</h2>
           <div className="mt-4 leading-8 text-zinc-600 dark:text-zinc-300">
             上面任意一个电台名都能直接点开播放，播放器会停在屏幕角落，切换页面也不会中断。
-            全站都可以用键盘控制（焦点不在输入框或按钮上时）：
+            焦点不在输入框或按钮上时，还可以用键盘控制：
           </div>
 
           {/* 快捷键是一张图例，不是正文，所以给它独立表面并居中——
@@ -229,7 +229,9 @@ export default function StationsPage() {
           <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#FFFAFC] px-5 py-5 dark:border-white/[0.08] dark:bg-white/[0.03]">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-7 sm:gap-y-4">
               {[
-                { key: "空格", label: "播放 / 暂停" },
+                // 空格在内容页留给「向下翻页」，只有首页归播放器，
+                // 见 components/keyboard-shortcuts.tsx 的 SPACE_OWNED_PATHS
+                { key: "空格", label: "播放 / 暂停（仅首页）" },
                 { key: "←", label: "上一个电台" },
                 { key: "→", label: "下一个电台" },
                 { key: "M", label: "静音" },

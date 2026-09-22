@@ -119,6 +119,12 @@ function applyStationSelection(index: number, set: AudioSet, get: AudioGet) {
     userWantsPlay: true,
     stationLoadToken: keepCurrentLoad ? stationLoadToken : stationLoadToken + 1,
     isLoading: keepCurrentLoad ? isLoading : true,
+    // 要重载就说明当前这一路流马上会被拆掉，isPlaying 必须当场归位。
+    // 指望 cleanup() 的 pause 事件来清是不行的：紧跟着的 load() 会把那个
+    // 还没派发的事件一并清掉，isPlaying 会带着上一台的 true 一路撑到新台开播
+    // ——新台要是很慢，导航条和黑胶就会一直显示「在放」。
+    // 这里直接写而不走 setPlaying(false)：后者会结算专注时长，而切台不该断表。
+    isPlaying: keepCurrentLoad ? isPlaying : false,
     hasError: false,
     errorMessage: null,
     // 沿用当前这次加载时慢提示要保留：看门狗的 hintedSlow 是 effect 内的局部

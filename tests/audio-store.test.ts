@@ -196,7 +196,10 @@ test('正在连接时重选同一电台不推倒重来', () => {
   assert.equal(state.isSlowConnection, true, '沿用当前这次加载时慢提示要保留');
 });
 
-test('切到另一个电台一定重载', () => {
+test('切到另一个电台一定重载，并且不留着上一台的 isPlaying', () => {
+  // 指望 cleanup() 的 pause 事件来清 isPlaying 是不行的：紧跟着的 load() 会把
+  // 那个还没派发的事件一并清掉。不在这里归位的话，新台很慢时导航条和黑胶
+  // 会一直显示「在放」。
   primePlayback({ isPlaying: true });
 
   useAudioStore.getState().selectStationById(stations[1].id);
@@ -205,4 +208,17 @@ test('切到另一个电台一定重载', () => {
   assert.equal(state.currentStation?.id, stations[1].id);
   assert.equal(state.stationLoadToken, 8);
   assert.equal(state.isLoading, true);
+  assert.equal(state.isPlaying, false, '新台还没开播，不该显示成在放');
+});
+
+test('专注计时不因切台断表', () => {
+  // isPlaying 直接写而不走 setPlaying(false)，就是为了不触发专注时长结算——
+  // 切台的时候用户还在听，只是换了个台。
+  const startedAt = Date.now() - 30_000;
+  primePlayback({ isPlaying: true });
+  useAudioStore.setState({ focusStartTime: startedAt, accumulatedFocusTime: 0 });
+
+  useAudioStore.getState().selectStationById(stations[1].id);
+
+  assert.equal(useAudioStore.getState().focusStartTime, startedAt, '起算点不该被清掉');
 });

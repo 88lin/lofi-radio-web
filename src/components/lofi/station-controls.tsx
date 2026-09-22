@@ -32,9 +32,19 @@ function useStationPlayback(stationId: string) {
 
   const isCurrent = current?.id === stationId;
   const isFailed = isCurrent && hasError;
-  // 不加 !isPlaying：直播流放着放着断流时不会触发 pause 事件，isPlaying 会一直
-  // 停在 true，只有 waiting 事件把 isLoading 抬起来——这时候该转圈，不是显示均衡器。
-  const isBuffering = isCurrent && userWantsPlay && isLoading && !hasError;
+  /**
+   * 「用户想听，但还没有声音」。
+   *
+   * 两个信号都要：isLoading 覆盖「在连 / 在缓冲」，isSlowConnection 覆盖
+   * 看门狗已经判定卡住、但 isLoading 早被 canplay 清成 false 的情况
+   * （流走到末尾断掉就是这样）。只看 isLoading 的话，迷你岛显示「网络较慢…」
+   * 而清单页里出问题的那一行什么都不显示——正好是这套改动要消灭的
+   * 「状态不可见」。两处必须用同一个窗口。
+   *
+   * 不加 !isPlaying：直播流断流时不会触发 pause 事件，isPlaying 会一直停在
+   * true，这时候该转圈，不是显示均衡器。
+   */
+  const isBuffering = isCurrent && userWantsPlay && !hasError && (isLoading || isSlowConnection);
 
   const toggle = () => {
     if (!isCurrent) {
@@ -55,13 +65,13 @@ function useStationPlayback(stationId: string) {
     // 失败态不能算「正在播放」：这一格的图标是用户判断有没有在响的唯一依据
     isActive: isCurrent && userWantsPlay && !hasError,
     isSounding: isCurrent && isPlaying,
-    // 「在连但还没出声」必须和「已经在放」区分开，否则连不上的那段时间里
-    // 按钮显示的是暂停图标，看起来和正常播放一模一样。
-    // 要带上 userWantsPlay：页面刚打开时播放器会预载当前电台，那会儿
-    // isLoading 也是 true，但用户并没有点过任何东西，不该转圈。
+    // 判据见上面 isBuffering 的说明
     isBuffering,
-    /** 还在连、只是慢。这是提示不是错误，文案不能写成「失败」。 */
-    isSlow: isBuffering && isSlowConnection,
+    /**
+     * 还在连、只是慢。这是提示不是错误，文案不能写成「失败」。
+     * 判据必须和 MiniPlayer 的状态行一致（那边只看 isSlowConnection）。
+     */
+    isSlow: isCurrent && userWantsPlay && !hasError && isSlowConnection,
     isFailed,
     toggle,
   };
