@@ -824,7 +824,7 @@ FullScreenPlayer.displayName = 'FullScreenPlayer';
 
 // ==================== 迷你灵动岛 ====================
 const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
-  const { isPlaying, currentStation, isLoading, userWantsPlay, hasError, requestPlay, requestPause, nextStation, prevStation, retryStation } = useAudioStore();
+  const { isPlaying, currentStation, isLoading, userWantsPlay, hasError, isSlowConnection, requestPlay, requestPause, nextStation, prevStation, retryStation } = useAudioStore();
   const { focusTime } = useFocusTimer();
   const stationColor = hasError ? '#EF4444' : (currentStation?.color || '#8B5CF6');
 
@@ -904,6 +904,10 @@ const MiniPlayer = memo(({ onExpand }: { onExpand: () => void }) => {
           <div className="flex items-center gap-1 text-slate-500 dark:text-white/55 text-[10px] sm:text-xs font-medium">
             {hasError ? (
               <span className="text-red-500 dark:text-red-400">播放失败</span>
+            ) : isSlowConnection ? (
+              /* 「慢」不是「失败」：还在连就别用红色，也别写成失败，
+                 否则用户会去点重试，把已经缓冲好的部分全丢掉重来 */
+              <span className="text-amber-600 dark:text-amber-400">网络较慢…</span>
             ) : (
               <>
                 <Clock className="w-2.5 h-2.5" />

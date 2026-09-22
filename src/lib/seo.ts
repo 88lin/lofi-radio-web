@@ -3,7 +3,6 @@ import type { Metadata, MetadataRoute } from "next";
 import {
   homepageFaqs,
   howToStart,
-  siteFacts,
   siteLastUpdated,
 } from "./seo-content";
 import { type Station, stations } from "./stations";
@@ -586,6 +585,3 @@ export function buildSitemapEntries(): MetadataRoute.Sitemap {
     },
   ];
 }
-
-/** 供页面渲染的站点速览数据。 */
-export const siteSummary = siteFacts;
