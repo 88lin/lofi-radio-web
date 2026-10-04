@@ -491,6 +491,6 @@ If you have questions or suggestions, feel free to:
 
 **If this project helped you, please give it a ⭐ Star for support!**
 
-Made with ❤️ by [Moling Knowledge Base](https://blog.88lin.eu.org/) · [GitHub](https://github.com/88lin)
+Made with ❤️ by [Moling Knowledge Base](https://dev.88lin.eu.org/) · [GitHub](https://github.com/88lin)
 
 </div>

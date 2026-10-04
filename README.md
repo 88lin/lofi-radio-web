@@ -536,6 +536,6 @@ lofi-radio-web/
 
 **如果这个项目对你有帮助，请给一个 ⭐ Star 支持一下！**
 
-Made with ❤️ by [茉灵智库](https://blog.88lin.eu.org/) · [GitHub](https://github.com/88lin)
+Made with ❤️ by [茉灵智库](https://dev.88lin.eu.org/) · [GitHub](https://github.com/88lin)
 
 </div>

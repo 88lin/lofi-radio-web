@@ -12,7 +12,9 @@ export const siteConfig = {
   fullName: "Lofi Radio 在线专注音乐电台",
   url: "https://lofi.88lin.eu.org",
   author: "茉灵智库",
-  creatorUrl: "https://blog.88lin.eu.org/",
+  creatorUrl: "https://dev.88lin.eu.org",
+  /** 博客仍是维护者的内容站，只是不再作为默认跳转入口，故保留在 sameAs 里。 */
+  blogUrl: "https://blog.88lin.eu.org/",
   githubUrl: "https://github.com/88lin/lofi-radio-web",
   ogImage:
     "https://cdn.jsdmirror.com/gh/88lin/picx-images-hosting@master/hero-image-dark.jpg",
@@ -241,7 +243,7 @@ function buildOrganization() {
       url: `${siteConfig.url}/logo.svg`,
       caption: `${siteConfig.fullName} Logo`,
     },
-    sameAs: [siteConfig.creatorUrl, siteConfig.githubUrl],
+    sameAs: [siteConfig.creatorUrl, siteConfig.blogUrl, siteConfig.githubUrl],
   };
 }
 
