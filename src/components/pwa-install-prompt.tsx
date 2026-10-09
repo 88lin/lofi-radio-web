@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share, Plus, Music4 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  createPwaInstallState,
+  PWA_DISMISSED_KEY,
+  PWA_INSTALLED_KEY,
+  PWA_SESSION_KEY,
+  type InstallDevice,
+  type PwaInstallState,
+} from '@/lib/pwa-install';
 
 // 扩展 Window 接口
 declare global {
   interface WindowEventMap {
-    beforeinstallprompt: Event & {
-      prompt: () => Promise<void>;
-      userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-    };
+    beforeinstallprompt: BeforeInstallPromptEvent;
   }
 }
 
@@ -20,30 +26,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-type DeviceType = 'ios' | 'android' | 'desktop' | null;
-
-const DISMISSED_KEY = 'pwa-install-dismissed';
-const DISMISS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** localStorage 在隐私模式与被锁定的 WebView 里会抛异常，这个组件挂在 root layout 上，抛出去会波及每一页。 */
-function readDismissedAt(): number | null {
-  try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
-    return raw ? parseInt(raw, 10) : null;
-  } catch {
-    return null;
-  }
-}
-
-function markDismissed() {
-  try {
-    localStorage.setItem(DISMISSED_KEY, Date.now().toString());
-  } catch {
-    // 记不住就记不住，不能让提示逻辑把页面带崩
-  }
-}
-
-function getDeviceType(): DeviceType {
+function getDeviceType(): InstallDevice | null {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -77,103 +60,140 @@ function getIsStandalone() {
 }
 
 export function PWAInstallPrompt() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [installState] = useState(() => createPwaInstallState(
+    () => window.localStorage,
+    () => window.sessionStorage,
+  ));
   const deviceType = getDeviceType();
   const isStandalone = getIsStandalone();
 
+  const handleInstalled = useCallback(() => {
+    installState.markInstalled();
+    deferredPromptRef.current = null;
+    setDeferredPrompt(null);
+    setIsInstalled(true);
+  }, [installState]);
+
   useEffect(() => {
-    if (isStandalone) return;
+    // 从主屏幕打开过的用户，之后回到同一浏览器存储空间也不再提示。
+    if (getIsStandalone()) installState.markInstalled();
 
-    const currentDevice = deviceType ?? 'desktop';
-
-    // 检查是否之前已关闭过提示
-    const dismissedAt = readDismissedAt();
-    if (dismissedAt !== null && Date.now() - dismissedAt < DISMISS_WINDOW_MS) {
-      return;
-    }
-
-    let showTimer: ReturnType<typeof setTimeout> | undefined;
-
-    // iOS 设备特殊处理（没有原生事件，直接延迟显示）
-    if (currentDevice === 'ios') {
-      showTimer = setTimeout(() => {
-        setShowPrompt(true);
-      }, 6000);
-      return () => clearTimeout(showTimer);
-    }
-
-    // 监听 beforeinstallprompt 事件（Android/桌面端）
-    const handleBeforeInstallPrompt = (e: Event) => {
-      if (currentDevice === 'desktop') {
+    const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
+      // 必须先拦截原生自动提示，再检查免打扰；地址栏/菜单的手动安装入口仍由浏览器提供。
+      event.preventDefault();
+      if (getIsStandalone()) {
+        handleInstalled();
         return;
       }
+      if (!installState.canPrompt(deviceType ?? 'desktop')) return;
 
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-
-      showTimer = setTimeout(() => {
-        setShowPrompt(true);
-      }, 6000);
+      deferredPromptRef.current = event;
+      setDeferredPrompt(event);
     };
+    const checkInstalled = () => {
+      if (getIsStandalone() || installState.isInstalled()) handleInstalled();
+    };
+    const displayMode = window.matchMedia('(display-mode: standalone)');
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+    window.addEventListener('storage', checkInstalled);
+    window.addEventListener('pageshow', checkInstalled);
+    document.addEventListener('visibilitychange', checkInstalled);
+    // addListener 兼容旧版 iOS Safari。
+    if (displayMode.addEventListener) displayMode.addEventListener('change', checkInstalled);
+    else displayMode.addListener(checkInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      // 这个 timer 原来没人清理：6 秒内跳走再回来，旧的定时器还会再排一次弹出
-      if (showTimer) clearTimeout(showTimer);
+      window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener('storage', checkInstalled);
+      window.removeEventListener('pageshow', checkInstalled);
+      document.removeEventListener('visibilitychange', checkInstalled);
+      if (displayMode.removeEventListener) displayMode.removeEventListener('change', checkInstalled);
+      else displayMode.removeListener(checkInstalled);
     };
-  }, [deviceType, isStandalone]);
-
-  /**
-   * 提示一露出就记账，8 秒后自动收起。
-   *
-   * 记账必须发生在「弹出」而不是「关闭」的时刻。原来只在手动关闭 / 8 秒自动关闭时
-   * 写 localStorage，用户只要在这 8 秒内刷新或整页跳转，7 天免打扰标记就永远写不进去，
-   * 下一次加载 6 秒后又弹——页面越多越像「每页都弹」。
-   */
-  useEffect(() => {
-    if (!showPrompt) return;
-
-    markDismissed();
-
-    const timer = setTimeout(() => {
-      setShowPrompt(false);
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, [showPrompt]);
+  }, [deviceType, handleInstalled, installState]);
 
   const handleInstall = useCallback(async () => {
-    if (!deferredPrompt) return;
+    const prompt = deferredPromptRef.current;
+    if (!prompt) return;
+
+    // 浏览器事件只能消费一次；同步清空，避免快速连点或失败重试复用旧事件。
+    deferredPromptRef.current = null;
+    setDeferredPrompt(null);
+    installState.dismiss();
 
     try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        setShowPrompt(false);
-        setDeferredPrompt(null);
-      } else {
-        setShowPrompt(false);
-        setDeferredPrompt(null);
-        markDismissed();
-      }
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') handleInstalled();
     } catch (error) {
       console.error('Install failed:', error);
-      setShowPrompt(false);
-      markDismissed();
     }
-  }, [deferredPrompt]);
+  }, [handleInstalled, installState]);
+
+  // 监听器全站保留，卡片及其计时器只在首页存活。离开首页就卸载，返回也不会带回旧卡片。
+  if (pathname !== '/' || isInstalled || isStandalone || !deviceType || deviceType === 'desktop') {
+    return null;
+  }
+
+  return (
+    <HomeInstallPrompt
+      deviceType={deviceType}
+      hasNativePrompt={deferredPrompt !== null}
+      installState={installState}
+      onInstall={handleInstall}
+    />
+  );
+}
+
+function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstall }: {
+  deviceType: 'ios' | 'android';
+  hasNativePrompt: boolean;
+  installState: PwaInstallState;
+  onInstall: () => Promise<void>;
+}) {
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  // 重复的 beforeinstallprompt 只更新可用事件，不叠加计时器。
+  useEffect(() => {
+    if (deviceType !== 'ios' && !hasNativePrompt) return;
+    if (!installState.canPrompt(deviceType)) return;
+
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    const showTimer = setTimeout(() => {
+      // 等待期间可能已在别处安装、关闭提示或改变显示模式，露出前再次核验并记账。
+      // 路由已更新但 React 尚未清理旧 effect 时，不能消费首页的展示机会。
+      if (window.location.pathname !== '/' || getIsStandalone() || !installState.markShown(deviceType)) return;
+      setShowPrompt(true);
+      hideTimer = setTimeout(() => setShowPrompt(false), 8000);
+    }, 6000);
+
+    const handleStorage = (event: StorageEvent) => {
+      if (![PWA_DISMISSED_KEY, PWA_INSTALLED_KEY, PWA_SESSION_KEY].includes(event.key ?? '')) return;
+      if (installState.canPrompt(deviceType)) return;
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+      setShowPrompt(false);
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [deviceType, hasNativePrompt, installState]);
 
   const handleDismiss = useCallback(() => {
+    installState.dismiss();
     setShowPrompt(false);
-    markDismissed();
-  }, []);
-
-  // 如果是 PWA 模式，或者是桌面端（走原生），直接返回空
-  if (isStandalone || deviceType === 'desktop') return null;
+  }, [installState]);
 
   // showPrompt 的判断必须放在 AnimatePresence 里面。提前 return null 会把
   // AnimatePresence 本身一起卸载，它就没有机会播放子元素的 exit 动画——
@@ -218,7 +238,7 @@ export function PWAInstallPrompt() {
                     就是浏览器的错误页，/pricing.md 也明写了不提供离线缓存。 */}
                 <p className="text-zinc-600 dark:text-white/60 text-[13px] leading-relaxed mb-3 pr-2">
                   {deviceType === 'ios'
-                    ? '将应用添加到主屏幕。轻点浏览器下方的分享图标，选择添加到主屏幕'
+                    ? '将应用添加到主屏幕。打开浏览器的分享菜单，选择添加到主屏幕'
                     : '添加到主屏幕，获取独立窗口与沉浸式播放，打开更快'}
                 </p>
 
@@ -237,7 +257,10 @@ export function PWAInstallPrompt() {
                 ) : (
                   <div className="flex items-center gap-2.5 mt-1">
                     <Button
-                      onClick={handleInstall}
+                      onClick={() => {
+                        handleDismiss();
+                        void onInstall();
+                      }}
                       className="h-8 px-4 rounded-full text-[13px] font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-sm transition-all"
                     >
                       立即安装
