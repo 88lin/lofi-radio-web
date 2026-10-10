@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share, Plus, Music4 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { BeforeInstallPromptEvent } from '@/lib/pwa-install-capture';
 import {
   createPwaInstallState,
   PWA_DISMISSED_KEY,
@@ -13,18 +14,6 @@ import {
   type InstallDevice,
   type PwaInstallState,
 } from '@/lib/pwa-install';
-
-// 扩展 Window 接口
-declare global {
-  interface WindowEventMap {
-    beforeinstallprompt: BeforeInstallPromptEvent;
-  }
-}
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
 
 function getDeviceType(): InstallDevice | null {
   if (typeof window === 'undefined') {
@@ -72,6 +61,11 @@ export function PWAInstallPrompt() {
   const isStandalone = getIsStandalone();
 
   const handleInstalled = useCallback(() => {
+    const captured = window.__lofiPwaInstall;
+    if (captured) {
+      captured.installed = true;
+      captured.prompt = null;
+    }
     installState.markInstalled();
     deferredPromptRef.current = null;
     setDeferredPrompt(null);
@@ -79,13 +73,18 @@ export function PWAInstallPrompt() {
   }, [installState]);
 
   useEffect(() => {
-    // 从主屏幕打开过的用户，之后回到同一浏览器存储空间也不再提示。
-    if (getIsStandalone()) installState.markInstalled();
+    // 从主屏幕打开或在 hydration 前已安装，先记账，首页计时器就不会启动。
+    if (getIsStandalone() || window.__lofiPwaInstall?.installed) installState.markInstalled();
 
     const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
-      // 必须先拦截原生自动提示，再检查免打扰；地址栏/菜单的手动安装入口仍由浏览器提供。
+      // 桌面端不显示自定义卡片，必须保留浏览器自己的原生安装入口。
+      if (deviceType === 'desktop') return;
+
+      // 移动端由自定义卡片在合适时机调用 prompt；先拦截浏览器自动提示。
       event.preventDefault();
-      if (getIsStandalone()) {
+      const captured = window.__lofiPwaInstall;
+      if (captured?.prompt === event) captured.prompt = null;
+      if (getIsStandalone() || captured?.installed) {
         handleInstalled();
         return;
       }
@@ -101,6 +100,9 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleInstalled);
+    // 接管 head 脚本收到的早期事件，仍走同一套冷却和安装状态判断。
+    const pendingPrompt = window.__lofiPwaInstall?.prompt;
+    if (pendingPrompt) handleBeforeInstallPrompt(pendingPrompt);
     window.addEventListener('storage', checkInstalled);
     window.addEventListener('pageshow', checkInstalled);
     document.addEventListener('visibilitychange', checkInstalled);

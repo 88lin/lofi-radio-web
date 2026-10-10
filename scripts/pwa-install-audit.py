@@ -22,7 +22,8 @@ READY_SCRIPT = """(() => {
   const addListener = window.addEventListener.bind(window);
   window.addEventListener = (type, ...args) => {
     addListener(type, ...args);
-    if (type === 'beforeinstallprompt') window.__pwaReady = true;
+    // head 的 capture listener 先启动；必须等 React 的普通 listener 才算就绪。
+    if (type === 'beforeinstallprompt' && args[1] !== true) window.__pwaReady = true;
   };
 })();"""
 
@@ -185,6 +186,45 @@ class Audit:
             self.advance(page)
             self.shown(page)
             assert page.evaluate("Number(localStorage.getItem('pwa-install-dismissed')) > 0")
+
+    def before_hydration(self, mode='prompt'):
+        device = 'desktop' if mode == 'desktop' else 'android'
+        with self.session(device) as (context, page):
+            # 阻塞客户端 bundle，确定事件发生在 head 已执行、React 尚未启动的窗口。
+            # 不注入生产 HTML，也不依赖机器加载速度制造竞态。
+            pending = []
+            context.route('**/_next/**/*.js', lambda route: pending.append(route))
+            page.goto(self.url + '/', wait_until='commit')
+            page.wait_for_function('window.__lofiPwaInstall !== undefined')
+            assert not page.evaluate('window.__pwaReady === true'), 'React started before early event'
+            if mode == 'cooldown':
+                page.evaluate("localStorage.setItem('pwa-install-dismissed', String(Date.now()))")
+            prevented = page.evaluate(INSTALL_EVENT, {})
+            assert prevented == (device == 'android'), 'Early native prompt handled for wrong device'
+            if mode == 'installed':
+                page.evaluate("window.dispatchEvent(new Event('appinstalled'))")
+
+            context.unroute('**/_next/**/*.js')
+            for route in pending:
+                route.continue_()
+            page.wait_for_load_state('networkidle')
+            page.wait_for_function('window.__pwaReady === true')
+
+            if mode == 'prompt':
+                self.shown(page)
+                # 缓存的必须是仍可消费的同一个安装事件，而不只是一个展示标记。
+                page.get_by_role('button', name='立即安装', exact=True).click()
+                self.hidden(page)
+                assert page.evaluate('window.__promptCalls') == 1
+                assert page.evaluate("localStorage.getItem('pwa-installed') === 'true'")
+            else:
+                self.advance(page)
+                self.hidden(page)
+                if mode == 'installed':
+                    assert page.evaluate("localStorage.getItem('pwa-installed') === 'true'")
+                    self.fire(page)
+                    self.advance(page)
+                    self.hidden(page)
 
     def content_page(self, path):
         with self.session() as (_, page):
@@ -366,12 +406,16 @@ class Audit:
         with self.session(device) as (_, page):
             for path in ['/', '/faq', '/about', '/stations']:
                 self.goto(page, path)
-                self.fire(page)
+                assert not page.evaluate(INSTALL_EVENT, {}), 'Desktop native prompt was prevented'
                 self.advance(page)
                 self.hidden(page)
 
     def all(self):
         self.run('Android waits for installability, then shows once', self.first_visit)
+        self.run('Early Android install event survives hydration and remains usable', self.before_hydration)
+        self.run('Early appinstalled survives hydration and suppresses later events', lambda: self.before_hydration('installed'))
+        self.run('Early Android event respects existing cooldown', lambda: self.before_hydration('cooldown'))
+        self.run('Early desktop event preserves native prompt', lambda: self.before_hydration('desktop'))
         for path in ['/faq', '/about', '/stations']:
             self.run(f'{path}: no card; captured event usable on home', lambda path=path: self.content_page(path))
         self.run('Navigate while timer pending', lambda: self.navigation(True))
@@ -397,8 +441,8 @@ class Audit:
         self.run('iPad manual guide is home only and shown once', lambda: self.ios('ipad'))
         self.run('iPad desktop UA with touch detection', lambda: self.ios('mac', True))
         self.run('iOS navigator.standalone installation', self.ios_standalone)
-        self.run('Desktop Chrome UA: no auto card on all pages', lambda: self.desktop('desktop'))
-        self.run('Desktop Safari UA: no auto card on all pages', lambda: self.desktop('mac'))
+        self.run('Desktop Chrome UA: preserve native prompt on all pages', lambda: self.desktop('desktop'))
+        self.run('Desktop Safari UA: preserve native prompt on all pages', lambda: self.desktop('mac'))
 
 
 def main():

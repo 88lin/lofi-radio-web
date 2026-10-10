@@ -7,6 +7,7 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { ThemeColorSync } from "@/components/theme-color-sync";
 import { PlayerHost } from "@/components/lofi/player-host";
+import { PWA_INSTALL_CAPTURE_SCRIPT } from "@/lib/pwa-install-capture";
 import { buildSiteMetadata, buildSiteSchema, serializeJsonLd } from "@/lib/seo";
 
 import type { Viewport } from "next";
@@ -37,6 +38,11 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        {/* 安装事件可能早于 React effect；不能用延后执行的 next/script 接收它。 */}
+        <script
+          id="pwa-install-capture"
+          dangerouslySetInnerHTML={{ __html: PWA_INSTALL_CAPTURE_SCRIPT }}
+        />
         {/* 用原生 <script> 而不是 next/script：
             next/script 在 App Router 下把内容塞进 RSC 的 __next_s 载荷，
             要等客户端运行时才注入 DOM。AI 抓取器大多不执行 JS，
