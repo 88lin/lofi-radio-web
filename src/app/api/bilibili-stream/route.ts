@@ -65,6 +65,10 @@ const BILIBILI_HEADERS = {
   'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
 };
 
+// 电台只需要声音，优先请求流畅档，避免主动拉取原画视频。
+// B 站可能回退到更高的 current_qn；qn=80 不代表纯音频或保证低码率。
+const PREFERRED_QN = 80;
+
 async function fetchJson<T>(url: string, timeoutMs = 12000): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -197,7 +201,7 @@ export async function GET(request: NextRequest) {
   const roomInfoUrl = `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${roomId}`;
   const playInfoUrl =
     'https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo' +
-    `?room_id=${roomId}&protocol=0,1&format=0,1,2&codec=0,1&qn=10000&platform=web&ptype=8`;
+    `?room_id=${roomId}&protocol=0,1&format=0,1,2&codec=0,1&qn=${PREFERRED_QN}&platform=web&ptype=8`;
 
   try {
     const [infoData, playInfoData] = await Promise.all([

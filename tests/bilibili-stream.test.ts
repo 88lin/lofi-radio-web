@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { NextRequest } from 'next/server';
 
-import { extractHlsUrls, isValidRoomId } from '../src/app/api/bilibili-stream/route';
+import { GET, extractHlsUrls, isValidRoomId } from '../src/app/api/bilibili-stream/route';
 
 test('isValidRoomId only accepts plain positive integers', () => {
   assert.equal(isValidRoomId('27519423'), true);
@@ -73,3 +74,62 @@ test('extractHlsUrls keeps compatible HLS fallbacks in priority order', () => {
     'https://fmp4.example.com/fmp4-avc.m3u8?token=1',
   ]);
 });
+
+// 请求档位和实际档位是两回事。每个 codec 只提供一个实际档位，
+// url_info 中的多个条目是该流的 CDN 候选，不是不同画质。
+for (const actualQn of [80, 250]) {
+  test(`API requests qn=80 and preserves signed stream candidates when upstream returns qn=${actualQn}`, async (t) => {
+    const requests: URL[] = [];
+    t.mock.method(globalThis, 'fetch', async (input: string | URL | Request) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      requests.push(url);
+
+      if (url.pathname === '/room/v1/Room/get_info') {
+        return Response.json({ code: 0, data: { title: 'Lofi Girl', live_status: 1 } });
+      }
+
+      assert.equal(url.pathname, '/xlive/web-room/v2/index/getRoomPlayInfo');
+      assert.equal(url.searchParams.get('room_id'), '27519423');
+      assert.equal(url.searchParams.get('qn'), '80');
+      return Response.json({
+        code: 0,
+        data: {
+          playurl_info: {
+            playurl: {
+              stream: [
+                { protocol: 'http_stream', format: 'flv', path: '/live.flv' },
+                { protocol: 'http_hls', format: 'ts', path: '/live.m3u8' },
+              ].map(({ protocol, format, path }) => ({
+                protocol_name: protocol,
+                format: [{
+                  format_name: format,
+                  codec: [{
+                    codec_name: 'avc',
+                    current_qn: actualQn,
+                    base_url: path,
+                    url_info: [
+                      { host: 'https://primary.example.com', extra: '?token=primary' },
+                      { host: 'https://backup.example.com', extra: '?token=backup' },
+                    ],
+                  }],
+                }],
+              })),
+            },
+          },
+        },
+      });
+    });
+
+    const response = await GET(new NextRequest('http://localhost/api/bilibili-stream?room_id=27519423'));
+    const body = await response.json();
+
+    assert.equal(requests.length, 2);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    assert.equal(body.success, true);
+    assert.equal(body.flv_url, 'https://primary.example.com/live.flv?token=primary');
+    assert.equal(body.hls_url, 'https://primary.example.com/live.m3u8?token=primary');
+    assert.deepEqual(body.backup_urls, ['https://backup.example.com/live.flv?token=backup']);
+    assert.deepEqual(body.hls_backup_urls, ['https://backup.example.com/live.m3u8?token=backup']);
+  });
+}

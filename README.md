@@ -298,6 +298,13 @@ npm run start
 - API 依赖：`/api/bilibili-stream` 显式使用 Node.js runtime
 - 外网访问：部署环境需要允许服务端访问 `api.live.bilibili.com` 和 `api.github.com`
 
+### Bilibili 直播的流量与代理
+
+- Bilibili 取流接口默认请求流畅档（`qn=80`），供 Lofi Girl 等 B 站电台使用。B 站可能返回更高的实际档位（例如 `current_qn=250`）；这只是尽力请求低画质，不保证节省流量或改善卡顿。
+- HLS/FLV 通常仍包含视频。隐藏画面、使用 `<audio>` 或在 flv.js 设置 `hasVideo: false` 只影响本地播放处理，不会阻止视频数据下载。
+- 固定直链代理（如 [bili-live-flv-proxy](https://github.com/oversizexl/bili-live-flv-proxy)）可以简化外部播放器的地址配置，但原样转发音视频并不等于提取纯音频。本项目的 API 只解析地址，由浏览器直连 CDN，使用已有的 HLS/FLV 回退机制，不持续转发直播数据。
+- 如需显著减少听众流量，应使用纯音频电台，或另行部署可长期运行的音频提取服务，将视频在服务端去除后再传给浏览器。后者需要单独承担上游拉流、音频分发和运维成本；普通 FLV 代理不能代替这一步。
+
 ### 部署到 Vercel（推荐）
 
 [Vercel](https://vercel.com) 与当前仓库结构匹配，是优先推荐的托管方式。
