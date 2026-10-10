@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { HlsCandidate } from '@/lib/hls-candidates';
 
 export const runtime = 'nodejs';
 
@@ -144,9 +145,9 @@ function extractStreamCandidates(
     .sort(sortStreamCandidates);
 }
 
-export function extractHlsUrls(playInfo: BilibiliPlayInfoData | undefined): string[] {
+export function extractHlsCandidates(playInfo: BilibiliPlayInfoData | undefined): HlsCandidate[] {
   const streams = playInfo?.playurl_info?.playurl?.stream ?? [];
-  const urls: string[] = [];
+  const urls = new Map<string, HlsCandidate>();
 
   for (const protocolName of ['http_hls', 'http_stream']) {
     for (const formatName of ['ts', 'fmp4']) {
@@ -169,16 +170,26 @@ export function extractHlsUrls(playInfo: BilibiliPlayInfoData | undefined): stri
           )
           .sort(sortStreamCandidates);
 
-        urls.push(...candidates.map((candidate) => candidate.url));
+        for (const candidate of candidates) {
+          if (!urls.has(candidate.url)) {
+            urls.set(candidate.url, { url: candidate.url, format: formatName, codec: candidate.codecName });
+          }
+        }
 
         if (format.master_url && candidates.length === 0) {
-          urls.push(format.master_url);
+          if (!urls.has(format.master_url)) {
+            urls.set(format.master_url, { url: format.master_url, format: formatName });
+          }
         }
       }
     }
   }
 
-  return [...new Set(urls)];
+  return [...urls.values()];
+}
+
+export function extractHlsUrls(playInfo: BilibiliPlayInfoData | undefined): string[] {
+  return extractHlsCandidates(playInfo).map(candidate => candidate.url);
 }
 
 // room_id 会被拼进上游 URL，必须先确认它只是一串数字，
@@ -241,7 +252,8 @@ export async function GET(request: NextRequest) {
     }
 
     const flvCandidates = extractStreamCandidates(playInfoData.data, 'http_stream', 'flv');
-    const hlsUrls = extractHlsUrls(playInfoData.data);
+    const hlsCandidates = extractHlsCandidates(playInfoData.data);
+    const hlsUrls = hlsCandidates.map(candidate => candidate.url);
 
     if (!flvCandidates[0]?.url && !hlsUrls[0]) {
       return NextResponse.json(
@@ -262,6 +274,7 @@ export async function GET(request: NextRequest) {
         flv_url: flvCandidates[0]?.url || '',
         hls_url: hlsUrls[0] ?? null,
         hls_backup_urls: hlsUrls.slice(1),
+        hls_candidates: hlsCandidates,
         backup_urls: flvCandidates.slice(1).map((candidate) => candidate.url),
         quality: playInfoData.data?.playurl_info?.playurl?.g_qn_desc ?? [],
         timestamp: Date.now(),

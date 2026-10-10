@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NextRequest } from 'next/server';
 
-import { GET, extractHlsUrls, isValidRoomId } from '../src/app/api/bilibili-stream/route';
+import { GET, extractHlsCandidates, extractHlsUrls, isValidRoomId } from '../src/app/api/bilibili-stream/route';
 
 test('isValidRoomId only accepts plain positive integers', () => {
   assert.equal(isValidRoomId('27519423'), true);
@@ -73,6 +73,12 @@ test('extractHlsUrls keeps compatible HLS fallbacks in priority order', () => {
     'https://ts-hevc.example.com/ts-hevc.m3u8?token=2',
     'https://fmp4.example.com/fmp4-avc.m3u8?token=1',
   ]);
+  assert.deepEqual(extractHlsCandidates(playInfo).map(({ format, codec }) => ({ format, codec })), [
+    { format: 'ts', codec: 'avc' },
+    { format: 'ts', codec: 'avc' },
+    { format: 'ts', codec: 'hevc' },
+    { format: 'fmp4', codec: 'avc' },
+  ]);
 });
 
 // 请求档位和实际档位是两回事。每个 codec 只提供一个实际档位，
@@ -131,5 +137,9 @@ for (const actualQn of [80, 250]) {
     assert.equal(body.hls_url, 'https://primary.example.com/live.m3u8?token=primary');
     assert.deepEqual(body.backup_urls, ['https://backup.example.com/live.flv?token=backup']);
     assert.deepEqual(body.hls_backup_urls, ['https://backup.example.com/live.m3u8?token=backup']);
+    assert.deepEqual(body.hls_candidates, [
+      { url: body.hls_url, format: 'ts', codec: 'avc' },
+      { url: body.hls_backup_urls[0], format: 'ts', codec: 'avc' },
+    ]);
   });
 }

@@ -255,6 +255,8 @@ The runtime must provide:
 
 ### Bilibili bandwidth and proxies
 
+- Streams connect only after a play request. Pausing cancels pending resolution, playlist probes, and media downloads. Resuming reconnects to the live stream and resolves fresh Bilibili URLs, so a short buffering period is possible and the previous playback position is not preserved.
+- Bilibili selection probes at most two playlists at once, giving compatible candidates in different formats an early opportunity, then starts one player. Probes do not fetch media fragments, and HLS/FLV fallbacks remain available. This can reduce startup delays from trying slow candidates serially; results still depend on the network and CDN.
 - The Bilibili stream API requests the low quality tier (`qn=80`) for stations such as Lofi Girl. Bilibili may return a higher actual tier (for example, `current_qn=250`); this is a best-effort request, with no guarantee of bandwidth savings or reduced buffering.
 - HLS/FLV streams generally still contain video. Hiding the picture, using `<audio>`, or setting `hasVideo: false` in flv.js only changes local playback processing; video data is still downloaded.
 - Fixed-URL proxies such as [bili-live-flv-proxy](https://github.com/oversizexl/bili-live-flv-proxy) simplify URL configuration in external players, but forwarding the original audio and video does not extract audio. This project's API only resolves URLs; browsers connect directly to the CDN using the existing HLS/FLV fallback paths, without relaying the continuous stream through the application server.

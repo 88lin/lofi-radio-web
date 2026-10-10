@@ -87,6 +87,14 @@ npm run build
 - 电台源维护：确认链接可访问、可持续、可公开引用
 - README / 文案：确认相关数字、链接和描述没有同步遗漏
 
+播放器的暂停、切台和加载取消另有浏览器回归脚本。安装 Python Playwright 和 Chromium 后，在一个终端运行 `npm run build`、`npm run start -- -p 3100`，另一个终端运行：
+
+```bash
+python tests/browser/playback-lifecycle.py http://127.0.0.1:3100
+```
+
+脚本使用隔离的浏览器上下文及模拟音源，不依赖 B 站或 CDN 可用性；真实直播播放和回退仍需另外验证。
+
 ## 电台源与内容维护
 
 如果你的改动涉及电台资源，请优先保证这些信息明确：
