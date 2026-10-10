@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share, Plus, Music4 } from 'lucide-react';
+import { X, Share, Plus, Music4, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BeforeInstallPromptEvent } from '@/lib/pwa-install-capture';
 import {
   createPwaInstallState,
   PWA_DISMISSED_KEY,
   PWA_INSTALLED_KEY,
+  PWA_MANUAL_SHOWN_KEY,
   PWA_SESSION_KEY,
   type InstallDevice,
   type PwaInstallState,
@@ -88,8 +89,8 @@ export function PWAInstallPrompt() {
         handleInstalled();
         return;
       }
-      if (!installState.canPrompt(deviceType ?? 'desktop')) return;
-
+      // 展示机会由首页计时器核验。已显示的手动说明也可以接管迟到的原生事件，
+      // 更新为可用的安装按钮；不重新弹卡片，也不重新领取展示机会。
       deferredPromptRef.current = event;
       setDeferredPrompt(event);
     };
@@ -161,36 +162,41 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
   onInstall: () => Promise<void>;
 }) {
   const [showPrompt, setShowPrompt] = useState(false);
+  const mode = deviceType === 'android' && hasNativePrompt ? 'native' : 'manual';
 
-  // 重复的 beforeinstallprompt 只更新可用事件，不叠加计时器。
+  // 无事件的安卓浏览器多等一会，再展示一次手动说明；收到原生事件则替换等待计时。
+  // 重复事件只更新可用事件，不叠加计时器，也不重置已显示卡片的收起时间。
   useEffect(() => {
-    if (deviceType !== 'ios' && !hasNativePrompt) return;
-    if (!installState.canPrompt(deviceType)) return;
+    if (!installState.canPrompt(deviceType, Date.now(), mode)) return;
 
-    let hideTimer: ReturnType<typeof setTimeout> | undefined;
     const showTimer = setTimeout(() => {
       // 等待期间可能已在别处安装、关闭提示或改变显示模式，露出前再次核验并记账。
       // 路由已更新但 React 尚未清理旧 effect 时，不能消费首页的展示机会。
-      if (window.location.pathname !== '/' || getIsStandalone() || !installState.markShown(deviceType)) return;
+      if (window.location.pathname !== '/' || getIsStandalone() || !installState.markShown(deviceType, Date.now(), mode)) return;
       setShowPrompt(true);
-      hideTimer = setTimeout(() => setShowPrompt(false), 8000);
-    }, 6000);
+    }, deviceType === 'android' && mode === 'manual' ? 12000 : 6000);
 
+    return () => clearTimeout(showTimer);
+  }, [deviceType, mode, installState]);
+
+  useEffect(() => {
+    if (!showPrompt) return;
+    const hideTimer = setTimeout(() => setShowPrompt(false), 8000);
+    return () => clearTimeout(hideTimer);
+  }, [showPrompt]);
+
+  useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
-      if (![PWA_DISMISSED_KEY, PWA_INSTALLED_KEY, PWA_SESSION_KEY].includes(event.key ?? '')) return;
-      if (installState.canPrompt(deviceType)) return;
-      clearTimeout(showTimer);
-      clearTimeout(hideTimer);
+      if (![PWA_DISMISSED_KEY, PWA_INSTALLED_KEY, PWA_SESSION_KEY, PWA_MANUAL_SHOWN_KEY].includes(event.key ?? '')) return;
+      if (installState.canPrompt(deviceType, Date.now(), mode)) return;
       setShowPrompt(false);
     };
     window.addEventListener('storage', handleStorage);
 
     return () => {
-      clearTimeout(showTimer);
-      clearTimeout(hideTimer);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [deviceType, hasNativePrompt, installState]);
+  }, [deviceType, mode, installState]);
 
   const handleDismiss = useCallback(() => {
     installState.dismiss();
@@ -226,7 +232,7 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
               <div className="flex-1 min-w-0 pt-0.5">
                 <div className="flex justify-between items-start">
                   <h3 className="text-zinc-900 dark:text-[#f5f5f7] font-semibold text-[16px] tracking-tight mb-1">
-                    {deviceType === 'ios' ? '获取完整体验' : '安装 Lofi Radio'}
+                    {deviceType === 'ios' ? '获取完整体验' : mode === 'manual' ? '添加到桌面' : '安装 Lofi Radio'}
                   </h3>
                   <button
                     onClick={handleDismiss}
@@ -241,7 +247,9 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
                 <p className="text-zinc-600 dark:text-white/60 text-[13px] leading-relaxed mb-3 pr-2">
                   {deviceType === 'ios'
                     ? '将应用添加到主屏幕。打开浏览器的分享菜单，选择添加到主屏幕'
-                    : '添加到主屏幕，获取独立窗口与沉浸式播放，打开更快'}
+                    : mode === 'manual'
+                      ? '打开浏览器菜单，查找“添加到桌面”“添加到主屏幕”或“安装应用”（名称和可用性因浏览器而异）。'
+                      : '添加到主屏幕，获取独立窗口与沉浸式播放，打开更快'}
                 </p>
 
                 {deviceType === 'ios' ? (
@@ -254,6 +262,18 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
                       <Plus className="w-3 h-3" />
                       添加到主屏幕
+                    </span>
+                  </div>
+                ) : mode === 'manual' ? (
+                  <div className="flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-white/40">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                      <Menu className="w-3 h-3" />
+                      浏览器菜单
+                    </span>
+                    <span className="text-zinc-300 dark:text-white/15">→</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                      <Plus className="w-3 h-3" />
+                      添加到桌面
                     </span>
                   </div>
                 ) : (

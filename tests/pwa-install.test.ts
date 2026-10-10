@@ -6,6 +6,7 @@ import {
   PWA_DISMISSED_KEY,
   PWA_DISMISS_WINDOW_MS,
   PWA_INSTALLED_KEY,
+  PWA_MANUAL_SHOWN_KEY,
 } from '../src/lib/pwa-install';
 
 const NOW = 1_800_000_000_000;
@@ -44,6 +45,17 @@ test('兼容旧版七天免打扰，过期后仅在新的浏览会话允许安�
   const shown = createPwaInstallState(() => local, () => session);
   assert.equal(shown.markShown('android', NOW + PWA_DISMISS_WINDOW_MS), true);
   assert.equal(createPwaInstallState(() => local, () => session).canPrompt('android', NOW + 3 * PWA_DISMISS_WINDOW_MS), false);
+});
+
+test('安卓无安装事件时的手动说明只自动展示一次，原生提示仍遵守七天冷却', () => {
+  const local = storage();
+  const session = storage();
+  const state = createPwaInstallState(() => local, () => session);
+
+  assert.equal(state.markShown('android', NOW, 'manual'), true);
+  assert.equal(local.getItem(PWA_MANUAL_SHOWN_KEY), 'true');
+  assert.equal(createPwaInstallState(() => local, storage).canPrompt('android', NOW + 365 * 86400000, 'manual'), false);
+  assert.equal(createPwaInstallState(() => local, storage).canPrompt('android', NOW + 365 * 86400000), true);
 });
 
 test('关闭后的重复事件不能重新获取展示机会', () => {

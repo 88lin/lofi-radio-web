@@ -35,13 +35,16 @@ PWA_TIMERS_SCRIPT = """(() => {
   const timers = new Map();
   let now = 0;
   window.setTimeout = (callback, delay, ...args) => {
-    if (delay !== 6000 && delay !== 8000) return schedule(callback, delay, ...args);
+    if (![6000, 8000, 12000].includes(delay)) return schedule(callback, delay, ...args);
     const id = schedule(() => {}, 2147483647);
     timers.set(id, { callback, args, delay, due: now + delay });
     return id;
   };
   window.clearTimeout = (id) => { timers.delete(id); cancel(id); };
-  window.__hasPwaShowTimer = () => [...timers.values()].some((timer) => timer.delay === 6000);
+  const showTimers = () => [...timers.values()].filter((timer) => [6000, 12000].includes(timer.delay));
+  window.__hasPwaShowTimer = () => showTimers().length > 0;
+  window.__pwaShowTimerCount = () => showTimers().length;
+  window.__pwaShowWait = () => Math.max(0, Math.min(...showTimers().map((timer) => timer.due - now))) + 100;
   window.__advancePwaTimers = (duration) => {
     const end = now + duration;
     while (true) {
@@ -149,6 +152,8 @@ class Audit:
     def prompt(self, page):
         return page.get_by_role('heading', name='安装 Lofi Radio', exact=True).or_(
             page.get_by_role('heading', name='获取完整体验', exact=True),
+        ).or_(
+            page.get_by_role('heading', name='添加到桌面', exact=True),
         )
 
     def fire(self, page, outcome='accepted', fail=False):
@@ -161,9 +166,9 @@ class Audit:
         # 生产构建的路由过渡可能晚于 URL 更新才提交 effect，按计时器就绪条件等待。
         page.wait_for_function("""() => window.__hasPwaShowTimer() ||
           [...document.querySelectorAll('h3')].some((heading) =>
-            ['安装 Lofi Radio', '获取完整体验'].includes(heading.textContent))""")
+            ['安装 Lofi Radio', '获取完整体验', '添加到桌面'].includes(heading.textContent))""")
         if page.evaluate('window.__hasPwaShowTimer()'):
-            self.advance(page)
+            self.advance(page, page.evaluate('window.__pwaShowWait()'))
         expect(self.prompt(page)).to_be_visible(timeout=3000)
 
     def run(self, name, scenario):
@@ -183,9 +188,100 @@ class Audit:
             self.advance(page)
             self.hidden(page)
             self.fire(page)
-            self.advance(page)
+            page.wait_for_timeout(100)
+            assert page.evaluate('window.__pwaShowTimerCount()') == 1, 'Native event duplicated the manual wait timer'
             self.shown(page)
+            expect(page.get_by_role('button', name='立即安装', exact=True)).to_be_visible()
+            assert page.evaluate("localStorage.getItem('pwa-install-manual-shown')") is None
             assert page.evaluate("Number(localStorage.getItem('pwa-install-dismissed')) > 0")
+
+    def manual_guide(self, automatic=False, setup=''):
+        with self.session(setup=setup) as (_, page):
+            self.goto(page)
+            self.advance(page)
+            self.hidden(page)
+            self.shown(page)
+            expect(page.get_by_role('heading', name='添加到桌面', exact=True)).to_be_visible()
+            expect(page.get_by_text('浏览器菜单', exact=True)).to_be_visible()
+            expect(page.get_by_role('button', name='立即安装', exact=True)).to_have_count(0)
+            if automatic:
+                self.advance(page, 8500)
+            else:
+                page.get_by_role('button', name='关闭', exact=True).click()
+            self.hidden(page)
+            for path in ['/faq', '/about', '/']:
+                self.navigate(page, path)
+                self.advance(page, 12500)
+                self.hidden(page)
+            self.goto(page)
+            self.advance(page, 12500)
+            self.hidden(page)
+            self.fire(page)
+            self.advance(page, 12500)
+            self.hidden(page)
+
+    def manual_new_session(self):
+        with self.session() as (context, page):
+            self.goto(page)
+            self.shown(page)
+            assert page.evaluate("localStorage.getItem('pwa-install-manual-shown') === 'true'")
+            page.evaluate("localStorage.setItem('pwa-install-dismissed', String(Date.now() - 30 * 86400000))")
+            other = context.new_page()
+            self.goto(other)
+            self.advance(other, 12500)
+            self.hidden(other)
+            # 手动说明永久抑制；安装事件的原有七天冷却不受这个标记影响。
+            self.fire(other)
+            self.shown(other)
+            expect(other.get_by_role('button', name='立即安装', exact=True)).to_be_visible()
+
+    def manual_late_event(self, install=False):
+        with self.session() as (_, page):
+            self.goto(page)
+            self.shown(page)
+            recorded = page.evaluate("localStorage.getItem('pwa-install-dismissed')")
+            self.advance(page, 3000)
+            self.fire(page)
+            expect(page.get_by_role('button', name='立即安装', exact=True)).to_be_visible()
+            expect(page.get_by_role('heading', name='添加到桌面', exact=True)).to_have_count(0)
+            assert page.evaluate('window.__pwaShowTimerCount()') == 0, 'Late event scheduled another card'
+            assert page.evaluate("localStorage.getItem('pwa-install-dismissed')") == recorded, 'Late event consumed another exposure'
+            if install:
+                page.get_by_role('button', name='立即安装', exact=True).click()
+                assert page.evaluate('window.__promptCalls') == 1
+                assert page.evaluate("localStorage.getItem('pwa-installed') === 'true'")
+            else:
+                self.advance(page, 5500)
+            self.hidden(page)
+            self.fire(page)
+            self.advance(page, 12500)
+            self.hidden(page)
+
+    def manual_content_page(self, path):
+        with self.session() as (_, page):
+            self.goto(page, path)
+            self.advance(page, 12500)
+            self.hidden(page)
+            assert page.evaluate("localStorage.getItem('pwa-install-manual-shown')") is None
+            self.navigate(page, '/')
+            self.shown(page)
+            expect(page.get_by_role('heading', name='添加到桌面', exact=True)).to_be_visible()
+
+    def manual_suppressed(self, setup):
+        # init_script 也会跑在初始 about:blank；只给有站点 origin 的文档预置存储。
+        with self.session(setup=f"if (location.protocol !== 'about:') {{ {setup} }}") as (_, page):
+            self.goto(page)
+            self.advance(page, 12500)
+            self.hidden(page)
+
+    def manual_cross_tab(self):
+        with self.session() as (context, page):
+            self.goto(page)
+            other = context.new_page()
+            self.goto(other, '/faq')
+            other.evaluate("localStorage.setItem('pwa-install-manual-shown', 'true')")
+            self.advance(page, 12500)
+            self.hidden(page)
 
     def before_hydration(self, mode='prompt'):
         device = 'desktop' if mode == 'desktop' else 'android'
@@ -236,36 +332,38 @@ class Audit:
             self.advance(page)
             self.shown(page)
 
-    def navigation(self, pending):
+    def navigation(self, pending, native=True):
         with self.session() as (_, page):
             self.goto(page)
-            self.fire(page)
+            if native:
+                self.fire(page)
             if not pending:
-                self.advance(page)
                 self.shown(page)
             self.navigate(page, '/faq')
-            self.advance(page)
+            self.advance(page, 12500)
             self.hidden(page)
             self.navigate(page, '/about')
-            self.fire(page)
-            self.advance(page)
+            if native:
+                self.fire(page)
+            self.advance(page, 12500)
             self.hidden(page)
             self.navigate(page, '/')
-            self.advance(page)
             if pending:
                 self.shown(page)
             else:
+                self.advance(page, 12500)
                 self.hidden(page)
 
-    def navigation_before_cleanup(self):
+    def navigation_before_cleanup(self, native=True):
         with self.session() as (_, page):
             self.goto(page)
-            self.fire(page)
+            if native:
+                self.fire(page)
             page.wait_for_function('window.__hasPwaShowTimer()')
             # Next 的原生 History API 集成异步通知 React，旧 effect 此刻还未清理。
             recorded = page.evaluate("""() => {
               history.pushState({}, '', '/faq');
-              window.__advancePwaTimers(6500);
+              window.__advancePwaTimers(12500);
               return localStorage.getItem('pwa-install-dismissed');
             }""")
             assert recorded is None, 'Old route timer consumed the home prompt after URL changed'
@@ -298,15 +396,15 @@ class Audit:
             self.advance(page)
             self.hidden(page)
 
-    def installed(self, pending):
+    def installed(self, pending, native=True):
         with self.session() as (_, page):
             self.goto(page)
-            self.fire(page)
+            if native:
+                self.fire(page)
             if not pending:
-                self.advance(page)
                 self.shown(page)
             page.evaluate("window.dispatchEvent(new Event('appinstalled'))")
-            self.advance(page)
+            self.advance(page, 12500)
             self.hidden(page)
             assert page.evaluate("localStorage.getItem('pwa-installed') === 'true'")
             page.evaluate("""() => {
@@ -315,7 +413,7 @@ class Audit:
             }""")
             self.goto(page)
             self.fire(page)
-            self.advance(page)
+            self.advance(page, 12500)
             self.hidden(page)
 
     def standalone(self, device, initial):
@@ -411,7 +509,24 @@ class Audit:
                 self.hidden(page)
 
     def all(self):
-        self.run('Android waits for installability, then shows once', self.first_visit)
+        self.run('Android event during manual wait: one native timer and usable button', self.first_visit)
+        self.run('Manual Android guide: close, navigate and refresh without repeat', self.manual_guide)
+        self.run('Manual Android guide: auto-hide and no repeat after late event', lambda: self.manual_guide(True))
+        self.run('Manual Android guide: sessionStorage fallback survives refresh', lambda: self.manual_guide(setup=BLOCK_LOCAL))
+        self.run('Manual Android guide: localStorage survives blocked sessionStorage', lambda: self.manual_guide(setup=BLOCK_SESSION))
+        self.run('Manual Android guide: new tab after 30 days suppresses guide, permits native', self.manual_new_session)
+        self.run('Manual Android guide: late event upgrades without resetting auto-hide', self.manual_late_event)
+        self.run('Manual Android guide: late event remains installable', lambda: self.manual_late_event(True))
+        for path in ['/faq', '/about', '/stations']:
+            self.run(f'Manual Android guide: {path} has no card or exposure record', lambda path=path: self.manual_content_page(path))
+        self.run('Manual Android guide: navigate while pending', lambda: self.navigation(True, False))
+        self.run('Manual Android guide: navigate while visible and return', lambda: self.navigation(False, False))
+        self.run('Manual Android guide: URL changes before timer cleanup', lambda: self.navigation_before_cleanup(False))
+        self.run('Manual Android guide: install while pending', lambda: self.installed(True, False))
+        self.run('Manual Android guide: install while visible', lambda: self.installed(False, False))
+        self.run('Manual Android guide: existing cooldown is respected', lambda: self.manual_suppressed("localStorage.setItem('pwa-install-dismissed', String(Date.now()))"))
+        self.run('Manual Android guide: storage unavailable stays quiet', lambda: self.manual_suppressed(BLOCK_LOCAL + BLOCK_SESSION))
+        self.run('Manual Android guide: another tab records guide while waiting', self.manual_cross_tab)
         self.run('Early Android install event survives hydration and remains usable', self.before_hydration)
         self.run('Early appinstalled survives hydration and suppresses later events', lambda: self.before_hydration('installed'))
         self.run('Early Android event respects existing cooldown', lambda: self.before_hydration('cooldown'))

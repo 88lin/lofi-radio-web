@@ -4,7 +4,10 @@ export type InstallDevice = 'ios' | 'android' | 'desktop';
 export const PWA_DISMISSED_KEY = 'pwa-install-dismissed';
 export const PWA_INSTALLED_KEY = 'pwa-installed';
 export const PWA_SESSION_KEY = 'pwa-install-seen';
+export const PWA_MANUAL_SHOWN_KEY = 'pwa-install-manual-shown';
 export const PWA_DISMISS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+type InstallPromptMode = 'native' | 'manual';
 
 type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -36,9 +39,13 @@ export function createPwaInstallState(local: StorageAccess, session: StorageAcce
     );
   }
 
-  function canPrompt(device: InstallDevice, now = Date.now()) {
+  function canPrompt(device: InstallDevice, now = Date.now(), mode: InstallPromptMode = 'native') {
     if (device === 'desktop' || seenInDocument || isInstalled()) return false;
     if (readStorage(session, PWA_SESSION_KEY).value === 'true') return false;
+    // 无安装事件的手动说明只自动展示一次；之后收到原生事件仍走原有冷却规则。
+    if (mode === 'manual' && [local, session].some(
+      (access) => readStorage(access, PWA_MANUAL_SHOWN_KEY).value === 'true',
+    )) return false;
 
     const records = [local, session].map((access) => readStorage(access, PWA_DISMISSED_KEY));
     // 无法记住露出记录时保持安静，避免每次刷新都重新打扰。
@@ -63,9 +70,16 @@ export function createPwaInstallState(local: StorageAccess, session: StorageAcce
   return {
     canPrompt,
     isInstalled,
-    markShown(device: InstallDevice, now = Date.now()) {
+    markShown(device: InstallDevice, now = Date.now(), mode: InstallPromptMode = 'native') {
       // 写入必须先于显示；同一份状态最多领取一次展示机会。
-      if (!canPrompt(device, now) || !rememberSeen(now)) return false;
+      if (!canPrompt(device, now, mode)) return false;
+      if (mode === 'manual') {
+        const saved = [local, session].map((access) =>
+          writeStorage(access, PWA_MANUAL_SHOWN_KEY, 'true'),
+        );
+        if (!saved.some(Boolean)) return false;
+      }
+      if (!rememberSeen(now)) return false;
       seenInDocument = true;
       return true;
     },
