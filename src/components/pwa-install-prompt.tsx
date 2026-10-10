@@ -231,7 +231,7 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
 
               <div className="flex-1 min-w-0 pt-0.5">
                 <div className="flex justify-between items-start">
-                  <h3 className="text-zinc-900 dark:text-[#f5f5f7] font-semibold text-[16px] tracking-tight mb-1">
+                  <h3 className="text-zinc-900 dark:text-[#f5f5f7] font-semibold text-[16px] mb-1">
                     {deviceType === 'ios' ? '获取完整体验' : mode === 'manual' ? '添加到桌面' : '安装 Lofi Radio'}
                   </h3>
                   <button
@@ -248,30 +248,30 @@ function HomeInstallPrompt({ deviceType, hasNativePrompt, installState, onInstal
                   {deviceType === 'ios'
                     ? '将应用添加到主屏幕。打开浏览器的分享菜单，选择添加到主屏幕'
                     : mode === 'manual'
-                      ? '打开浏览器菜单，查找“添加到桌面”“添加到主屏幕”或“安装应用”（名称和可用性因浏览器而异）。'
+                      ? '打开浏览器菜单，查找“添加到桌面”“添加到主屏幕”或“安装应用”。'
                       : '添加到主屏幕，获取独立窗口与沉浸式播放，打开更快'}
                 </p>
 
                 {deviceType === 'ios' ? (
-                  <div className="flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-white/40">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[12px] min-[390px]:text-[13px] font-medium text-zinc-600 dark:text-white/70">
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.08]">
                       <Share className="w-3 h-3" />
                       分享
                     </span>
                     <span className="text-zinc-300 dark:text-white/15">→</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.08]">
                       <Plus className="w-3 h-3" />
                       添加到主屏幕
                     </span>
                   </div>
                 ) : mode === 'manual' ? (
-                  <div className="flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-white/40">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[12px] min-[390px]:text-[13px] font-medium text-zinc-600 dark:text-white/70">
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.08]">
                       <Menu className="w-3 h-3" />
                       浏览器菜单
                     </span>
                     <span className="text-zinc-300 dark:text-white/15">→</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.08]">
                       <Plus className="w-3 h-3" />
                       添加到桌面
                     </span>
