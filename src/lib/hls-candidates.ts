@@ -5,7 +5,7 @@ export interface HlsCandidate {
   codec?: string;
 }
 
-function probeOrder(candidates: HlsCandidate[]): HlsCandidate[] {
+export function orderHlsCandidates(candidates: HlsCandidate[]): HlsCandidate[] {
   const unique = [...new Map(candidates.map(candidate => [candidate.url, candidate])).values()];
   const result: HlsCandidate[] = [];
   // Try AVC/unknown before HEVC, and interleave formats so slow TS hosts cannot
@@ -64,7 +64,7 @@ export async function probeHlsCandidate(
   timeoutMs = 8000,
 ): Promise<string | null> {
   signal.throwIfAborted();
-  const queue = probeOrder(candidates);
+  const queue = orderHlsCandidates(candidates);
   if (!queue.length) return null;
   const controller = new AbortController();
   const onAbort = () => controller.abort();

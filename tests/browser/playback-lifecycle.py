@@ -131,8 +131,52 @@ async def main():
             for stage in ['resolver', 'probe', 'hls']:
                 for switch in [False, True]:
                     await check(browser, stage, switch)
+            await check_probe_fallback(browser)
         finally:
             await browser.close()
+
+
+async def check_probe_fallback(browser):
+    """Failed JS probes must not put every TS variant ahead of fMP4 playback."""
+    context = await browser.new_context()
+    page = await context.new_page()
+    fmp4_player_started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def handle(route):
+        url = route.request.url
+        if '/api/bilibili-stream' in url:
+            candidates = [
+                {'url': BASE + '/primary-ts.m3u8', 'format': 'ts', 'codec': 'avc'},
+                {'url': BASE + '/backup-ts.m3u8', 'format': 'ts', 'codec': 'avc'},
+                {'url': BASE + '/primary-mp4.m3u8', 'format': 'fmp4', 'codec': 'avc'},
+            ]
+            await route.fulfill(json={'success': True, 'live_status': 1, 'flv_url': '',
+                'hls_url': candidates[0]['url'], 'hls_backup_urls': [c['url'] for c in candidates[1:]],
+                'hls_candidates': candidates})
+        elif '.m3u8' in url:
+            if route.request.resource_type == 'fetch' or 'primary-ts' in url:
+                await route.fulfill(status=403, body='injected playlist failure')
+            elif 'primary-mp4' in url:
+                fmp4_player_started.set()
+                await release.wait()
+                await route.abort()
+            else:
+                # A hung backup TS must not delay trying the other format.
+                await release.wait()
+                await route.abort()
+        else:
+            await route.continue_()
+
+    await page.route('**/*', handle)
+    try:
+        await page.goto(BASE + '/stations', wait_until='networkidle')
+        await page.get_by_role('button', name='播放 Lofi Girl', exact=True).first.click()
+        await asyncio.wait_for(fmp4_player_started.wait(), timeout=4)
+        print(json.dumps({'stage': 'failed probes keep format diversity', 'result': 'PASS'}), flush=True)
+    finally:
+        release.set()
+        await context.close()
 
 
 asyncio.run(main())
