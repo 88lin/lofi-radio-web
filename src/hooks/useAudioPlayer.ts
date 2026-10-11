@@ -274,7 +274,14 @@ export function useAudioPlayer() {
           hlsRef.current = null;
         }
 
-        const hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
+        const hls = new Hls({
+          enableWorker: true,
+          maxBufferLength: 30,
+          // B 站 fMP4 通常每片仅 1 秒，默认紧跟 3 片容易耗尽缓冲。
+          // 电台不要求实时互动，保留 5 片的直播延迟以吸收短暂网络抖动。
+          // 这是播放位置的目标，不是额外等待 5 秒才开始播放。
+          liveSyncDurationCount: 5,
+        });
         // Own the instance before awaiting initialization, so pause/switch can
         // destroy it even while its first manifest request is still pending.
         hlsRef.current = hls;
